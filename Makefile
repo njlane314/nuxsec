@@ -3,14 +3,14 @@ CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra $(shell root-config --cflags)
 LDFLAGS ?= $(shell root-config --libs) -lsqlite3
 
 LIB_NAME = build/lib/libNuIO.so
-LIB_SRC = src/lib/NuIO/src/StageResultIO.cxx
+LIB_SRC = lib/NuIO/src/StageResultIO.cxx
 LIB_OBJ = $(LIB_SRC:.cxx=.o)
 
 BIN_NAME = build/bin/nuIOaggregator.exe
-BIN_SRC = src/bin/nuIOaggregator/nuIOaggregator.cxx
+BIN_SRC = bin/nuIOaggregator/nuIOaggregator.cxx
 BIN_OBJ = $(BIN_SRC:.cxx=.o)
 
-INCLUDES = -I./src/lib/NuIO/include
+INCLUDES = -I./lib/NuIO/include
 
 all: $(LIB_NAME) $(BIN_NAME)
 

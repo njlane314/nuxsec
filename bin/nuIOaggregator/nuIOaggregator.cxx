@@ -1,5 +1,5 @@
 /**
- *  @file  src/bin/nuIOaggregator/nuIOaggregator.cxx
+ *  @file  bin/nuIOaggregator/nuIOaggregator.cxx
  *
  *  @brief Main implementation for the nuIOaggregator executable
  */
