@@ -1,14 +1,12 @@
-#include <TFile.h>
-#include <TTree.h>
 #include <TChain.h>
-#include <TFileMerger.h>
 #include <TDirectory.h>
+#include <TFile.h>
+#include <TFileMerger.h>
+#include <TNamed.h>
 #include <TObjArray.h>
 #include <TObjString.h>
 #include <TParameter.h>
-#include <TNamed.h>
-
-#include <sqlite3.h>
+#include <TTree.h>
 
 #include <algorithm>
 #include <cctype>
@@ -27,7 +25,9 @@
 #include <utility>
 #include <vector>
 
-#include "stage_result_io.h"
+#include "NuIO/StageResult.h"
+#include "NuIO/StageResultIO.h"
+#include "NuPOT/BeamRunDB.h"
 
 namespace nucond {
 
@@ -39,7 +39,7 @@ static inline std::string Trim(std::string s) {
 }
 
 static inline bool IContains(const std::string& hay, const std::string& needle) {
-  return ToLower(hay).find(ToLower(needle)) != std::string::npos;
+  return nuio::ToLower(hay).find(nuio::ToLower(needle)) != std::string::npos;
 }
 
 static inline void EnsureDirLike(const std::string& path) {
@@ -66,22 +66,22 @@ static inline std::vector<std::string> ReadFileList(const std::string& filelistP
   return files;
 }
 
-static inline SampleKind InferSampleKind(const std::string& stageName) {
-  const std::string s = ToLower(stageName);
-  if (s.find("ext") != std::string::npos)      return SampleKind::kEXT;
-  if (s.find("dirt") != std::string::npos)     return SampleKind::kMCDirt;
-  if (s.find("strange") != std::string::npos)  return SampleKind::kMCStrangeness;
-  if (s.find("beam") != std::string::npos)     return SampleKind::kMCOverlay;
-  if (s.find("data") != std::string::npos)     return SampleKind::kData;
-  return SampleKind::kUnknown;
+static inline nuio::SampleKind InferSampleKind(const std::string& stageName) {
+  const std::string s = nuio::ToLower(stageName);
+  if (s.find("ext") != std::string::npos)      return nuio::SampleKind::kEXT;
+  if (s.find("dirt") != std::string::npos)     return nuio::SampleKind::kMCDirt;
+  if (s.find("strange") != std::string::npos)  return nuio::SampleKind::kMCStrangeness;
+  if (s.find("beam") != std::string::npos)     return nuio::SampleKind::kMCOverlay;
+  if (s.find("data") != std::string::npos)     return nuio::SampleKind::kData;
+  return nuio::SampleKind::kUnknown;
 }
 
-static inline BeamMode InferBeamMode(const std::string& stageName) {
-  const std::string s = ToLower(stageName);
-  if (s.find("numi") != std::string::npos) return BeamMode::kNuMI;
-  if (s.find("bnb")  != std::string::npos) return BeamMode::kBNB;
-  if (s.find("fhc") != std::string::npos || s.find("rhc") != std::string::npos) return BeamMode::kNuMI;
-  return BeamMode::kUnknown;
+static inline nuio::BeamMode InferBeamMode(const std::string& stageName) {
+  const std::string s = nuio::ToLower(stageName);
+  if (s.find("numi") != std::string::npos) return nuio::BeamMode::kNuMI;
+  if (s.find("bnb")  != std::string::npos) return nuio::BeamMode::kBNB;
+  if (s.find("fhc") != std::string::npos || s.find("rhc") != std::string::npos) return nuio::BeamMode::kNuMI;
+  return nuio::BeamMode::kUnknown;
 }
 
 struct FilePeek {
@@ -121,8 +121,8 @@ static inline uint64_t PackRunSubrun(int run, int subrun) {
          (static_cast<uint64_t>(static_cast<uint32_t>(subrun)));
 }
 
-static inline SubRunSummary ScanSubRunTree(const std::vector<std::string>& files) {
-  SubRunSummary out;
+static inline nuio::SubRunSummary ScanSubRunTree(const std::vector<std::string>& files) {
+  nuio::SubRunSummary out;
 
   TChain chain("SubRun");
   for (const auto& f : files) chain.Add(f.c_str());
@@ -151,132 +151,18 @@ static inline SubRunSummary ScanSubRunTree(const std::vector<std::string>& files
 
     const uint64_t key = PackRunSubrun(run, subRun);
     if (seen.insert(key).second) {
-      out.unique_pairs.push_back(RunSubrun{static_cast<int>(run), static_cast<int>(subRun)});
+      out.unique_pairs.push_back(nuio::RunSubrun{static_cast<int>(run), static_cast<int>(subRun)});
     }
   }
 
   std::sort(out.unique_pairs.begin(), out.unique_pairs.end(),
-            [](const RunSubrun& a, const RunSubrun& b) {
+            [](const nuio::RunSubrun& a, const nuio::RunSubrun& b) {
               if (a.run != b.run) return a.run < b.run;
               return a.subrun < b.subrun;
             });
 
   return out;
 }
-
-class BeamRunDB {
-public:
-  explicit BeamRunDB(std::string path)
-    : db_path_(std::move(path))
-  {
-    sqlite3* db = nullptr;
-    const int rc = sqlite3_open_v2(db_path_.c_str(), &db, SQLITE_OPEN_READONLY, nullptr);
-    if (rc != SQLITE_OK || !db) {
-      std::string msg = (db ? sqlite3_errmsg(db) : "sqlite3_open_v2 failed");
-      if (db) sqlite3_close(db);
-      throw std::runtime_error("Failed to open SQLite DB: " + db_path_ + " : " + msg);
-    }
-    db_ = db;
-  }
-
-  ~BeamRunDB() {
-    if (db_) sqlite3_close(db_);
-  }
-
-  BeamRunDB(const BeamRunDB&) = delete;
-  BeamRunDB& operator=(const BeamRunDB&) = delete;
-
-  DBSums SumRuninfoForSelection(const std::vector<RunSubrun>& pairs) const {
-    if (pairs.empty()) throw std::runtime_error("DB selection is empty (no run/subrun pairs).");
-
-    Exec("CREATE TEMP TABLE IF NOT EXISTS sel(run INTEGER, subrun INTEGER);");
-    Exec("DELETE FROM sel;");
-
-    Exec("BEGIN;");
-    sqlite3_stmt* ins = nullptr;
-    Prepare("INSERT INTO sel(run, subrun) VALUES(?, ?);", &ins);
-
-    for (const auto& p : pairs) {
-      sqlite3_reset(ins);
-      sqlite3_clear_bindings(ins);
-      sqlite3_bind_int(ins, 1, p.run);
-      sqlite3_bind_int(ins, 2, p.subrun);
-
-      const int rc = sqlite3_step(ins);
-      if (rc != SQLITE_DONE) {
-        const std::string msg = sqlite3_errmsg(db_);
-        sqlite3_finalize(ins);
-        Exec("ROLLBACK;");
-        throw std::runtime_error("SQLite insert failed: " + msg);
-      }
-    }
-
-    sqlite3_finalize(ins);
-    Exec("COMMIT;");
-
-    DBSums out{};
-    out.n_pairs_loaded = static_cast<long long>(pairs.size());
-
-    sqlite3_stmt* q = nullptr;
-    Prepare(
-      "SELECT "
-      "  IFNULL(SUM(r.tortgt), 0.0) AS tortgt_sum, "
-      "  IFNULL(SUM(r.tor101), 0.0) AS tor101_sum, "
-      "  IFNULL(SUM(r.tor860), 0.0) AS tor860_sum, "
-      "  IFNULL(SUM(r.tor875), 0.0) AS tor875_sum, "
-      "  IFNULL(SUM(r.EA9CNT), 0)  AS ea9cnt_sum, "
-      "  IFNULL(SUM(r.E1DCNT), 0)  AS e1dcnt_sum, "
-      "  IFNULL(SUM(r.EXTTrig), 0) AS exttrig_sum, "
-      "  IFNULL(SUM(r.Gate1Trig), 0) AS gate1_sum, "
-      "  IFNULL(SUM(r.Gate2Trig), 0) AS gate2_sum "
-      "FROM runinfo r "
-      "JOIN sel USING(run, subrun);",
-      &q
-    );
-
-    const int rc = sqlite3_step(q);
-    if (rc != SQLITE_ROW) {
-      const std::string msg = sqlite3_errmsg(db_);
-      sqlite3_finalize(q);
-      throw std::runtime_error("SQLite sum query failed: " + msg);
-    }
-
-    out.tortgt_sum    = sqlite3_column_double(q, 0);
-    out.tor101_sum    = sqlite3_column_double(q, 1);
-    out.tor860_sum    = sqlite3_column_double(q, 2);
-    out.tor875_sum    = sqlite3_column_double(q, 3);
-    out.EA9CNT_sum    = sqlite3_column_int64(q, 4);
-    out.E1DCNT_sum    = sqlite3_column_int64(q, 5);
-    out.EXTTrig_sum   = sqlite3_column_int64(q, 6);
-    out.Gate1Trig_sum = sqlite3_column_int64(q, 7);
-    out.Gate2Trig_sum = sqlite3_column_int64(q, 8);
-
-    sqlite3_finalize(q);
-    return out;
-  }
-
-private:
-  void Exec(const std::string& sql) const {
-    char* err = nullptr;
-    const int rc = sqlite3_exec(db_, sql.c_str(), nullptr, nullptr, &err);
-    if (rc != SQLITE_OK) {
-      std::string msg = err ? err : sqlite3_errmsg(db_);
-      sqlite3_free(err);
-      throw std::runtime_error("SQLite exec failed: " + msg + " ; SQL=" + sql);
-    }
-  }
-
-  void Prepare(const std::string& sql, sqlite3_stmt** stmt) const {
-    const int rc = sqlite3_prepare_v2(db_, sql.c_str(), -1, stmt, nullptr);
-    if (rc != SQLITE_OK || !stmt || !(*stmt)) {
-      std::string msg = sqlite3_errmsg(db_);
-      throw std::runtime_error("SQLite prepare failed: " + msg + " ; SQL=" + sql);
-    }
-  }
-
-  std::string db_path_;
-  sqlite3* db_ = nullptr;
-};
 
 static inline bool MergeRootFiles(const std::vector<std::string>& files,
                                  const std::string& outFile)
@@ -304,7 +190,7 @@ struct CLI {
   bool do_merge = true;
   std::string ext_denom = "EXTTrig";
 
-  std::vector<StageConfig> stages;
+  std::vector<nuio::StageConfig> stages;
 };
 
 static inline void PrintUsage(const char* argv0) {
@@ -351,7 +237,7 @@ static inline CLI ParseArgs(int argc, char** argv) {
       if (pos == std::string::npos) {
         throw std::runtime_error("Bad --stage spec (expected NAME:FILELIST): " + spec);
       }
-      StageConfig sc;
+      nuio::StageConfig sc;
       sc.stage_name = spec.substr(0, pos);
       sc.filelist_path = spec.substr(pos + 1);
       sc.stage_name = Trim(sc.stage_name);
@@ -371,22 +257,22 @@ static inline CLI ParseArgs(int argc, char** argv) {
   return cli;
 }
 
-static inline long long GetDenomFromDB(const DBSums& s, const std::string& denomCol) {
-  const std::string c = ToLower(denomCol);
+static inline long long GetDenomFromDB(const nuio::DBSums& s, const std::string& denomCol) {
+  const std::string c = nuio::ToLower(denomCol);
   if (c == "exttrig")  return s.EXTTrig_sum;
   if (c == "gate1trig") return s.Gate1Trig_sum;
   if (c == "gate2trig") return s.Gate2Trig_sum;
   return s.EXTTrig_sum;
 }
 
-static inline StageResult ProcessStage(const StageConfig& cfg,
-                                       const BeamRunDB& db,
-                                       double pot_scale,
-                                       const std::string& ext_denom_col,
-                                       const std::string& outdir,
-                                       bool do_merge)
+static inline nuio::StageResult ProcessStage(const nuio::StageConfig& cfg,
+                                             const nupot::BeamRunDB& db,
+                                             double pot_scale,
+                                             const std::string& ext_denom_col,
+                                             const std::string& outdir,
+                                             bool do_merge)
 {
-  StageResult r;
+  nuio::StageResult r;
   r.cfg = cfg;
 
   r.input_files = ReadFileList(cfg.filelist_path);
@@ -396,13 +282,13 @@ static inline StageResult ProcessStage(const StageConfig& cfg,
 
   const FilePeek peek = PeekEventFlags(r.input_files.front());
   if (peek.isNuMI.has_value()) {
-    r.beam = (*peek.isNuMI ? BeamMode::kNuMI : BeamMode::kBNB);
+    r.beam = (*peek.isNuMI ? nuio::BeamMode::kNuMI : nuio::BeamMode::kBNB);
   }
   if (peek.isData.has_value()) {
     if (*peek.isData) {
-      if (r.kind == SampleKind::kUnknown) r.kind = SampleKind::kData;
+      if (r.kind == nuio::SampleKind::kUnknown) r.kind = nuio::SampleKind::kData;
     } else {
-      if (r.kind == SampleKind::kUnknown) r.kind = SampleKind::kMCOverlay;
+      if (r.kind == nuio::SampleKind::kUnknown) r.kind = nuio::SampleKind::kMCOverlay;
     }
   }
 
@@ -415,7 +301,7 @@ static inline StageResult ProcessStage(const StageConfig& cfg,
 
   r.scale = 1.0;
 
-  if (r.kind == SampleKind::kMCOverlay || r.kind == SampleKind::kMCDirt || r.kind == SampleKind::kMCStrangeness) {
+  if (r.kind == nuio::SampleKind::kMCOverlay || r.kind == nuio::SampleKind::kMCDirt || r.kind == nuio::SampleKind::kMCStrangeness) {
     const double pot_mc = r.subrun.pot_sum;
     const double pot_data = r.db_tortgt_pot;
 
@@ -424,7 +310,7 @@ static inline StageResult ProcessStage(const StageConfig& cfg,
     } else {
       r.scale = 0.0;
     }
-  } else if (r.kind == SampleKind::kEXT) {
+  } else if (r.kind == nuio::SampleKind::kEXT) {
     const long long num = r.dbsums.EA9CNT_sum;
     const long long den = GetDenomFromDB(r.dbsums, ext_denom_col);
     if (num > 0 && den > 0) r.scale = static_cast<double>(num) / static_cast<double>(den);
@@ -440,13 +326,13 @@ static inline StageResult ProcessStage(const StageConfig& cfg,
     if (!ok) {
       throw std::runtime_error("ROOT merge failed for stage " + cfg.stage_name + " -> " + outFile);
     }
-    StageResultIO::Write(r, outFile);
+    nuio::StageResultIO::Write(r, outFile);
   }
 
   return r;
 }
 
-} 
+}  // namespace nucond
 
 int main(int argc, char** argv) {
   using namespace nucond;
@@ -456,18 +342,18 @@ int main(int argc, char** argv) {
 
     EnsureDirLike(cli.outdir);
 
-    BeamRunDB db(cli.db_path);
+    nupot::BeamRunDB db(cli.db_path);
 
-    std::vector<StageResult> results;
+    std::vector<nuio::StageResult> results;
     results.reserve(cli.stages.size());
 
     for (const auto& st : cli.stages) {
-      std::cerr << "[nucondenser] stage=" << st.stage_name
+      std::cerr << "[nuIOcondenser] stage=" << st.stage_name
                 << " filelist=" << st.filelist_path << "\n";
-      StageResult r = ProcessStage(st, db, cli.pot_scale, cli.ext_denom, cli.outdir, cli.do_merge);
+      nuio::StageResult r = ProcessStage(st, db, cli.pot_scale, cli.ext_denom, cli.outdir, cli.do_merge);
 
-      std::cerr << "  kind=" << SampleKindName(r.kind)
-                << " beam=" << BeamModeName(r.beam)
+      std::cerr << "  kind=" << nuio::SampleKindName(r.kind)
+                << " beam=" << nuio::BeamModeName(r.beam)
                 << " files=" << r.input_files.size()
                 << " unique_pairs=" << r.subrun.unique_pairs.size()
                 << " subrun_pot_sum=" << r.subrun.pot_sum
@@ -513,8 +399,8 @@ int main(int argc, char** argv) {
 
       for (const auto& r : results) {
         stage_name = r.cfg.stage_name;
-        kind = SampleKindName(r.kind);
-        beam = BeamModeName(r.beam);
+        kind = nuio::SampleKindName(r.kind);
+        beam = nuio::BeamModeName(r.beam);
         condensed_file = cli.outdir + "/" + r.cfg.stage_name + ".condensed.root";
         subrun_pot_sum = r.subrun.pot_sum;
         db_tortgt_pot = r.db_tortgt_pot;
