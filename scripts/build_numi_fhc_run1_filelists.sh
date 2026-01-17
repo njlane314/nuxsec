@@ -14,20 +14,34 @@ write_list() {
     local stage="$1"
     local dir="$2"
     local list="${OUTPUT_DIR}/${stage}.list"
+    local tmp_list
+    tmp_list="$(mktemp)"
 
     if [[ ! -d "${dir}" ]]
     then
         echo "Warning: missing output directory: ${dir}" >&2
-        : > "${list}"
+        if [[ ! -f "${list}" ]]
+        then
+            : > "${list}"
+        fi
+        rm -f "${tmp_list}"
         return 0
     fi
 
-    find "${dir}" -maxdepth 1 -type f -name "*.root" | sort > "${list}"
+    find "${dir}" -type f -name "*.root" | sort > "${tmp_list}"
 
-    if [[ ! -s "${list}" ]]
+    if [[ ! -s "${tmp_list}" ]]
     then
         echo "Warning: no ROOT files found in ${dir}" >&2
+        if [[ ! -f "${list}" ]]
+        then
+            : > "${list}"
+        fi
+        rm -f "${tmp_list}"
+        return 0
     fi
+
+    mv "${tmp_list}" "${list}"
 }
 
 write_list "beam_s0" "${BASE}/beam/s0/out"
