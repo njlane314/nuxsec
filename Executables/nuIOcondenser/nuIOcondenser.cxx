@@ -1,7 +1,7 @@
 /**
- *  @file  nucondenser.cxx
+ *  @file  Executables/nuIOcondenser/nuIOcondenser.cxx
  *
- *  @brief Main implementation for the nucondenser utility
+ *  @brief Main implementation for the nuIOcondenser executable
  */
 
 #include <TChain.h>
@@ -25,7 +25,6 @@
 #include <fstream>
 #include <iostream>
 #include <optional>
-#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -33,31 +32,28 @@
 #include <utility>
 #include <vector>
 
-#include "stage_result_io.h"
+#include "NuIO/StageResultIO.h"
 
 namespace nucond
 {
 
-static inline std::string Trim(std::string s)
+using namespace nuio;
+
+static std::string Trim(std::string s)
 {
     auto notspace = [](unsigned char c)
-    { return !std::isspace(c); };
+    { return std::isspace(c) == 0; };
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), notspace));
     s.erase(std::find_if(s.rbegin(), s.rend(), notspace).base(), s.end());
     return s;
 }
 
-static inline bool IContains(const std::string& hay, const std::string& needle)
-{
-    return ToLower(hay).find(ToLower(needle)) != std::string::npos;
-}
-
-static inline void EnsureDirLike(const std::string& path)
+static void EnsureDirLike(const std::string& path)
 {
     (void)path;
 }
 
-static inline std::vector<std::string> ReadFileList(const std::string& filelistPath)
+static std::vector<std::string> ReadFileList(const std::string& filelistPath)
 {
     std::ifstream fin(filelistPath);
     if (!fin)
@@ -83,7 +79,7 @@ static inline std::vector<std::string> ReadFileList(const std::string& filelistP
     return files;
 }
 
-static inline SampleKind InferSampleKind(const std::string& stageName)
+static SampleKind InferSampleKind(const std::string& stageName)
 {
     const std::string s = ToLower(stageName);
     if (s.find("ext") != std::string::npos)
@@ -99,7 +95,7 @@ static inline SampleKind InferSampleKind(const std::string& stageName)
     return SampleKind::kUnknown;
 }
 
-static inline BeamMode InferBeamMode(const std::string& stageName)
+static BeamMode InferBeamMode(const std::string& stageName)
 {
     const std::string s = ToLower(stageName);
     if (s.find("numi") != std::string::npos)
@@ -117,7 +113,7 @@ struct FilePeek
     std::optional<bool> isNuMI;
 };
 
-static inline FilePeek PeekEventFlags(const std::string& rootFile)
+static FilePeek PeekEventFlags(const std::string& rootFile)
 {
     FilePeek out;
     std::unique_ptr<TFile> f(TFile::Open(rootFile.c_str(), "READ"));
@@ -153,13 +149,13 @@ static inline FilePeek PeekEventFlags(const std::string& rootFile)
     return out;
 }
 
-static inline uint64_t PackRunSubrun(int run, int subrun)
+static uint64_t PackRunSubrun(int run, int subrun)
 {
     return (static_cast<uint64_t>(static_cast<uint32_t>(run)) << 32) |
            (static_cast<uint64_t>(static_cast<uint32_t>(subrun)));
 }
 
-static inline SubRunSummary ScanSubRunTree(const std::vector<std::string>& files)
+static SubRunSummary ScanSubRunTree(const std::vector<std::string>& files)
 {
     SubRunSummary out;
 
@@ -336,8 +332,8 @@ class BeamRunDB
     sqlite3* db_ = nullptr;
 };
 
-static inline bool MergeRootFiles(const std::vector<std::string>& files,
-                                  const std::string& outFile)
+static bool MergeRootFiles(const std::vector<std::string>& files,
+                           const std::string& outFile)
 {
     TFileMerger merger(false);
     merger.SetFastMethod(true);
@@ -369,7 +365,7 @@ struct CLI
     std::vector<StageConfig> stages;
 };
 
-static inline void PrintUsage(const char* argv0)
+static void PrintUsage(const char* argv0)
 {
     std::cerr << "Usage:\n"
                  "  "
@@ -384,7 +380,7 @@ static inline void PrintUsage(const char* argv0)
                           "  --help              Print this message\n";
 }
 
-static inline CLI ParseArgs(int argc, char** argv)
+static CLI ParseArgs(int argc, char** argv)
 {
     CLI cli;
     for (int i = 1; i < argc; ++i)
@@ -458,7 +454,7 @@ static inline CLI ParseArgs(int argc, char** argv)
     return cli;
 }
 
-static inline long long GetDenomFromDB(const DBSums& s, const std::string& denomCol)
+static long long GetDenomFromDB(const DBSums& s, const std::string& denomCol)
 {
     const std::string c = ToLower(denomCol);
     if (c == "exttrig")
@@ -470,12 +466,12 @@ static inline long long GetDenomFromDB(const DBSums& s, const std::string& denom
     return s.EXTTrig_sum;
 }
 
-static inline StageResult ProcessStage(const StageConfig& cfg,
-                                       const BeamRunDB& db,
-                                       double pot_scale,
-                                       const std::string& ext_denom_col,
-                                       const std::string& outdir,
-                                       bool do_merge)
+static StageResult ProcessStage(const StageConfig& cfg,
+                                const BeamRunDB& db,
+                                double pot_scale,
+                                const std::string& ext_denom_col,
+                                const std::string& outdir,
+                                bool do_merge)
 {
     StageResult r;
     r.cfg = cfg;
@@ -575,7 +571,7 @@ int main(int argc, char** argv)
 
         for (const auto& st : cli.stages)
         {
-            std::cerr << "[nucondenser] stage=" << st.stage_name
+            std::cerr << "[nuIOcondenser] stage=" << st.stage_name
                       << " filelist=" << st.filelist_path << "\n";
             StageResult r = ProcessStage(st, db, cli.pot_scale, cli.ext_denom, cli.outdir, cli.do_merge);
 
