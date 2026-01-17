@@ -1,11 +1,11 @@
 /**
- *  @file  lib/NuIO/include/NuIO/StageResultIO.h
+ *  @file  lib/NuIO/include/NuIO/ArtProvenanceIO.h
  *
- *  @brief Data structures and IO helpers for NuIO condenser stage results
+ *  @brief Data structures and IO helpers for NuIO condenser stage provenance
  */
 
-#ifndef NUIO_STAGE_RESULT_IO_H
-#define NUIO_STAGE_RESULT_IO_H
+#ifndef NUIO_ART_PROVENANCE_IO_H
+#define NUIO_ART_PROVENANCE_IO_H
 
 #include <TDirectory.h>
 #include <TFile.h>
@@ -61,14 +61,14 @@ struct RunSubrun
     int subrun = 0;
 };
 
-struct SubRunSummary
+struct SubRunInfo
 {
     double pot_sum = 0.0;
     long long n_entries = 0;
     std::vector<RunSubrun> unique_pairs;
 };
 
-struct DBSums
+struct RunInfoSums
 {
     double tortgt_sum = 0.0;
     double tor101_sum = 0.0;
@@ -84,22 +84,22 @@ struct DBSums
     long long n_pairs_loaded = 0;
 };
 
-struct StageConfig
+struct StageCfg
 {
     std::string stage_name;
     std::string filelist_path;
 };
 
-struct StageResult
+struct ArtProvenance
 {
-    StageConfig cfg;
+    StageCfg cfg;
     SampleKind kind = SampleKind::kUnknown;
     BeamMode beam = BeamMode::kUnknown;
 
     std::vector<std::string> input_files;
 
-    SubRunSummary subrun;
-    DBSums dbsums;
+    SubRunInfo subrun;
+    RunInfoSums runinfo;
 
     double scale = 1.0;
 
@@ -110,11 +110,11 @@ struct StageResult
 SampleKind SampleKindFromName(const std::string& name);
 BeamMode BeamModeFromName(const std::string& name);
 
-class StageResultIO
+class ArtProvenanceIO
 {
   public:
-    static void Write(const StageResult& r, const std::string& outFile);
-    static StageResult Read(const std::string& inFile);
+    static void Write(const ArtProvenance& r, const std::string& outFile);
+    static ArtProvenance Read(const std::string& inFile);
 
   private:
     static std::string ReadNamedString(TDirectory* d, const char* key);
@@ -137,4 +137,4 @@ class StageResultIO
 
 } // namespace nuio
 
-#endif // NUIO_STAGE_RESULT_IO_H
+#endif // NUIO_ART_PROVENANCE_IO_H

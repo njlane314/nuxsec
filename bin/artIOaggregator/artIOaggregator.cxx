@@ -1,7 +1,7 @@
 /**
- *  @file  bin/nuIOaggregator/nuIOaggregator.cxx
+ *  @file  bin/artIOaggregator/artIOaggregator.cxx
  *
- *  @brief Main implementation for the nuIOaggregator executable
+ *  @brief Main implementation for the artIOaggregator executable
  */
 
 #include <TChain.h>
@@ -32,7 +32,7 @@
 #include <utility>
 #include <vector>
 
-#include "NuIO/StageResultIO.h"
+#include "NuIO/ArtProvenanceIO.h"
 
 namespace nucond
 {
@@ -155,9 +155,9 @@ static uint64_t PackRunSubrun(int run, int subrun)
            (static_cast<uint64_t>(static_cast<uint32_t>(subrun)));
 }
 
-static SubRunSummary ScanSubRunTree(const std::vector<std::string>& files)
+static SubRunInfo ScanSubRunTree(const std::vector<std::string>& files)
 {
-    SubRunSummary out;
+    SubRunInfo out;
 
     TChain chain("SubRun");
     for (const auto& f : files)
@@ -205,10 +205,10 @@ static SubRunSummary ScanSubRunTree(const std::vector<std::string>& files)
     return out;
 }
 
-class BeamRunDB
+class RunInfoDB
 {
   public:
-    explicit BeamRunDB(std::string path)
+    explicit RunInfoDB(std::string path)
         : db_path_(std::move(path))
     {
         sqlite3* db = nullptr;
@@ -223,16 +223,16 @@ class BeamRunDB
         db_ = db;
     }
 
-    ~BeamRunDB()
+    ~RunInfoDB()
     {
         if (db_)
             sqlite3_close(db_);
     }
 
-    BeamRunDB(const BeamRunDB&) = delete;
-    BeamRunDB& operator=(const BeamRunDB&) = delete;
+    RunInfoDB(const RunInfoDB&) = delete;
+    RunInfoDB& operator=(const RunInfoDB&) = delete;
 
-    DBSums SumRuninfoForSelection(const std::vector<RunSubrun>& pairs) const
+    RunInfoSums SumRuninfoForSelection(const std::vector<RunSubrun>& pairs) const
     {
         if (pairs.empty())
             throw std::runtime_error("DB selection is empty (no run/subrun pairs).");
@@ -264,7 +264,7 @@ class BeamRunDB
         sqlite3_finalize(ins);
         Exec("COMMIT;");
 
-        DBSums out{};
+        RunInfoSums out{};
         out.n_pairs_loaded = static_cast<long long>(pairs.size());
 
         sqlite3_stmt* q = nullptr;
@@ -362,7 +362,7 @@ struct CLI
     bool do_merge = true;
     std::string ext_denom = "EXTTrig";
 
-    std::vector<StageConfig> stages;
+    std::vector<StageCfg> stages;
 };
 
 static void PrintUsage(const char* argv0)
@@ -430,7 +430,7 @@ static CLI ParseArgs(int argc, char** argv)
             {
                 throw std::runtime_error("Bad --stage spec (expected NAME:FILELIST): " + spec);
             }
-            StageConfig sc;
+            StageCfg sc;
             sc.stage_name = spec.substr(0, pos);
             sc.filelist_path = spec.substr(pos + 1);
             sc.stage_name = Trim(sc.stage_name);
@@ -454,7 +454,7 @@ static CLI ParseArgs(int argc, char** argv)
     return cli;
 }
 
-static long long GetDenomFromDB(const DBSums& s, const std::string& denomCol)
+static long long GetDenomFromDB(const RunInfoSums& s, const std::string& denomCol)
 {
     const std::string c = ToLower(denomCol);
     if (c == "exttrig")
@@ -466,14 +466,14 @@ static long long GetDenomFromDB(const DBSums& s, const std::string& denomCol)
     return s.EXTTrig_sum;
 }
 
-static StageResult ProcessStage(const StageConfig& cfg,
-                                const BeamRunDB& db,
-                                double pot_scale,
-                                const std::string& ext_denom_col,
-                                const std::string& outdir,
-                                bool do_merge)
+static ArtProvenance ProcessStage(const StageCfg& cfg,
+                                  const RunInfoDB& db,
+                                  double pot_scale,
+                                  const std::string& ext_denom_col,
+                                  const std::string& outdir,
+                                  bool do_merge)
 {
-    StageResult r;
+    ArtProvenance r;
     r.cfg = cfg;
 
     r.input_files = ReadFileList(cfg.filelist_path);
@@ -502,10 +502,10 @@ static StageResult ProcessStage(const StageConfig& cfg,
 
     r.subrun = ScanSubRunTree(r.input_files);
 
-    r.dbsums = db.SumRuninfoForSelection(r.subrun.unique_pairs);
+    r.runinfo = db.SumRuninfoForSelection(r.subrun.unique_pairs);
 
-    r.db_tortgt_pot = r.dbsums.tortgt_sum * pot_scale;
-    r.db_tor101_pot = r.dbsums.tor101_sum * pot_scale;
+    r.db_tortgt_pot = r.runinfo.tortgt_sum * pot_scale;
+    r.db_tor101_pot = r.runinfo.tor101_sum * pot_scale;
 
     r.scale = 1.0;
 
@@ -525,8 +525,8 @@ static StageResult ProcessStage(const StageConfig& cfg,
     }
     else if (r.kind == SampleKind::kEXT)
     {
-        const long long num = r.dbsums.EA9CNT_sum;
-        const long long den = GetDenomFromDB(r.dbsums, ext_denom_col);
+        const long long num = r.runinfo.EA9CNT_sum;
+        const long long den = GetDenomFromDB(r.runinfo, ext_denom_col);
         if (num > 0 && den > 0)
             r.scale = static_cast<double>(num) / static_cast<double>(den);
         else
@@ -546,7 +546,7 @@ static StageResult ProcessStage(const StageConfig& cfg,
         {
             throw std::runtime_error("ROOT merge failed for stage " + cfg.stage_name + " -> " + outFile);
         }
-        StageResultIO::Write(r, outFile);
+        ArtProvenanceIO::Write(r, outFile);
     }
 
     return r;
@@ -564,16 +564,16 @@ int main(int argc, char** argv)
 
         EnsureDirLike(cli.outdir);
 
-        BeamRunDB db(cli.db_path);
+        RunInfoDB db(cli.db_path);
 
-        std::vector<StageResult> results;
+        std::vector<ArtProvenance> results;
         results.reserve(cli.stages.size());
 
         for (const auto& st : cli.stages)
         {
-            std::cerr << "[nuIOaggregator] stage=" << st.stage_name
+            std::cerr << "[artIOaggregator] stage=" << st.stage_name
                       << " filelist=" << st.filelist_path << "\n";
-            StageResult r = ProcessStage(st, db, cli.pot_scale, cli.ext_denom, cli.outdir, cli.do_merge);
+            ArtProvenance r = ProcessStage(st, db, cli.pot_scale, cli.ext_denom, cli.outdir, cli.do_merge);
 
             std::cerr << "  kind=" << SampleKindName(r.kind)
                       << " beam=" << BeamModeName(r.beam)
@@ -581,8 +581,8 @@ int main(int argc, char** argv)
                       << " unique_pairs=" << r.subrun.unique_pairs.size()
                       << " subrun_pot_sum=" << r.subrun.pot_sum
                       << " db_tortgt_pot=" << r.db_tortgt_pot
-                      << " EA9CNT=" << r.dbsums.EA9CNT_sum
-                      << " EXTTrig=" << r.dbsums.EXTTrig_sum
+                      << " EA9CNT=" << r.runinfo.EA9CNT_sum
+                      << " EXTTrig=" << r.runinfo.EXTTrig_sum
                       << " scale=" << r.scale
                       << "\n";
 
@@ -629,8 +629,8 @@ int main(int argc, char** argv)
                 condensed_file = cli.outdir + "/" + r.cfg.stage_name + ".condensed.root";
                 subrun_pot_sum = r.subrun.pot_sum;
                 db_tortgt_pot = r.db_tortgt_pot;
-                ea9cnt_sum = r.dbsums.EA9CNT_sum;
-                exttrig_sum = r.dbsums.EXTTrig_sum;
+                ea9cnt_sum = r.runinfo.EA9CNT_sum;
+                exttrig_sum = r.runinfo.EXTTrig_sum;
                 scale = r.scale;
                 n_files = static_cast<long long>(r.input_files.size());
                 n_pairs = static_cast<long long>(r.subrun.unique_pairs.size());

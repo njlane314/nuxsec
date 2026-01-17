@@ -1,10 +1,10 @@
 /**
- *  @file  lib/NuIO/src/StageResultIO.cxx
+ *  @file  lib/NuIO/src/ArtProvenanceIO.cxx
  *
- *  @brief Implementation for NuIO condenser stage result IO
+ *  @brief Implementation for NuIO condenser stage provenance IO
  */
 
-#include "NuIO/StageResultIO.h"
+#include "NuIO/ArtProvenanceIO.h"
 
 namespace nuio
 {
@@ -67,7 +67,7 @@ BeamMode BeamModeFromName(const std::string& name)
     return BeamMode::kUnknown;
 }
 
-void StageResultIO::Write(const StageResult& r, const std::string& outFile)
+void ArtProvenanceIO::Write(const ArtProvenance& r, const std::string& outFile)
 {
     std::unique_ptr<TFile> f(TFile::Open(outFile.c_str(), "UPDATE"));
     if (!f || f->IsZombie())
@@ -89,16 +89,16 @@ void StageResultIO::Write(const StageResult& r, const std::string& outFile)
     TParameter<long long>("unique_run_subrun_pairs", static_cast<long long>(r.subrun.unique_pairs.size()))
         .Write("unique_run_subrun_pairs", TObject::kOverwrite);
 
-    TParameter<double>("db_tortgt_sum_raw", r.dbsums.tortgt_sum).Write("db_tortgt_sum_raw", TObject::kOverwrite);
-    TParameter<double>("db_tor101_sum_raw", r.dbsums.tor101_sum).Write("db_tor101_sum_raw", TObject::kOverwrite);
+    TParameter<double>("db_tortgt_sum_raw", r.runinfo.tortgt_sum).Write("db_tortgt_sum_raw", TObject::kOverwrite);
+    TParameter<double>("db_tor101_sum_raw", r.runinfo.tor101_sum).Write("db_tor101_sum_raw", TObject::kOverwrite);
 
     TParameter<double>("db_tortgt_pot", r.db_tortgt_pot).Write("db_tortgt_pot", TObject::kOverwrite);
     TParameter<double>("db_tor101_pot", r.db_tor101_pot).Write("db_tor101_pot", TObject::kOverwrite);
 
-    TParameter<long long>("db_ea9cnt_sum", r.dbsums.EA9CNT_sum).Write("db_ea9cnt_sum", TObject::kOverwrite);
-    TParameter<long long>("db_exttrig_sum", r.dbsums.EXTTrig_sum).Write("db_exttrig_sum", TObject::kOverwrite);
-    TParameter<long long>("db_gate1trig_sum", r.dbsums.Gate1Trig_sum).Write("db_gate1trig_sum", TObject::kOverwrite);
-    TParameter<long long>("db_gate2trig_sum", r.dbsums.Gate2Trig_sum).Write("db_gate2trig_sum", TObject::kOverwrite);
+    TParameter<long long>("db_ea9cnt_sum", r.runinfo.EA9CNT_sum).Write("db_ea9cnt_sum", TObject::kOverwrite);
+    TParameter<long long>("db_exttrig_sum", r.runinfo.EXTTrig_sum).Write("db_exttrig_sum", TObject::kOverwrite);
+    TParameter<long long>("db_gate1trig_sum", r.runinfo.Gate1Trig_sum).Write("db_gate1trig_sum", TObject::kOverwrite);
+    TParameter<long long>("db_gate2trig_sum", r.runinfo.Gate2Trig_sum).Write("db_gate2trig_sum", TObject::kOverwrite);
 
     TParameter<double>("scale_factor", r.scale).Write("scale_factor", TObject::kOverwrite);
 
@@ -131,7 +131,7 @@ void StageResultIO::Write(const StageResult& r, const std::string& outFile)
     f->Close();
 }
 
-StageResult StageResultIO::Read(const std::string& inFile)
+ArtProvenance ArtProvenanceIO::Read(const std::string& inFile)
 {
     std::unique_ptr<TFile> f(TFile::Open(inFile.c_str(), "READ"));
     if (!f || f->IsZombie())
@@ -146,7 +146,7 @@ StageResult StageResultIO::Read(const std::string& inFile)
     }
     d->cd();
 
-    StageResult r;
+    ArtProvenance r;
     r.cfg.stage_name = ReadNamedString(d, "stage_name");
     r.kind = SampleKindFromName(ReadNamedString(d, "sample_kind"));
     r.beam = BeamModeFromName(ReadNamedString(d, "beam_mode"));
@@ -154,15 +154,15 @@ StageResult StageResultIO::Read(const std::string& inFile)
     r.subrun.pot_sum = ReadParam<double>(d, "subrun_pot_sum");
     r.subrun.n_entries = ReadParam<long long>(d, "subrun_entries");
 
-    r.dbsums.tortgt_sum = ReadParam<double>(d, "db_tortgt_sum_raw");
-    r.dbsums.tor101_sum = ReadParam<double>(d, "db_tor101_sum_raw");
+    r.runinfo.tortgt_sum = ReadParam<double>(d, "db_tortgt_sum_raw");
+    r.runinfo.tor101_sum = ReadParam<double>(d, "db_tor101_sum_raw");
     r.db_tortgt_pot = ReadParam<double>(d, "db_tortgt_pot");
     r.db_tor101_pot = ReadParam<double>(d, "db_tor101_pot");
 
-    r.dbsums.EA9CNT_sum = ReadParam<long long>(d, "db_ea9cnt_sum");
-    r.dbsums.EXTTrig_sum = ReadParam<long long>(d, "db_exttrig_sum");
-    r.dbsums.Gate1Trig_sum = ReadParam<long long>(d, "db_gate1trig_sum");
-    r.dbsums.Gate2Trig_sum = ReadParam<long long>(d, "db_gate2trig_sum");
+    r.runinfo.EA9CNT_sum = ReadParam<long long>(d, "db_ea9cnt_sum");
+    r.runinfo.EXTTrig_sum = ReadParam<long long>(d, "db_exttrig_sum");
+    r.runinfo.Gate1Trig_sum = ReadParam<long long>(d, "db_gate1trig_sum");
+    r.runinfo.Gate2Trig_sum = ReadParam<long long>(d, "db_gate2trig_sum");
     r.scale = ReadParam<double>(d, "scale_factor");
 
     r.input_files = ReadInputFiles(d);
@@ -170,7 +170,7 @@ StageResult StageResultIO::Read(const std::string& inFile)
     return r;
 }
 
-std::string StageResultIO::ReadNamedString(TDirectory* d, const char* key)
+std::string ArtProvenanceIO::ReadNamedString(TDirectory* d, const char* key)
 {
     TObject* obj = d->Get(key);
     auto* named = dynamic_cast<TNamed*>(obj);
@@ -181,7 +181,7 @@ std::string StageResultIO::ReadNamedString(TDirectory* d, const char* key)
     return std::string(named->GetTitle());
 }
 
-std::vector<std::string> StageResultIO::ReadInputFiles(TDirectory* d)
+std::vector<std::string> ArtProvenanceIO::ReadInputFiles(TDirectory* d)
 {
     std::vector<std::string> files;
     TObject* obj = d->Get("input_files");
@@ -204,7 +204,7 @@ std::vector<std::string> StageResultIO::ReadInputFiles(TDirectory* d)
     return files;
 }
 
-std::vector<RunSubrun> StageResultIO::ReadRunSubrunPairs(TDirectory* d)
+std::vector<RunSubrun> ArtProvenanceIO::ReadRunSubrunPairs(TDirectory* d)
 {
     TObject* obj = d->Get("run_subrun");
     auto* tree = dynamic_cast<TTree*>(obj);
