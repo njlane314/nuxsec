@@ -21,10 +21,6 @@ write_list() {
     if [[ ! -d "${dir}" ]]
     then
         echo "Warning: missing output directory: ${dir}" >&2
-        if [[ ! -f "${list}" ]]
-        then
-            : > "${list}"
-        fi
         rm -f "${tmp_list}"
         return 0
     fi
@@ -34,10 +30,6 @@ write_list() {
     if [[ ! -s "${tmp_list}" ]]
     then
         echo "Warning: no ROOT files found in ${dir}" >&2
-        if [[ ! -f "${list}" ]]
-        then
-            : > "${list}"
-        fi
         rm -f "${tmp_list}"
         return 0
     fi
