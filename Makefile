@@ -26,4 +26,4 @@ $(BIN_NAME): $(BIN_OBJ) $(LIB_NAME)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -fPIC -c $< -o $@
 
 clean:
-	rm -f $(LIB_OBJ) $(BIN_OBJ) $(LIB_NAME) $(BIN_NAME)
+	rm -rf build
