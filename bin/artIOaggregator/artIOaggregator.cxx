@@ -1,7 +1,7 @@
 /**
  *  @file  bin/artIOaggregator/artIOaggregator.cxx
  *
- *  @brief Main entrypoint for ArtIO manifest generation
+ *  @brief Main entrypoint for ArtIO provenance generation
  */
 
 #include <algorithm>
@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "NuIO/ArtIOManifestIO.h"
+#include "NuIO/ArtProvenanceIO.h"
 #include "NuIO/RunInfoDB.h"
 #include "NuIO/SubRunScanner.h"
 
@@ -111,16 +111,7 @@ int main(int argc, char **argv)
 
         const Args args = ParseArgs(argc, argv);
 
-        std::vector<std::string> existing = ArtIOManifestIO::ListStages(args.artio_path);
-        std::sort(existing.begin(), existing.end());
-
         RunInfoDB db(db_path);
-
-        if (std::binary_search(existing.begin(), existing.end(), args.stage_cfg.stage_name))
-        {
-            std::cerr << "[artIOaggregator] exists stage=" << args.stage_cfg.stage_name << "\n";
-            return 0;
-        }
 
         const auto files = ReadFileList(args.stage_cfg.filelist_path);
 
@@ -136,14 +127,23 @@ int main(int argc, char **argv)
         rec.subrun = ScanSubRunTree(files);
         rec.runinfo = db.SumRuninfo(rec.subrun.unique_pairs);
 
+        rec.subrun.pot_sum *= pot_scale;
+        rec.runinfo.tortgt_sum *= pot_scale;
+        rec.runinfo.tor101_sum *= pot_scale;
+        rec.runinfo.tor860_sum *= pot_scale;
+        rec.runinfo.tor875_sum *= pot_scale;
+        rec.db_tortgt_pot = rec.runinfo.tortgt_sum;
+        rec.db_tor101_pot = rec.runinfo.tor101_sum;
+        rec.scale = pot_scale;
+
         std::cerr << "[artIOaggregator] add stage=" << rec.cfg.stage_name
                   << " files=" << rec.input_files.size()
                   << " pairs=" << rec.subrun.unique_pairs.size()
                   << " pot_sum=" << rec.subrun.pot_sum
-                  << " tortgt=" << rec.runinfo.tortgt_sum * pot_scale
+                  << " tortgt=" << rec.runinfo.tortgt_sum
                   << "\n";
 
-        ArtIOManifestIO::WriteStage(args.artio_path, db_path, pot_scale, rec);
+        ArtProvenanceIO::Write(rec, args.artio_path);
 
         return 0;
     }

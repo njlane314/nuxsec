@@ -107,11 +107,14 @@ void ArtProvenanceIO::Write(const ArtProvenance& r, const std::string& outFile)
 
     TParameter<double>("db_tortgt_sum_raw", r.runinfo.tortgt_sum).Write("db_tortgt_sum_raw", TObject::kOverwrite);
     TParameter<double>("db_tor101_sum_raw", r.runinfo.tor101_sum).Write("db_tor101_sum_raw", TObject::kOverwrite);
+    TParameter<double>("db_tor860_sum", r.runinfo.tor860_sum).Write("db_tor860_sum", TObject::kOverwrite);
+    TParameter<double>("db_tor875_sum", r.runinfo.tor875_sum).Write("db_tor875_sum", TObject::kOverwrite);
 
     TParameter<double>("db_tortgt_pot", r.db_tortgt_pot).Write("db_tortgt_pot", TObject::kOverwrite);
     TParameter<double>("db_tor101_pot", r.db_tor101_pot).Write("db_tor101_pot", TObject::kOverwrite);
 
     TParameter<long long>("db_ea9cnt_sum", r.runinfo.EA9CNT_sum).Write("db_ea9cnt_sum", TObject::kOverwrite);
+    TParameter<long long>("db_e1dcnt_sum", r.runinfo.E1DCNT_sum).Write("db_e1dcnt_sum", TObject::kOverwrite);
     TParameter<long long>("db_exttrig_sum", r.runinfo.EXTTrig_sum).Write("db_exttrig_sum", TObject::kOverwrite);
     TParameter<long long>("db_gate1trig_sum", r.runinfo.Gate1Trig_sum).Write("db_gate1trig_sum", TObject::kOverwrite);
     TParameter<long long>("db_gate2trig_sum", r.runinfo.Gate2Trig_sum).Write("db_gate2trig_sum", TObject::kOverwrite);
@@ -172,10 +175,13 @@ ArtProvenance ArtProvenanceIO::Read(const std::string& inFile)
 
     r.runinfo.tortgt_sum = ReadParam<double>(d, "db_tortgt_sum_raw");
     r.runinfo.tor101_sum = ReadParam<double>(d, "db_tor101_sum_raw");
+    r.runinfo.tor860_sum = ReadParam<double>(d, "db_tor860_sum");
+    r.runinfo.tor875_sum = ReadParam<double>(d, "db_tor875_sum");
     r.db_tortgt_pot = ReadParam<double>(d, "db_tortgt_pot");
     r.db_tor101_pot = ReadParam<double>(d, "db_tor101_pot");
 
     r.runinfo.EA9CNT_sum = ReadParam<long long>(d, "db_ea9cnt_sum");
+    r.runinfo.E1DCNT_sum = ReadParam<long long>(d, "db_e1dcnt_sum");
     r.runinfo.EXTTrig_sum = ReadParam<long long>(d, "db_exttrig_sum");
     r.runinfo.Gate1Trig_sum = ReadParam<long long>(d, "db_gate1trig_sum");
     r.runinfo.Gate2Trig_sum = ReadParam<long long>(d, "db_gate2trig_sum");
