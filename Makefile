@@ -29,7 +29,8 @@ SAMPLE_SRC = io/src/SampleAggregator.cc \
 SAMPLE_OBJ = $(SAMPLE_SRC:.cc=.o)
 
 ANA_LIB_NAME = build/lib/libNuXsecAna.so
-ANA_SRC = ana/src/AnalysisRdfDefinitions.cc \
+ANA_SRC = ana/src/AnalysisDefinition.cc \
+          ana/src/AnalysisRdfDefinitions.cc \
           ana/src/RDataFrameFactory.cc \
           ana/src/TemplateSpec.cc
 ANA_OBJ = $(ANA_SRC:.cc=.o)
