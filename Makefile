@@ -2,19 +2,19 @@ CXX ?= g++
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra $(shell root-config --cflags)
 LDFLAGS ?= $(shell root-config --libs) -lsqlite3
 
-IO_LIB_NAME = build/lib/libNuxsecIO.so
+IO_LIB_NAME = build/lib/libNuXsecIO.so
 IO_SRC = io/src/ArtFileProvenanceRootIO.cc \
          io/src/SubrunTreeScanner.cc \
          io/src/RunInfoSqliteReader.cc \
          sample/src/SampleTypes.cc
 IO_OBJ = $(IO_SRC:.cc=.o)
 
-SAMPLE_LIB_NAME = build/lib/libNuxsecSample.so
+SAMPLE_LIB_NAME = build/lib/libNuXsecSample.so
 SAMPLE_SRC = sample/src/SampleAggregator.cc \
              sample/src/SampleRootIO.cc
 SAMPLE_OBJ = $(SAMPLE_SRC:.cc=.o)
 
-ANA_LIB_NAME = build/lib/libNuxsecAna.so
+ANA_LIB_NAME = build/lib/libNuXsecAna.so
 ANA_SRC = ana/src/AnalysisRdfDefinitions.cc \
           rdf/src/RDataFrameFactory.cc
 ANA_OBJ = $(ANA_SRC:.cc=.o)
@@ -39,7 +39,7 @@ $(IO_LIB_NAME): $(IO_OBJ)
 
 $(SAMPLE_LIB_NAME): $(SAMPLE_OBJ) $(IO_LIB_NAME)
 	mkdir -p $(dir $(SAMPLE_LIB_NAME))
-	$(CXX) -shared $(CXXFLAGS) $(SAMPLE_OBJ) -Lbuild/lib -lNuxsecIO $(LDFLAGS) -o $(SAMPLE_LIB_NAME)
+	$(CXX) -shared $(CXXFLAGS) $(SAMPLE_OBJ) -Lbuild/lib -lNuXsecIO $(LDFLAGS) -o $(SAMPLE_LIB_NAME)
 
 $(ANA_LIB_NAME): $(ANA_OBJ)
 	mkdir -p $(dir $(ANA_LIB_NAME))
@@ -47,17 +47,17 @@ $(ANA_LIB_NAME): $(ANA_OBJ)
 
 $(RDF_BUILDER_NAME): $(RDF_BUILDER_SRC) $(IO_LIB_NAME) $(SAMPLE_LIB_NAME) $(ANA_LIB_NAME)
 	mkdir -p $(dir $(RDF_BUILDER_NAME))
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(RDF_BUILDER_SRC) -Lbuild/lib -lNuxsecIO -lNuxsecSample \
-		-lNuxsecAna $(LDFLAGS) -o $(RDF_BUILDER_NAME)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(RDF_BUILDER_SRC) -Lbuild/lib -lNuXsecIO -lNuXsecSample \
+		-lNuXsecAna $(LDFLAGS) -o $(RDF_BUILDER_NAME)
 
 $(ART_AGGREGATOR_NAME): $(ART_AGGREGATOR_SRC) $(IO_LIB_NAME)
 	mkdir -p $(dir $(ART_AGGREGATOR_NAME))
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(ART_AGGREGATOR_SRC) -Lbuild/lib -lNuxsecIO $(LDFLAGS) -o \
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(ART_AGGREGATOR_SRC) -Lbuild/lib -lNuXsecIO $(LDFLAGS) -o \
 		$(ART_AGGREGATOR_NAME)
 
 $(SAMPLE_AGGREGATOR_NAME): $(SAMPLE_AGGREGATOR_SRC) $(IO_LIB_NAME) $(SAMPLE_LIB_NAME)
 	mkdir -p $(dir $(SAMPLE_AGGREGATOR_NAME))
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(SAMPLE_AGGREGATOR_SRC) -Lbuild/lib -lNuxsecSample -lNuxsecIO \
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(SAMPLE_AGGREGATOR_SRC) -Lbuild/lib -lNuXsecSample -lNuXsecIO \
 		$(LDFLAGS) -o $(SAMPLE_AGGREGATOR_NAME)
 
 %.o: %.cc

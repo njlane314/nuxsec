@@ -38,16 +38,16 @@ make
 
 This produces:
 
-- `build/lib/libNuxsecIO.so`
-- `build/lib/libNuxsecSample.so`
-- `build/lib/libNuxsecAna.so`
+- `build/lib/libNuXsecIO.so`
+- `build/lib/libNuXsecSample.so`
+- `build/lib/libNuXsecAna.so`
 - `build/bin/artIOaggregator`
 - `build/bin/sampleIOaggregator`
 - `build/bin/sampleRDFbuilder`
 
 ## Analysis processing
 
-The `libNuxsecAna` library provides `nuxsec::AnalysisRdfDefinitions` and RDF construction helpers
+The `libNuXsecAna` library provides `nuxsec::AnalysisRdfDefinitions` and RDF construction helpers
 for defining analysis-level columns (weights, fiducial checks, channel classifications) on `ROOT::RDF::RNode`
 instances used by `sampleRDFbuilder`.
 
