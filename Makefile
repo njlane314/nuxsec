@@ -1,6 +1,12 @@
 CXX ?= g++
-CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra $(shell root-config --cflags)
-LDFLAGS ?= $(shell root-config --libs) -lsqlite3
+ROOT_CONFIG ?= root-config
+
+ifeq ($(shell command -v $(ROOT_CONFIG) 2>/dev/null),)
+$(error ROOT not found. Please set up ROOT so that 'root-config' is on your PATH.)
+endif
+
+CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra $(shell $(ROOT_CONFIG) --cflags)
+LDFLAGS ?= $(shell $(ROOT_CONFIG) --libs) -lsqlite3
 
 IO_LIB_NAME = build/lib/libNuXsecIO.so
 IO_SRC = io/src/ArtFileProvenanceRootIO.cc \
