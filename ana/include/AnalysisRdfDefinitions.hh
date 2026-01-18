@@ -56,11 +56,11 @@ class AnalysisRdfDefinitions
     static const AnalysisRdfDefinitions &Instance();
 
   private:
-    static constexpr double kRecognisedPurityMin;
-    static constexpr double kRecognisedCompletenessMin;
+    static const double kRecognisedPurityMin;
+    static const double kRecognisedCompletenessMin;
 
-    static constexpr float kTrainingFraction;
-    static constexpr bool kTrainingIncludeExt;
+    static const float kTrainingFraction;
+    static const bool kTrainingIncludeExt;
 
     static bool IsInTruthVolume(float x, float y, float z) noexcept;
     static bool IsInRecoVolume(float x, float y, float z) noexcept;
