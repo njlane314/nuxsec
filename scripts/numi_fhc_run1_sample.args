@@ -1,0 +1,7 @@
+# Arguments for build/bin/nuxsecSampleIOaggregator
+# Format: SAMPLE_NAME:FILELIST_PATH
+# File lists should contain ArtFileProvenance ROOT files produced by nuxsecArtIOaggregator.
+beam:inputs/numi_fhc_run1/filelists/beam.list
+dirt:inputs/numi_fhc_run1/filelists/dirt.list
+strangeness:inputs/numi_fhc_run1/filelists/strangeness.list
+ext:inputs/numi_fhc_run1/filelists/ext.list
