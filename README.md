@@ -19,7 +19,9 @@ This is a COLLIE-like module layout. Each module is built as its own shared libr
 ```
 nuxsec/
   io/      # LArSoft output discovery, file manifests, provenance extraction
-  ana/     # analysis-level definitions and ROOT::RDataFrame sources + derived columns
+  sample/  # aggregated sample structures and ROOT serialisation
+  rdf/     # ROOT::RDataFrame construction utilities
+  ana/     # analysis-level definitions and derived columns
   apps/    # small CLIs (aggregators, RDF builders)
   scripts/ # environment helpers
 ```
@@ -39,7 +41,7 @@ make
 This produces:
 
 - `build/lib/libNuxsecIO.so`
-- `build/lib/libNuxsecRDF.so`
+- `build/lib/libNuxsecRdf.so`
 - `build/lib/libNuxsecAna.so`
 - `build/bin/artIOaggregator`
 - `build/bin/sampleIOaggregator`
@@ -47,7 +49,7 @@ This produces:
 
 ## Analysis processing
 
-The `libNuxsecAna` library provides `nuxsec::AnalysisProcessor` for defining analysis-level
+The `libNuxsecAna` library provides `nuxsec::AnalysisRdfDefinitions` for defining analysis-level
 columns (weights, fiducial checks, channel classifications) on `ROOT::RDF::RNode`
 instances used by `sampleRDFbuilder`.
 

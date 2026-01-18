@@ -1,11 +1,11 @@
 /* -- C++ -- */
 /**
- *  @file  io/src/RunInfoDB.cc
+ *  @file  io/src/RunInfoSqliteReader.cc
  *
  *  @brief Implementation of SQLite-backed run info summaries.
  */
 
-#include "RunInfoDB.hh"
+#include "RunInfoSqliteReader.hh"
 
 #include <stdexcept>
 #include <utility>
@@ -13,7 +13,7 @@
 namespace nuxsec
 {
 
-RunInfoDB::RunInfoDB(std::string path)
+RunInfoSqliteReader::RunInfoSqliteReader(std::string path)
     : db_path_(std::move(path))
 {
     sqlite3 *db = nullptr;
@@ -28,17 +28,15 @@ RunInfoDB::RunInfoDB(std::string path)
         throw std::runtime_error("Failed to open SQLite DB: " + db_path_ + " : " + msg);
     }
     db_ = db;
-} // namespace nuxsec
-
-RunInfoDB::~RunInfoDB()
+RunInfoSqliteReader::~RunInfoSqliteReader()
 {
     if (db_)
     {
         sqlite3_close(db_);
     }
-}
+} // namespace nuxsec
 
-void RunInfoDB::exec(const std::string &sql) const
+void RunInfoSqliteReader::exec(const std::string &sql) const
 {
     char *err = nullptr;
     const int rc = sqlite3_exec(db_, sql.c_str(), nullptr, nullptr, &err);
@@ -50,7 +48,7 @@ void RunInfoDB::exec(const std::string &sql) const
     }
 }
 
-void RunInfoDB::prepare(const std::string &sql, sqlite3_stmt **stmt) const
+void RunInfoSqliteReader::prepare(const std::string &sql, sqlite3_stmt **stmt) const
 {
     const int rc = sqlite3_prepare_v2(db_, sql.c_str(), -1, stmt, nullptr);
     if (rc != SQLITE_OK || !stmt || !(*stmt))
@@ -59,7 +57,7 @@ void RunInfoDB::prepare(const std::string &sql, sqlite3_stmt **stmt) const
     }
 }
 
-RunInfoSums RunInfoDB::sum_runinfo(const std::vector<RunSubrun> &pairs) const
+RunInfoSums RunInfoSqliteReader::sumRunInfo(const std::vector<RunSubrun> &pairs) const
 {
     if (pairs.empty())
     {

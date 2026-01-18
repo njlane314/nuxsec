@@ -1,12 +1,12 @@
 /* -- C++ -- */
 /**
- *  @file  io/include/ArtProvenanceIO.hh
+ *  @file  io/include/ArtFileProvenanceRootIO.hh
  *
- *  @brief Data structures and IO helpers for ArtIO stage provenance.
+ *  @brief Data structures and ROOT IO helpers for Art file provenance.
  */
 
-#ifndef Nuxsec_IO_ART_PROVENANCE_IO_H_INCLUDED
-#define Nuxsec_IO_ART_PROVENANCE_IO_H_INCLUDED
+#ifndef Nuxsec_IO_ART_FILE_PROVENANCE_ROOT_IO_H_INCLUDED
+#define Nuxsec_IO_ART_FILE_PROVENANCE_ROOT_IO_H_INCLUDED
 
 #include <TDirectory.h>
 #include <TFile.h>
@@ -54,7 +54,7 @@ struct RunSubrun
     int subrun = 0;
 };
 
-struct SubRunInfo
+struct SubrunTreeSummary
 {
     double pot_sum = 0.0;
     long long n_entries = 0;
@@ -83,7 +83,7 @@ struct StageCfg
     std::string filelist_path;
 };
 
-struct ArtProvenance
+struct ArtFileProvenance
 {
     StageCfg cfg;
     SampleKind kind = SampleKind::kUnknown;
@@ -91,7 +91,7 @@ struct ArtProvenance
 
     std::vector<std::string> input_files;
 
-    SubRunInfo subrun;
+    SubrunTreeSummary subrun;
     RunInfoSums runinfo;
 
     double scale = 1.0;
@@ -100,12 +100,12 @@ struct ArtProvenance
     double db_tor101_pot = 0.0;
 };
 
-class ArtProvenanceIO
+class ArtFileProvenanceRootIO
 {
   public:
-    static void write(const ArtProvenance &r, const std::string &out_file);
-    static ArtProvenance read(const std::string &in_file);
-    static ArtProvenance read(const std::string &in_file, SampleKind kind, BeamMode beam);
+    static void write(const ArtFileProvenance &r, const std::string &out_file);
+    static ArtFileProvenance read(const std::string &in_file);
+    static ArtFileProvenance read(const std::string &in_file, SampleKind kind, BeamMode beam);
 
   private:
     static std::string read_named_string(TDirectory *d, const char *key);
@@ -124,9 +124,9 @@ class ArtProvenanceIO
 
     static std::vector<std::string> read_input_files(TDirectory *d);
     static std::vector<RunSubrun> read_run_subrun_pairs(TDirectory *d);
-    static ArtProvenance read_directory(TDirectory *d, SampleKind kind, BeamMode beam);
+    static ArtFileProvenance read_directory(TDirectory *d, SampleKind kind, BeamMode beam);
 };
 
 } // namespace nuxsec
 
-#endif // Nuxsec_IO_ART_PROVENANCE_IO_H_INCLUDED
+#endif // Nuxsec_IO_ART_FILE_PROVENANCE_ROOT_IO_H_INCLUDED

@@ -2,7 +2,7 @@
 /**
  *  @file  apps/src/sampleIOaggregator.cc
  *
- *  @brief Main entrypoint for SampleIO provenance aggregation.
+ *  @brief Main entrypoint for SampleRootIO provenance aggregation.
  */
 
 #include <algorithm>
@@ -17,7 +17,8 @@
 #include <vector>
 
 #include "AppUtils.hh"
-#include "SampleIO.hh"
+#include "SampleAggregator.hh"
+#include "SampleRootIO.hh"
 
 namespace
 {
@@ -172,12 +173,12 @@ int main(int argc, char **argv)
         const Args args = parse_args(argc, argv);
         const auto files = nuxsec::app::read_file_list(args.filelist_path);
 
-        Sample sample = SampleIO::aggregate(args.sample_name, files);
-        SampleIO::write(sample, args.output_path);
+        Sample sample = SampleAggregator::aggregate(args.sample_name, files);
+        SampleRootIO::write(sample, args.output_path);
         update_sample_list(args.sample_list_path, sample, args.output_path);
 
         std::cerr << "[sampleIOaggregator] sample=" << sample.sample_name
-                  << " stages=" << sample.stages.size()
+                  << " fragments=" << sample.fragments.size()
                   << " pot_sum=" << sample.subrun_pot_sum
                   << " db_tortgt_pot_sum=" << sample.db_tortgt_pot_sum
                   << " normalisation=" << sample.normalisation
