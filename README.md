@@ -47,7 +47,7 @@ This produces:
 
 ## Analysis processing
 
-The `libNuxsecAna` library provides `nuxsec::AnalysisRdfDefinitions` and RDF construction helpers
+The `libNuXsecAna` library provides `nuxsec::AnalysisRdfDefinitions` and RDF construction helpers
 for defining analysis-level columns (weights, fiducial checks, channel classifications) on `ROOT::RDF::RNode`
 instances used by `sampleRDFbuilder`.
 
