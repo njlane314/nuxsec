@@ -6,7 +6,8 @@ IO_LIB_NAME = build/lib/libNuXsecIO.so
 IO_SRC = io/src/ArtFileProvenanceRootIO.cc \
          io/src/SubrunTreeScanner.cc \
          io/src/RunInfoSqliteReader.cc \
-         io/src/SampleTypes.cc
+         io/src/SampleTypes.cc \
+         io/src/NuXSecTemplate.cc
 IO_OBJ = $(IO_SRC:.cc=.o)
 
 SAMPLE_LIB_NAME = build/lib/libNuXsecSample.so
