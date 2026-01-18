@@ -281,6 +281,30 @@ ROOT::RDF::RNode AnalysisRdfDefinitions::Define(ROOT::RDF::RNode node, const Pro
         },
         {"reco_neutrino_vertex_sce_x", "reco_neutrino_vertex_sce_y", "reco_neutrino_vertex_sce_z"});
 
+    node = node.Define(
+        "sel_template",
+        [](bool is_template) { return is_template; },
+        {"is_template"});
+
+    node = node.Define(
+        "sel_reco_fv",
+        [](bool is_template, bool reco_fv) { return is_template && reco_fv; },
+        {"is_template", "in_reco_fiducial"});
+
+    node = node.Define(
+        "sel_signal",
+        [](bool is_template, bool reco_fv, bool recognised_signal) {
+            return is_template && reco_fv && recognised_signal;
+        },
+        {"is_template", "in_reco_fiducial", "recognised_signal"});
+
+    node = node.Define(
+        "sel_bkg",
+        [](bool is_template, bool reco_fv, bool recognised_signal) {
+            return is_template && reco_fv && !recognised_signal;
+        },
+        {"is_template", "in_reco_fiducial", "recognised_signal"});
+
     return node;
 }
 //____________________________________________________________________________

@@ -75,8 +75,8 @@ The `libNuXsecAna` library provides `nuxsec::AnalysisRdfDefinitions` and RDF con
 for defining analysis-level columns (weights, fiducial checks, channel classifications) on `ROOT::RDF::RNode`.
 
 The `libNuXsecPlot` library and `nuxsecTemplateMaker` application build binned template histograms from
-aggregated samples and template specifications, serving as the inputs to plotting and downstream cross-section
-fits.
+aggregated samples and a compiled analysis definition, serving as the inputs to plotting and downstream
+cross-section fits.
 
 ## Runtime environment
 
@@ -115,5 +115,5 @@ build/bin/nuxsecSampleIOaggregator my_sample:data.list
 ## Produce templates
 
 ```bash
-build/bin/nuxsecTemplateMaker build/samples/SampleRootIO_samples.tsv MyTree templates.tsv OutputTemplates.root
+build/bin/nuxsecTemplateMaker build/samples/SampleRootIO_samples.tsv OutputTemplates.root 4
 ```
