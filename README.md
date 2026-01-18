@@ -97,21 +97,92 @@ cat > data.list <<'LIST'
 LIST
 ```
 
-## Run the aggregators
+## Example command-line workflow (sealed analysis, no runtime selections/tree/templates)
+
+Assume you run from the repo top-level (`nuxsec/`) and you already have per-stage filelists
+produced by your partitioning step.
+
+### 1) Stage → Art provenance ROOT (per partition/stage)
+
+Each stage filelist is a plain text file containing the input art/selection ROOT files for that stage.
 
 ```bash
-build/bin/nuxsec artio-aggregate my_stage:data.list
-# writes build/artio/ArtFileProvenance_my_stage.root
+# Data (kind can be omitted if your first file is nuselection_data.root and you rely on auto-detect)
+nuxsec artio "data_bnb_run1a:inputs/filelists/data_bnb_run1a.txt:Data:BNB"
+
+# EXT
+nuxsec artio "ext_bnb_run1a:inputs/filelists/ext_bnb_run1a.txt:EXT:BNB"
+
+# MC overlay
+nuxsec artio "overlay_bnb_run1a:inputs/filelists/overlay_bnb_run1a.txt:Overlay:BNB"
+
+# Dirt
+nuxsec artio "dirt_bnb_run1a:inputs/filelists/dirt_bnb_run1a.txt:Dirt:BNB"
 ```
+
+Outputs (by code convention):
+
+```
+build/out/art/art_prov_data_bnb_run1a.root
+build/out/art/art_prov_ext_bnb_run1a.root
+build/out/art/art_prov_overlay_bnb_run1a.root
+build/out/art/art_prov_dirt_bnb_run1a.root
+```
+
+Repeat `nuxsec artio ...` for each partition/stage (run1b, run1c, etc.).
+
+### 2) Art provenance ROOT → Sample ROOT (group stages into samples)
+
+Create per-sample filelists that contain the art provenance ROOT outputs from step (1):
 
 ```bash
-build/bin/nuxsec sample-aggregate my_sample:data.list
-# writes build/samples/SampleRootIO_my_sample.root
-# updates build/samples/SampleRootIO_samples.tsv
+ls build/out/art/art_prov_data_bnb_run1*.root    > inputs/samples/data_bnb_run1.txt
+ls build/out/art/art_prov_ext_bnb_run1*.root     > inputs/samples/ext_bnb_run1.txt
+ls build/out/art/art_prov_overlay_bnb_run1*.root > inputs/samples/overlay_bnb_run1.txt
+ls build/out/art/art_prov_dirt_bnb_run1*.root    > inputs/samples/dirt_bnb_run1.txt
 ```
 
-## Produce templates
+Then aggregate each sample:
 
 ```bash
-build/bin/nuxsec template-make build/samples/SampleRootIO_samples.tsv OutputTemplates.root 4
+nuxsec sample "data_bnb_run1:inputs/samples/data_bnb_run1.txt"
+nuxsec sample "ext_bnb_run1:inputs/samples/ext_bnb_run1.txt"
+nuxsec sample "overlay_bnb_run1:inputs/samples/overlay_bnb_run1.txt"
+nuxsec sample "dirt_bnb_run1:inputs/samples/dirt_bnb_run1.txt"
 ```
+
+Outputs:
+
+```
+build/out/sample/sample_root_<sample>.root
+build/out/sample/SampleRootIO_samples.tsv
+```
+
+The TSV is the only input list you pass downstream.
+
+### 3) Samples → Analysis object (templates ROOT), sealed analysis
+
+The compiled analysis definition in this repository is `nuxsec_default_v1` with tree
+name `MyTree`. The template maker writes templates plus metadata (analysis name, tree name,
+compiled template definitions, sample bookkeeping) into a single ROOT artifact.
+
+```bash
+nuxsec template-make build/out/sample/SampleRootIO_samples.tsv \
+  build/out/ana/analysis_default.root 8
+```
+
+### 4) Systematics and plots
+
+The current CLI only implements `artio-aggregate`, `sample-aggregate`, and `template-make`.
+There is no `systs`, `plots`, or `list-analyses` command in this repository yet. If you need
+systematics or plotting, use the ROOT macros under the module `macro/` directories or extend
+the CLI with a new application.
+
+### What the user “touches” in this UX
+
+- Filelists for stages (already produced by your partitioning step).
+- Per-sample grouping filelists (or a small helper script).
+- `SampleRootIO_samples.tsv` is produced automatically and becomes the stable handoff.
+- After that, users only run:
+  - `nuxsec template-make …` (required)
+  - Anything else is currently external to this repo (macros or new applications).
