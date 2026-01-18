@@ -59,7 +59,7 @@ std::vector<std::string> read_file_list(const std::string &filelist_path)
     return files;
 }
 
-bool is_nu_selection_data_file(const std::string &path)
+bool is_selection_data_file(const std::string &path)
 {
     const auto pos = path.find_last_of("/\\");
     const std::string name = (pos == std::string::npos) ? path : path.substr(pos + 1);
@@ -121,7 +121,7 @@ int main(int argc, char **argv)
         rec.cfg = args.stage_cfg;
         rec.input_files = files;
 
-        if (is_nu_selection_data_file(files.front()))
+        if (is_selection_data_file(files.front()))
         {
             rec.kind = SampleKind::kData;
         }
