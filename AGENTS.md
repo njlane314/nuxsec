@@ -1,28 +1,48 @@
-# Repository Formatting Rules
+# Scope
+This file captures the coding conventions and structural patterns used in the Collie C++ codebase.
 
-All source files in this repository must follow the formatting shown in `nuaggregator.cxx` and the example below.
+## File layout & naming
+- Use .hh for headers and .cc for implementation files.
+- Class and type names use Collie-prefixed PascalCase (e.g., CollieHistogram, CollieHistogramContainer).
+- Global/static variables and macros are defined in implementation files when appropriate.
 
-## Required style
+## Header conventions
+- Start headers with /* -- C++ -- */.
+- Use include guards in the form #ifndef Collie_H_INCLUDED / #define Collie_H_INCLUDED.
+- Forward declare classes when possible, include system/ROOT headers after that.
+- using namespace std; appears in headers and is acceptable in this codebase.
 
-- Every `.cxx`, `.cc`, `.cpp`, `.c`, and `.h/.hpp` file must start with a Doxygen file header of the form:
-  ```
-  /**
-   *  @file  <relative path>
-   *
-   *  @brief <short description>
-   */
-  ```
-- Use Allman braces (opening brace on its own line).
-- Indent with 4 spaces.
-- Keep namespace braces on their own lines.
-- Align pointer and reference symbols to the left (e.g., `const std::string &name`).
-- Prefer one statement per line and avoid compacting blocks into single-line statements.
-- Function names must be lowercase with words separated by underscores.
+## Documentation & comments
+- Use Doxygen-style comments:
+- /** \brief … */ for classes.
+- /// for method/field comments and short descriptions.
+- Multi-line class/method docs often include \ingroup tags and detailed text blocks.
 
-## Suggested clang-format
+## Formatting & style
+- Brace style: opening brace on the same line as the declaration.
+- Indentation mixes two spaces and tabs; preserve existing indentation style in the file being edited.
+- Inline methods are commonly defined in headers.
+- Prefer explicit NULL checks and early returns in implementation code.
 
-If you use `clang-format`, apply the following style:
+## Naming conventions
+- Member variables frequently use prefixes:
+- p_ for pointers (e.g., p_histograms, p_container).
+- m_ for member data (e.g., m_hist, m_name).
+- Methods use PascalCase with descriptive verbs (e.g., AddHistogram, StoreHistograms, GetUniqueId).
 
-```
-{BasedOnStyle: LLVM, IndentWidth: 4, BreakBeforeBraces: Allman, AllowShortFunctionsOnASingleLine: None, ColumnLimit: 0, PointerAlignment: Left, ReferenceAlignment: Left, NamespaceIndentation: None}
-```
+## Constants & macros
+- Macro guards and simple numeric constants are defined in .cc files.
+- Inline macro helpers like MIN, MAX, SQR, ABS follow the existing pattern.
+
+## API patterns
+- Prefer clear, imperative method names and explicit parameters.
+- Methods often return bool for success/failure and use early-exit patterns.
+- Use standard containers (std::vector, std::map) with iterators, consistent with existing code.
+
+## Error handling
+- Use simple checks and return/assert rather than exceptions.
+- Keep behavior consistent with existing patterns (e.g., return false on invalid inputs).
+
+## External dependencies
+- ROOT types (e.g., TFile, TH1, TH2) are used directly in headers/implementation.
+- Include ROOT headers in headers where needed.
