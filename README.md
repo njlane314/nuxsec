@@ -103,17 +103,17 @@ LIST
 
 ```bash
 build/bin/nuxsecArtIOaggregator my_stage:data.list
-# writes ./ArtFileProvenance_my_stage.root
+# writes build/artio/ArtFileProvenance_my_stage.root
 ```
 
 ```bash
 build/bin/nuxsecSampleIOaggregator my_sample:data.list
-# writes ./SampleRootIO_my_sample.root
-# updates ./SampleRootIO_samples.tsv
+# writes build/samples/SampleRootIO_my_sample.root
+# updates build/samples/SampleRootIO_samples.tsv
 ```
 
 ## Produce templates
 
 ```bash
-build/bin/nuxsecTemplateMaker SampleRootIO_samples.tsv MyTree templates.tsv OutputTemplates.root
+build/bin/nuxsecTemplateMaker build/samples/SampleRootIO_samples.tsv MyTree templates.tsv OutputTemplates.root
 ```

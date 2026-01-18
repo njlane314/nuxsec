@@ -88,4 +88,4 @@ $(TEMPLATE_MAKER_NAME): $(TEMPLATE_MAKER_SRC) $(IO_LIB_NAME) $(SAMPLE_LIB_NAME) 
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -fPIC -c $< -o $@
 
 clean:
-	rm -rf build
+	rm -rf build/lib build/bin

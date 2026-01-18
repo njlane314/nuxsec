@@ -6,6 +6,7 @@
  */
 
 #include <exception>
+#include <filesystem>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -54,7 +55,7 @@ Args parse_args(int argc, char **argv)
         throw std::runtime_error("Bad stage spec: " + spec);
     }
 
-    args.artio_path = "./ArtFileProvenance_" + args.stage_cfg.stage_name + ".root";
+    args.artio_path = "build/artio/ArtFileProvenance_" + args.stage_cfg.stage_name + ".root";
 
     return args;
 }
@@ -71,6 +72,11 @@ int main(int argc, char **argv)
         const double pot_scale = 1e12;
 
         const Args args = parse_args(argc, argv);
+        std::filesystem::path out_path(args.artio_path);
+        if (!out_path.parent_path().empty())
+        {
+            std::filesystem::create_directories(out_path.parent_path());
+        }
 
         RunInfoSqliteReader db(db_path);
 

@@ -9,6 +9,7 @@
 #include <cerrno>
 #include <cstring>
 #include <exception>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <tuple>
@@ -54,8 +55,8 @@ Args parse_args(int argc, char **argv)
         throw std::runtime_error("Bad sample spec: " + spec);
     }
 
-    args.output_path = "./SampleRootIO_" + args.sample_name + ".root";
-    args.sample_list_path = "./SampleRootIO_samples.tsv";
+    args.output_path = "build/samples/SampleRootIO_" + args.sample_name + ".root";
+    args.sample_list_path = "build/samples/SampleRootIO_samples.tsv";
 
     return args;
 }
@@ -172,6 +173,17 @@ int main(int argc, char **argv)
     {
         const Args args = parse_args(argc, argv);
         const auto files = nuxsec::app::read_file_list(args.filelist_path);
+
+        std::filesystem::path output_path(args.output_path);
+        if (!output_path.parent_path().empty())
+        {
+            std::filesystem::create_directories(output_path.parent_path());
+        }
+        std::filesystem::path sample_list_path(args.sample_list_path);
+        if (!sample_list_path.parent_path().empty())
+        {
+            std::filesystem::create_directories(sample_list_path.parent_path());
+        }
 
         Sample sample = SampleAggregator::aggregate(args.sample_name, files);
         SampleRootIO::write(sample, args.output_path);
