@@ -1,10 +1,9 @@
 /**
  *  @file  bin/artIOaggregator/artIOaggregator.cxx
  *
- *  @brief Main entrypoint for ArtIO manifest generation
+ *  @brief Main entrypoint for ArtIO provenance generation
  */
 
-#include <algorithm>
 #include <cctype>
 #include <cerrno>
 #include <cstring>
@@ -15,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include "NuIO/ArtIOManifestIO.h"
+#include "NuIO/ArtProvenanceIO.h"
 #include "NuIO/RunInfoDB.h"
 #include "NuIO/SubRunScanner.h"
 
@@ -111,22 +110,14 @@ int main(int argc, char **argv)
 
         const CLI cli = ParseArgs(argc, argv);
 
-        std::vector<std::string> existing = ArtIOManifestIO::ListStages(cli.artio_path);
-        std::sort(existing.begin(), existing.end());
-
         RunInfoDB db(db_path);
-
-        if (std::binary_search(existing.begin(), existing.end(), cli.stage_cfg.stage_name))
-        {
-            std::cerr << "[artIOaggregator] exists stage=" << cli.stage_cfg.stage_name << "\n";
-            return 0;
-        }
 
         const auto files = ReadFileList(cli.stage_cfg.filelist_path);
 
         ArtProvenance rec;
         rec.cfg = cli.stage_cfg;
         rec.input_files = files;
+        rec.scale = pot_scale;
 
         if (IsNuSelectionDataFile(files.front()))
         {
@@ -135,6 +126,8 @@ int main(int argc, char **argv)
 
         rec.subrun = ScanSubRunTree(files);
         rec.runinfo = db.SumRuninfoForSelection(rec.subrun.unique_pairs);
+        rec.db_tortgt_pot = rec.runinfo.tortgt_sum * pot_scale;
+        rec.db_tor101_pot = rec.runinfo.tor101_sum * pot_scale;
 
         std::cerr << "[artIOaggregator] add stage=" << rec.cfg.stage_name
                   << " files=" << rec.input_files.size()
@@ -143,7 +136,7 @@ int main(int argc, char **argv)
                   << " tortgt=" << rec.runinfo.tortgt_sum * pot_scale
                   << "\n";
 
-        ArtIOManifestIO::WriteStage(cli.artio_path, db_path, pot_scale, rec);
+        ArtProvenanceIO::Write(rec, cli.artio_path);
 
         return 0;
     }

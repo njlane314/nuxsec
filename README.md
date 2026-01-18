@@ -7,7 +7,7 @@
 - `libArtIO.so`
   - ArtIO.root data model + ROOT dictionaries + I/O helpers (e.g. ArtProvenance, ArtProvenanceIO).
 - `libNuIO.so`
-  - NuIO bank schemas + dictionaries + manifest/loader helpers (friend-tree assembly).
+  - NuIO bank schemas + dictionaries + loader helpers (friend-tree assembly).
 - `libNuSel.so`
   - Selection definitions evaluated on NuIO.Evt variables; produces/consumes NuIO.Sel.
 - `libNuWgt.so`
