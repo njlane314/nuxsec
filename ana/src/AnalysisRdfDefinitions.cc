@@ -1,11 +1,11 @@
 /* -- C++ -- */
 /**
- *  @file  ana/src/AnalysisProcessor.cc
+ *  @file  ana/src/AnalysisRdfDefinitions.cc
  *
  *  @brief Variable definitions for analysis RDataFrame processing.
  */
 
-#include "AnalysisProcessor.hh"
+#include "AnalysisRdfDefinitions.hh"
 
 #include <algorithm>
 #include <cmath>
@@ -55,24 +55,24 @@ inline bool is_in_reco_volume(const X &x, const Y &y, const Z &z)
 
 }
 
-constexpr double AnalysisProcessor::kRecognisedPurityMin = 0.5;
-constexpr double AnalysisProcessor::kRecognisedCompletenessMin = 0.1;
+constexpr double AnalysisRdfDefinitions::kRecognisedPurityMin = 0.5;
+constexpr double AnalysisRdfDefinitions::kRecognisedCompletenessMin = 0.1;
 
-constexpr float AnalysisProcessor::kTrainingFraction = 0.10f;
-constexpr bool AnalysisProcessor::kTrainingIncludeExt = true;
+constexpr float AnalysisRdfDefinitions::kTrainingFraction = 0.10f;
+constexpr bool AnalysisRdfDefinitions::kTrainingIncludeExt = true;
 
-bool AnalysisProcessor::IsInTruthVolume(float x, float y, float z) noexcept
+bool AnalysisRdfDefinitions::IsInTruthVolume(float x, float y, float z) noexcept
 {
     return is_in_truth_volume(x, y, z);
 }
 
-bool AnalysisProcessor::IsInRecoVolume(float x, float y, float z) noexcept
+bool AnalysisRdfDefinitions::IsInRecoVolume(float x, float y, float z) noexcept
 {
     return is_in_reco_volume(x, y, z);
 }
 
 //____________________________________________________________________________
-ROOT::RDF::RNode AnalysisProcessor::Run(ROOT::RDF::RNode node, const ProcessorEntry &rec) const
+ROOT::RDF::RNode AnalysisRdfDefinitions::Define(ROOT::RDF::RNode node, const ProcessorEntry &rec) const
 {
     const bool is_data = (rec.source == SourceKind::kData);
     const bool is_ext = (rec.source == SourceKind::kExt);
@@ -286,9 +286,9 @@ ROOT::RDF::RNode AnalysisProcessor::Run(ROOT::RDF::RNode node, const ProcessorEn
 //____________________________________________________________________________
 
 //____________________________________________________________________________
-const AnalysisProcessor &AnalysisProcessor::Processor()
+const AnalysisRdfDefinitions &AnalysisRdfDefinitions::Instance()
 {
-    static const AnalysisProcessor ep{};
+    static const AnalysisRdfDefinitions ep{};
     return ep;
 }
 //____________________________________________________________________________

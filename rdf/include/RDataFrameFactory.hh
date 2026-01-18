@@ -1,19 +1,19 @@
 /* -- C++ -- */
 /**
- *  @file  ana/include/RDFBuilder.hh
+ *  @file  rdf/include/RDataFrameFactory.hh
  *
  *  @brief Sample loading and variable definitions for ROOT RDataFrame.
  */
 
-#ifndef Nuxsec_ANA_RDF_BUILDER_H_INCLUDED
-#define Nuxsec_ANA_RDF_BUILDER_H_INCLUDED
+#ifndef Nuxsec_RDF_RDATA_FRAME_FACTORY_H_INCLUDED
+#define Nuxsec_RDF_RDATA_FRAME_FACTORY_H_INCLUDED
 
 #include <ROOT/RDataFrame.hxx>
 
 #include <string>
 #include <vector>
 
-#include "SampleIO.hh"
+#include "Sample.hh"
 
 namespace nuxsec
 {
@@ -25,7 +25,7 @@ struct ColumnDefinition
     std::string description;
 };
 
-class RDFBuilder
+class RDataFrameFactory
 {
   public:
     static ROOT::RDataFrame load_sample(const Sample &sample, const std::string &tree_name);
@@ -36,4 +36,4 @@ class RDFBuilder
 
 } // namespace nuxsec
 
-#endif // Nuxsec_ANA_RDF_BUILDER_H_INCLUDED
+#endif // Nuxsec_RDF_RDATA_FRAME_FACTORY_H_INCLUDED
