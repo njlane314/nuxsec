@@ -1,12 +1,12 @@
 /* -- C++ -- */
 /**
- *  @file  rdf/include/RDFBuilder.hh
+ *  @file  ana/include/RDFBuilder.hh
  *
  *  @brief Sample loading and variable definitions for ROOT RDataFrame.
  */
 
-#ifndef Nuxsec_RDF_RDF_BUILDER_H_INCLUDED
-#define Nuxsec_RDF_RDF_BUILDER_H_INCLUDED
+#ifndef Nuxsec_ANA_RDF_BUILDER_H_INCLUDED
+#define Nuxsec_ANA_RDF_BUILDER_H_INCLUDED
 
 #include <ROOT/RDataFrame.hxx>
 
@@ -36,4 +36,4 @@ class RDFBuilder
 
 } // namespace nuxsec
 
-#endif // Nuxsec_RDF_RDF_BUILDER_H_INCLUDED
+#endif // Nuxsec_ANA_RDF_BUILDER_H_INCLUDED

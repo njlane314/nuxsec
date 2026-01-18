@@ -9,12 +9,9 @@ IO_SRC = io/src/ArtProvenanceIO.cc \
          io/src/RunInfoDB.cc
 IO_OBJ = $(IO_SRC:.cc=.o)
 
-RDF_LIB_NAME = build/lib/libNuxsecRDF.so
-RDF_SRC = rdf/src/RDFBuilder.cc
-RDF_OBJ = $(RDF_SRC:.cc=.o)
-
 ANA_LIB_NAME = build/lib/libNuxsecAna.so
-ANA_SRC = ana/src/AnalysisProcessor.cc
+ANA_SRC = ana/src/AnalysisProcessor.cc \
+          ana/src/RDFBuilder.cc
 ANA_OBJ = $(ANA_SRC:.cc=.o)
 
 RDF_BUILDER_NAME = build/bin/sampleRDFbuilder
@@ -26,26 +23,22 @@ ART_AGGREGATOR_SRC = apps/src/artIOaggregator.cc
 SAMPLE_AGGREGATOR_NAME = build/bin/sampleIOaggregator
 SAMPLE_AGGREGATOR_SRC = apps/src/sampleIOaggregator.cc
 
-INCLUDES = -I./io/include -I./rdf/include -I./ana/include
+INCLUDES = -I./io/include -I./ana/include
 
-all: $(IO_LIB_NAME) $(RDF_LIB_NAME) $(ANA_LIB_NAME) $(RDF_BUILDER_NAME) $(ART_AGGREGATOR_NAME) \
+all: $(IO_LIB_NAME) $(ANA_LIB_NAME) $(RDF_BUILDER_NAME) $(ART_AGGREGATOR_NAME) \
 	 $(SAMPLE_AGGREGATOR_NAME)
 
 $(IO_LIB_NAME): $(IO_OBJ)
 	mkdir -p $(dir $(IO_LIB_NAME))
 	$(CXX) -shared $(CXXFLAGS) $(IO_OBJ) $(LDFLAGS) -o $(IO_LIB_NAME)
 
-$(RDF_LIB_NAME): $(RDF_OBJ)
-	mkdir -p $(dir $(RDF_LIB_NAME))
-	$(CXX) -shared $(CXXFLAGS) $(RDF_OBJ) $(LDFLAGS) -o $(RDF_LIB_NAME)
-
 $(ANA_LIB_NAME): $(ANA_OBJ)
 	mkdir -p $(dir $(ANA_LIB_NAME))
 	$(CXX) -shared $(CXXFLAGS) $(ANA_OBJ) $(LDFLAGS) -o $(ANA_LIB_NAME)
 
-$(RDF_BUILDER_NAME): $(RDF_BUILDER_SRC) $(IO_LIB_NAME) $(RDF_LIB_NAME) $(ANA_LIB_NAME)
+$(RDF_BUILDER_NAME): $(RDF_BUILDER_SRC) $(IO_LIB_NAME) $(ANA_LIB_NAME)
 	mkdir -p $(dir $(RDF_BUILDER_NAME))
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(RDF_BUILDER_SRC) -Lbuild/lib -lNuxsecIO -lNuxsecRDF -lNuxsecAna \
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(RDF_BUILDER_SRC) -Lbuild/lib -lNuxsecIO -lNuxsecAna \
 		$(LDFLAGS) -o $(RDF_BUILDER_NAME)
 
 $(ART_AGGREGATOR_NAME): $(ART_AGGREGATOR_SRC) $(IO_LIB_NAME)

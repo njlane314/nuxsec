@@ -19,8 +19,7 @@ This is a COLLIE-like module layout. Each module is built as its own shared libr
 ```
 nuxsec/
   io/      # LArSoft output discovery, file manifests, provenance extraction
-  rdf/     # ROOT::RDataFrame sources + derived columns
-  ana/     # analysis-level definitions and output products
+  ana/     # analysis-level definitions and ROOT::RDataFrame sources + derived columns
   apps/    # small CLIs (aggregators, RDF builders)
   scripts/ # environment helpers
 ```

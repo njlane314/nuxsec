@@ -1,6 +1,6 @@
 /* -- C++ -- */
 /**
- *  @file  rdf/src/RDFBuilder.cc
+ *  @file  ana/src/RDFBuilder.cc
  *
  *  @brief Sample loading and variable definitions for ROOT RDataFrame.
  */
