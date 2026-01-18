@@ -55,11 +55,11 @@ inline bool is_in_reco_volume(const X &x, const Y &y, const Z &z)
 
 }
 
-constexpr double AnalysisRdfDefinitions::kRecognisedPurityMin = 0.5;
-constexpr double AnalysisRdfDefinitions::kRecognisedCompletenessMin = 0.1;
+const double AnalysisRdfDefinitions::kRecognisedPurityMin = 0.5;
+const double AnalysisRdfDefinitions::kRecognisedCompletenessMin = 0.1;
 
-constexpr float AnalysisRdfDefinitions::kTrainingFraction = 0.10f;
-constexpr bool AnalysisRdfDefinitions::kTrainingIncludeExt = true;
+const float AnalysisRdfDefinitions::kTrainingFraction = 0.10f;
+const bool AnalysisRdfDefinitions::kTrainingIncludeExt = true;
 
 bool AnalysisRdfDefinitions::IsInTruthVolume(float x, float y, float z) noexcept
 {
