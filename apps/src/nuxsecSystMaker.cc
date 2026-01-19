@@ -6,10 +6,10 @@
  */
 
 #include <exception>
-#include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "AppUtils.hh"
@@ -22,47 +22,17 @@ namespace
 
 std::vector<nuxsec::SampleListEntry> read_sample_list(const std::string &list_path)
 {
-    std::ifstream fin(list_path);
-    if (!fin)
-    {
-        throw std::runtime_error("Failed to open sample list: " + list_path);
-    }
-
+    const auto app_entries = nuxsec::app::read_sample_list(list_path);
     std::vector<nuxsec::SampleListEntry> entries;
-    std::string line;
-    bool first_nonempty = true;
-    while (std::getline(fin, line))
+    entries.reserve(app_entries.size());
+    for (const auto &entry : app_entries)
     {
-        line = nuxsec::app::trim(line);
-        if (line.empty() || line[0] == '#')
-        {
-            continue;
-        }
-
-        const auto fields = nuxsec::app::split_tabs(line);
-        if (fields.size() < 4)
-        {
-            throw std::runtime_error("Malformed sample list entry: " + line);
-        }
-
-        if (first_nonempty && fields[0] == "sample_name")
-        {
-            first_nonempty = false;
-            continue;
-        }
-        first_nonempty = false;
-
-        nuxsec::SampleListEntry e;
-        e.sample_name = fields[0];
-        e.sample_kind = fields[1];
-        e.beam_mode = fields[2];
-        e.output_path = fields[3];
-        entries.push_back(std::move(e));
-    }
-
-    if (entries.empty())
-    {
-        throw std::runtime_error("Sample list is empty: " + list_path);
+        nuxsec::SampleListEntry out;
+        out.sample_name = entry.sample_name;
+        out.sample_kind = entry.sample_kind;
+        out.beam_mode = entry.beam_mode;
+        out.output_path = entry.output_path;
+        entries.push_back(std::move(out));
     }
 
     return entries;
