@@ -23,7 +23,7 @@
 
 #include <sqlite3.h>
 
-#include "plot/include/Plotter.hh"
+#include "Plotter.hh"
 
 namespace
 {

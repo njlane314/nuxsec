@@ -19,6 +19,7 @@
 #include <vector>
 
 #include <TROOT.h>
+#include <TSystem.h>
 
 #include <TH1.h>
 #include <TH1D.h>
@@ -636,6 +637,8 @@ int run_plot(const std::vector<std::string> &args)
         std::filesystem::create_directories(outstem_path.parent_path());
     }
     const auto repo_root = find_repo_root();
+    const auto include_path = repo_root / "plot/include";
+    gSystem->AddIncludePath(("-I" + include_path.string()).c_str());
     const auto macro_path = repo_root / "plot/macro/NuxsecPlotDriver.C";
     if (!std::filesystem::exists(macro_path))
     {
