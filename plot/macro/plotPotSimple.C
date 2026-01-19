@@ -274,7 +274,7 @@ cumulative_data compute_cumulative_data(const histogram_bundle &histograms, int 
     if (max_stack > 0)
     {
         const double nice = std::ceil(max_stack / 5.0) * 5.0;
-        data.y_max = nice * 1.02;
+        data.y_max = nice * 1.08;
     }
     else data.y_max = 1.0;
     // Scale all cumulative curves to the left-axis range using the TOTAL cumulative maximum.
@@ -295,17 +295,20 @@ void draw_plot(const histogram_bundle &histograms, const cumulative_data &data, 
     TCanvas canvas("c", "POT timeline",
                    nuxsec::plot::kCanvasWidth,
                    nuxsec::plot::kCanvasHeight);
+    const double ml = 0.08;
+    const double mr = 0.12;
     const double split = 0.82;
     TPad *main_pad = new TPad("pad_main", "pad_main", 0.0, 0.0, 1.0, split);
     TPad *legend_pad = new TPad("pad_legend", "pad_legend", 0.0, split, 1.0, 1.0);
     main_pad->SetTopMargin(0.02);
     main_pad->SetBottomMargin(0.20);
-    main_pad->SetLeftMargin(0.08);
-    main_pad->SetRightMargin(0.12);
+    main_pad->SetLeftMargin(ml);
+    main_pad->SetRightMargin(mr);
     legend_pad->SetTopMargin(0.08);
     legend_pad->SetBottomMargin(0.02);
-    legend_pad->SetLeftMargin(0.02);
-    legend_pad->SetRightMargin(0.02);
+    // Match main-pad margins so the legend aligns with the plot frame (between y-axes).
+    legend_pad->SetLeftMargin(ml);
+    legend_pad->SetRightMargin(mr);
     main_pad->Draw();
     legend_pad->Draw();
     main_pad->cd();
@@ -340,32 +343,54 @@ void draw_plot(const histogram_bundle &histograms, const cumulative_data &data, 
     const Int_t col_fhc = TColor::GetColor("#ffb300");
     const Int_t col_rhc = TColor::GetColor("#ff1744");
 
+    auto style_line = [](TGraph &g, Int_t col, Int_t lstyle, Int_t lwidth,
+                         Int_t mstyle, double msize, bool markers)
+    {
+        g.SetLineColor(col);
+        g.SetLineStyle(lstyle);
+        g.SetLineWidth(lwidth);
+        if (markers)
+        {
+            g.SetMarkerColor(col);
+            g.SetMarkerStyle(mstyle);
+            g.SetMarkerSize(msize);
+        }
+    };
+
+    // Total cumulative POT: keep it dominant and clean (solid blue) with an outline for contrast.
     TGraph g_total(data.x.size(), data.x.data(), data.scaled_total.data());
-    g_total.SetLineColor(col_total);
-    g_total.SetLineWidth(2);
-    g_total.SetLineStyle(1);
+    TGraph g_total_outline(data.x.size(), data.x.data(), data.scaled_total.data());
+    style_line(g_total_outline, kBlack, 1, 5, 20, 0.0, false);
+    style_line(g_total, col_total, 1, 3, 20, 0.0, false);
+    g_total_outline.Draw("L SAME");
     g_total.Draw("L SAME");
 
+    // Beam-mode cumulative curves: thicker, distinct dash patterns + markers + outline.
+    // (Markers help against filled histograms; outlines avoid low-contrast segments.)
     TGraph g_bnb(data.x.size(), data.x.data(), data.scaled_bnb.data());
-    g_bnb.SetLineColor(col_bnb);
-    g_bnb.SetLineWidth(2);
-    g_bnb.SetLineStyle(2);
-    g_bnb.Draw("L SAME");
+    TGraph g_bnb_outline(data.x.size(), data.x.data(), data.scaled_bnb.data());
+    style_line(g_bnb_outline, kBlack, 7, 5, 21, 0.0, false);
+    style_line(g_bnb, col_bnb, 7, 3, 21, 0.55, true);
+    g_bnb_outline.Draw("L SAME");
+    g_bnb.Draw("LP SAME");
 
     TGraph g_fhc(data.x.size(), data.x.data(), data.scaled_fhc.data());
-    g_fhc.SetLineColor(col_fhc);
-    g_fhc.SetLineWidth(2);
-    g_fhc.SetLineStyle(2);
-    g_fhc.Draw("L SAME");
+    TGraph g_fhc_outline(data.x.size(), data.x.data(), data.scaled_fhc.data());
+    style_line(g_fhc_outline, kBlack, 2, 5, 22, 0.0, false);
+    style_line(g_fhc, col_fhc, 2, 3, 22, 0.55, true);
+    g_fhc_outline.Draw("L SAME");
+    g_fhc.Draw("LP SAME");
 
     TGraph g_rhc(data.x.size(), data.x.data(), data.scaled_rhc.data());
-    g_rhc.SetLineColor(col_rhc);
-    g_rhc.SetLineWidth(2);
-    g_rhc.SetLineStyle(2);
-    g_rhc.Draw("L SAME");
+    TGraph g_rhc_outline(data.x.size(), data.x.data(), data.scaled_rhc.data());
+    style_line(g_rhc_outline, kBlack, 9, 5, 23, 0.0, false);
+    style_line(g_rhc, col_rhc, 9, 3, 23, 0.55, true);
+    g_rhc_outline.Draw("L SAME");
+    g_rhc.Draw("LP SAME");
 
     const double xhi = stack.GetXaxis()->GetXmax();
-    TGaxis right_axis(xhi, 0, xhi, data.y_max, 0, data.max_cumulative_total, 507, "+L");
+    const double rhs_max = (data.max_cumulative_total > 0) ? (data.max_cumulative_total * 1.03) : 1.0;
+    TGaxis right_axis(xhi, 0, xhi, data.y_max, 0, rhs_max, 507, "+L");
     right_axis.SetLineColor(col_total);
     right_axis.SetLabelColor(col_total);
     right_axis.SetTitleColor(col_total);
@@ -380,7 +405,12 @@ void draw_plot(const histogram_bundle &histograms, const cumulative_data &data, 
     right_axis.Draw();
 
     legend_pad->cd();
-    TLegend legend(0.12, 0.00, 0.95, 0.75);
+    // Keep legend strictly within the plot-frame x-extent (between LHS and RHS axes).
+    const double lx1 = legend_pad->GetLeftMargin() + 0.02;
+    const double lx2 = 1.0 - legend_pad->GetRightMargin() - 0.02;
+    const double ly1 = legend_pad->GetBottomMargin() + 0.02;
+    const double ly2 = 1.0 - legend_pad->GetTopMargin() - 0.02;
+    TLegend legend(lx1, ly1, lx2, ly2);
     legend.SetBorderSize(0);
     legend.SetFillStyle(0);
     legend.SetTextFont(42);
@@ -395,9 +425,9 @@ void draw_plot(const histogram_bundle &histograms, const cumulative_data &data, 
     legend.AddEntry(&histograms.fhc, "NuMI-FHC (\\nu)", "f");
     legend.AddEntry(&histograms.rhc, "NuMI-RHC (\\bar{\\nu})", "f");
     legend.AddEntry(&g_total, "Total cumulative POT", "l");
-    legend.AddEntry(&g_bnb, "BNB cumulative POT", "l");
-    legend.AddEntry(&g_fhc, "NuMI-FHC cumulative POT", "l");
-    legend.AddEntry(&g_rhc, "NuMI-RHC cumulative POT", "l");
+    legend.AddEntry(&g_bnb, "BNB cumulative POT", "lp");
+    legend.AddEntry(&g_fhc, "NuMI-FHC cumulative POT", "lp");
+    legend.AddEntry(&g_rhc, "NuMI-RHC cumulative POT", "lp");
     legend.Draw();
     main_pad->cd();
     main_pad->RedrawAxis();
