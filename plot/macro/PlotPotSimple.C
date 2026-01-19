@@ -74,7 +74,7 @@ void configure_style()
     gStyle->SetTitleFont(42, "XYZ");
     gStyle->SetLabelSize(0.038, "XYZ");
     gStyle->SetTitleSize(0.050, "YZ");
-    gStyle->SetTitleOffset(1.10, "Y");
+    gStyle->SetTitleOffset(1.00, "Y");
     gStyle->SetPadTickX(1);
     // We draw a custom (blue) right axis; avoid black RHS ticks.
     gStyle->SetPadTickY(0);
@@ -188,10 +188,10 @@ struct histogram_bundle
         fhc.SetDirectory(nullptr);
         rhc.SetDirectory(nullptr);
 
-        // Pastel palette to match the reference plot.
-        const Int_t col_bnb = TColor::GetColor("#7ce390");
-        const Int_t col_fhc = TColor::GetColor("#ebb04c");
-        const Int_t col_rhc = TColor::GetColor("#df445d");
+        // Brighter (higher-value) fills: same hues, more "punch".
+        const Int_t col_bnb = TColor::GetColor("#8ce69d");
+        const Int_t col_fhc = TColor::GetColor("#edb961");
+        const Int_t col_rhc = TColor::GetColor("#e55a70");
 
         bnb.SetFillColor(col_bnb);
         bnb.SetLineColor(kBlack);
@@ -289,7 +289,7 @@ void draw_plot(const histogram_bundle &histograms, const cumulative_data &data, 
     stack.GetYaxis()->SetNdivisions(507);
     stack.GetYaxis()->SetTitleSize(0.050);
     stack.GetYaxis()->SetLabelSize(0.036);
-    stack.GetYaxis()->SetTitleOffset(1.10);
+    stack.GetYaxis()->SetTitleOffset(0.85);
 
     stack.SetMaximum(data.y_max);
     stack.SetMinimum(0);
@@ -310,7 +310,7 @@ void draw_plot(const histogram_bundle &histograms, const cumulative_data &data, 
     right_axis.SetTitleFont(42);
     right_axis.SetLabelSize(0.036);
     right_axis.SetTitleSize(0.050);
-    right_axis.SetTitleOffset(1.10);
+    right_axis.SetTitleOffset(0.95);
     right_axis.SetTickSize(0.02);
     right_axis.SetTitle("Cumulative POT (x 10^{20})");
     right_axis.Draw();
