@@ -11,9 +11,36 @@ _nuxsec()
 
   _nuxsec_find_root()
   {
-    local dir="${PWD}"
+    local dir
     local base
     local parent
+    local exe
+    local exe_dir
+
+    if [[ -n "${NUXSEC_REPO_ROOT:-}" && -d "${NUXSEC_REPO_ROOT}/plot/macro" ]]; then
+      printf "%s" "${NUXSEC_REPO_ROOT}"
+      return 0
+    fi
+
+    if [[ -n "${NUXSEC_ROOT:-}" && -d "${NUXSEC_ROOT}/plot/macro" ]]; then
+      printf "%s" "${NUXSEC_ROOT}"
+      return 0
+    fi
+
+    exe="$(command -v nuxsec 2>/dev/null || true)"
+    if [[ -n "${exe}" ]]; then
+      exe_dir="$(dirname "$(readlink -f "${exe}" 2>/dev/null || printf "%s" "${exe}")")"
+      dir="${exe_dir}"
+      while [[ -n "${dir}" && "${dir}" != "/" ]]; do
+        if [[ -d "${dir}/plot/macro" ]]; then
+          printf "%s" "${dir}"
+          return 0
+        fi
+        dir="$(dirname "${dir}")"
+      done
+    fi
+
+    dir="${PWD}"
     while [[ "${dir}" != "/" ]]; do
       if [[ -d "${dir}/plot/macro" ]]; then
         printf "%s" "${dir}"
