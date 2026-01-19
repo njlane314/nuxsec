@@ -508,6 +508,8 @@ int run_plot(const std::vector<std::string> &args)
     const auto repo_root = find_repo_root();
     const auto include_path = repo_root / "plot/include";
     gSystem->AddIncludePath(("-I" + include_path.string()).c_str());
+    const auto ana_include_path = repo_root / "ana/include";
+    gSystem->AddIncludePath(("-I" + ana_include_path.string()).c_str());
     const auto macro_path = repo_root / "plot/macro/NuxsecPlotDriver.C";
     if (!std::filesystem::exists(macro_path))
     {
