@@ -6,7 +6,6 @@
  */
 
 #include <exception>
-#include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -29,62 +28,6 @@
 
 namespace
 {
-
-struct SampleListEntry
-{
-    std::string sample_name;
-    std::string sample_kind;
-    std::string beam_mode;
-    std::string output_path;
-};
-
-std::vector<SampleListEntry> read_sample_list(const std::string &list_path)
-{
-    std::ifstream fin(list_path);
-    if (!fin)
-    {
-        throw std::runtime_error("Failed to open sample list: " + list_path);
-    }
-
-    std::vector<SampleListEntry> entries;
-    std::string line;
-    bool first_nonempty = true;
-    while (std::getline(fin, line))
-    {
-        line = nuxsec::app::trim(line);
-        if (line.empty() || line[0] == '#')
-        {
-            continue;
-        }
-
-        const auto fields = nuxsec::app::split_tabs(line);
-        if (fields.size() < 4)
-        {
-            throw std::runtime_error("Malformed sample list entry: " + line);
-        }
-
-        if (first_nonempty && fields[0] == "sample_name")
-        {
-            first_nonempty = false;
-            continue;
-        }
-        first_nonempty = false;
-
-        SampleListEntry entry;
-        entry.sample_name = fields[0];
-        entry.sample_kind = fields[1];
-        entry.beam_mode = fields[2];
-        entry.output_path = fields[3];
-        entries.push_back(std::move(entry));
-    }
-
-    if (entries.empty())
-    {
-        throw std::runtime_error("Sample list is empty: " + list_path);
-    }
-
-    return entries;
-}
 
 struct Args
 {
@@ -134,7 +77,7 @@ int main(int argc, char **argv)
         TH1::SetDefaultSumw2(true);
 
         const auto &analysis = nuxsec::AnalysisDefinition::Instance();
-        const auto entries = read_sample_list(args.list_path);
+        const auto entries = nuxsec::app::read_sample_list(args.list_path);
         const auto &specs = analysis.Templates1D();
 
         nuxsec::TemplateRootIO::write_string_meta(args.output_root, "__global__", "analysis_name", analysis.Name());

@@ -5,16 +5,11 @@
  *  @brief Unified CLI for Nuxsec utilities.
  */
 
-#include <algorithm>
-#include <cerrno>
-#include <cstring>
 #include <exception>
 #include <filesystem>
-#include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
-#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -263,80 +258,10 @@ SampleArgs parse_sample_args(const std::vector<std::string> &args)
     return out;
 }
 
-struct SampleListEntry
-{
-    std::string sample_name;
-    std::string sample_kind;
-    std::string beam_mode;
-    std::string output_path;
-};
-
-std::vector<SampleListEntry> read_sample_list(const std::string &list_path)
-{
-    std::ifstream fin(list_path);
-    if (!fin)
-    {
-        if (errno == ENOENT)
-        {
-            return {};
-        }
-        throw std::runtime_error("Failed to open sample list: " + list_path +
-                                 " (errno=" + std::to_string(errno) + " " + std::strerror(errno) + ")");
-    }
-
-    std::vector<SampleListEntry> entries;
-    std::string line;
-    while (std::getline(fin, line))
-    {
-        line = nuxsec::app::trim(line);
-        if (line.empty() || line[0] == '#')
-        {
-            continue;
-        }
-        const auto fields = nuxsec::app::split_tabs(line);
-        if (fields.size() < 4)
-        {
-            throw std::runtime_error("Malformed sample list entry: " + line);
-        }
-        SampleListEntry entry;
-        entry.sample_name = fields[0];
-        entry.sample_kind = fields[1];
-        entry.beam_mode = fields[2];
-        entry.output_path = fields[3];
-        entries.push_back(std::move(entry));
-    }
-    return entries;
-}
-
-void write_sample_list(const std::string &list_path, std::vector<SampleListEntry> entries)
-{
-    std::sort(entries.begin(), entries.end(),
-              [](const SampleListEntry &a, const SampleListEntry &b)
-              {
-                  return std::tie(a.sample_kind, a.beam_mode, a.sample_name) <
-                         std::tie(b.sample_kind, b.beam_mode, b.sample_name);
-              });
-
-    std::ofstream fout(list_path, std::ios::trunc);
-    if (!fout)
-    {
-        throw std::runtime_error("Failed to open sample list for writing: " + list_path +
-                                 " (errno=" + std::to_string(errno) + " " + std::strerror(errno) + ")");
-    }
-    fout << "# sample_name\tsample_kind\tbeam_mode\toutput_path\n";
-    for (const auto &entry : entries)
-    {
-        fout << entry.sample_name << "\t"
-             << entry.sample_kind << "\t"
-             << entry.beam_mode << "\t"
-             << entry.output_path << "\n";
-    }
-}
-
 void update_sample_list(const std::string &list_path, const nuxsec::Sample &sample,
                         const std::string &output_path)
 {
-    auto entries = read_sample_list(list_path);
+    auto entries = nuxsec::app::read_sample_list(list_path, true, false);
     const std::string kind_name = nuxsec::sample_kind_name(sample.kind);
     const std::string beam_name = nuxsec::beam_mode_name(sample.beam);
 
@@ -354,7 +279,7 @@ void update_sample_list(const std::string &list_path, const nuxsec::Sample &samp
     }
     if (!updated)
     {
-        SampleListEntry entry;
+        nuxsec::app::SampleListEntry entry;
         entry.sample_name = sample.sample_name;
         entry.sample_kind = kind_name;
         entry.beam_mode = beam_name;
@@ -362,7 +287,7 @@ void update_sample_list(const std::string &list_path, const nuxsec::Sample &samp
         entries.push_back(std::move(entry));
     }
 
-    write_sample_list(list_path, std::move(entries));
+    nuxsec::app::write_sample_list(list_path, std::move(entries));
 }
 
 int run_sample(const std::vector<std::string> &args)
@@ -402,62 +327,6 @@ int run_sample(const std::vector<std::string> &args)
               << "\n";
 
     return 0;
-}
-
-struct TemplateListEntry
-{
-    std::string sample_name;
-    std::string sample_kind;
-    std::string beam_mode;
-    std::string output_path;
-};
-
-std::vector<TemplateListEntry> read_template_list(const std::string &list_path)
-{
-    std::ifstream fin(list_path);
-    if (!fin)
-    {
-        throw std::runtime_error("Failed to open sample list: " + list_path);
-    }
-
-    std::vector<TemplateListEntry> entries;
-    std::string line;
-    bool first_nonempty = true;
-    while (std::getline(fin, line))
-    {
-        line = nuxsec::app::trim(line);
-        if (line.empty() || line[0] == '#')
-        {
-            continue;
-        }
-
-        const auto fields = nuxsec::app::split_tabs(line);
-        if (fields.size() < 4)
-        {
-            throw std::runtime_error("Malformed sample list entry: " + line);
-        }
-
-        if (first_nonempty && fields[0] == "sample_name")
-        {
-            first_nonempty = false;
-            continue;
-        }
-        first_nonempty = false;
-
-        TemplateListEntry entry;
-        entry.sample_name = fields[0];
-        entry.sample_kind = fields[1];
-        entry.beam_mode = fields[2];
-        entry.output_path = fields[3];
-        entries.push_back(std::move(entry));
-    }
-
-    if (entries.empty())
-    {
-        throw std::runtime_error("Sample list is empty: " + list_path);
-    }
-
-    return entries;
 }
 
 struct TemplateArgs
@@ -510,7 +379,7 @@ int run_template(const std::vector<std::string> &args)
     TH1::SetDefaultSumw2(true);
 
     const auto &analysis = nuxsec::AnalysisDefinition::Instance();
-    const auto entries = read_template_list(tpl_args.list_path);
+    const auto entries = nuxsec::app::read_sample_list(tpl_args.list_path);
     const auto &specs = analysis.Templates1D();
 
     nuxsec::TemplateRootIO::write_string_meta(tpl_args.output_root, "__global__", "analysis_name",
