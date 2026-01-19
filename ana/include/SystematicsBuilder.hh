@@ -23,6 +23,8 @@
 namespace nuxsec
 {
 
+struct Sample;
+
 struct SampleListEntry
 {
     std::string sample_name;
