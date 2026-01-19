@@ -66,6 +66,7 @@ This produces:
 - `build/lib/libNuXsecAna.so`
 - `build/lib/libNuXsecPlot.so`
 - `build/bin/nuxsec`
+- `./nuxsec` (wrapper script that runs `build/bin/nuxsec`)
 
 ## Analysis processing
 
@@ -84,6 +85,13 @@ source .setup.sh
 
 This adds `build/bin` to your `PATH` and `build/lib` to your `LD_LIBRARY_PATH` so the
 executables can locate the shared libraries at runtime.
+
+If you prefer to run from the repository root without modifying your `PATH`, use the
+wrapper script:
+
+```bash
+./nuxsec <command> [args...]
+```
 
 ## Prepare file lists
 
