@@ -519,7 +519,7 @@ int run_plot(const std::vector<std::string> &args)
     const std::string load_cmd = ".L " + macro_path.string();
     gROOT->ProcessLine(load_cmd.c_str());
 
-    const std::string call_cmd = "nuxsec_plot(\"" + plot_args.outstem + "\")";
+    const std::string call_cmd = "nuxsec_plot(\"" + plot_args.outstem + "\");";
     const long result = gROOT->ProcessLine(call_cmd.c_str());
     return static_cast<int>(result);
 }
