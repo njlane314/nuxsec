@@ -23,7 +23,7 @@
 
 #include <sqlite3.h>
 
-#include "rarexsec/plot/Plotter.h"
+#include "Plotter.hh"
 
 namespace
 {
@@ -64,7 +64,7 @@ time_t sunday_after_or_on(time_t t)
 
 void configure_style()
 {
-    rarexsec::plot::Plotter{}.set_global_style();
+    nuxsec::plot::Plotter{}.set_global_style();
     gStyle->SetOptStat(0);
     gStyle->SetLineWidth(2);
     gStyle->SetFrameLineWidth(2);

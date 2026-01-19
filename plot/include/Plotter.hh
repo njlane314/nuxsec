@@ -39,12 +39,12 @@ class Plotter
                                         const std::vector<const Entry *> &data,
                                         const TMatrixDSym &total_cov) const;
 
+    void set_global_style() const;
+
     static std::string sanitise(const std::string &name);
     static std::string fmt_commas(double value, int precision = -1);
 
   private:
-    void set_global_style() const;
-
     Options opt_;
 };
 
