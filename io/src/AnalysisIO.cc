@@ -296,7 +296,6 @@ void AnalysisIO::init(const std::string &analysis_root,
     if (f.IsZombie())
         throw std::runtime_error("Failed to create analysis ROOT file: " + analysis_root);
 
-    // __global__
     TDirectory *g = get_or_make_dir(&f, "__global__");
     write_objstring(g, "schema", header.schema);
     write_objstring(g, "analysis_name", header.analysis_name);
@@ -304,12 +303,10 @@ void AnalysisIO::init(const std::string &analysis_root,
     write_objstring(g, "created_utc", header.created_utc);
     write_objstring(g, "sample_list_source", header.sample_list_source);
 
-    // workspace snapshots
     TDirectory *w = get_or_make_dir(&f, "workspace");
     write_objstring(w, "template_specs_1d_source", template_specs_source);
     write_objstring(w, "template_specs_1d_tsv", template_specs_1d_tsv);
 
-    // workspace/samples index tree
     w->cd();
     TTree t("samples", "Nuxsec analysis sample index");
 

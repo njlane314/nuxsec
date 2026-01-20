@@ -25,8 +25,8 @@ struct AnalysisHeader
     std::string schema;
     std::string analysis_name;
     std::string analysis_tree;
-    std::string created_utc;        // ISO-8601 UTC
-    std::string sample_list_source; // provenance
+    std::string created_utc;
+    std::string sample_list_source;
 };
 
 struct AnalysisSampleRef
@@ -34,12 +34,12 @@ struct AnalysisSampleRef
     std::string sample_name;
     std::string sample_rootio_path;
 
-    int sample_kind = -1; // SampleIO::SampleKind as int
-    int beam_mode = -1;   // SampleIO beam enum as int
+    int sample_kind = -1;
+    int beam_mode = -1;
 
     double subrun_pot_sum = 0.0;
     double db_tortgt_pot_sum = 0.0;
-    double db_tor101_pot_sum = 0.0; // EXT nominal trigger POT-equivalent
+    double db_tor101_pot_sum = 0.0;
 };
 
 class AnalysisIO
@@ -54,7 +54,6 @@ class AnalysisIO
     static constexpr const char *kSchema = "nuxsec_analysisio_v1";
     static constexpr const char *kFamilyTemplates1D = "templates1d";
 
-    // Open an existing analysis file (READ by default; UPDATE if you intend to write products).
     explicit AnalysisIO(std::string analysis_root, OpenMode mode = OpenMode::kRead);
     ~AnalysisIO();
 
@@ -66,28 +65,22 @@ class AnalysisIO
 
     const std::string &path() const noexcept;
 
-    // Cached on first call.
     const AnalysisHeader &header() const;
 
-    // Reads from workspace/samples.
     std::vector<AnalysisSampleRef> samples() const;
 
-    // Reads from workspace/template_specs_1d_tsv.
     std::string template_specs_1d_tsv() const;
 
-    // products/<family>/<sample>/<hist>   (returns detached clone)
     std::unique_ptr<TH1> get_hist1d(const std::string &family,
                                     const std::string &sample_name,
                                     const std::string &hist_name) const;
 
-    // Write into products/<family>/<sample>/... (requires UPDATE mode).
     void put_histograms(const std::string &family,
                         const std::string &sample_name,
                         const std::vector<std::pair<std::string, const TH1 *>> &hists);
 
     void flush();
 
-    // Create/seed an analysis file (RECREATE): header + sample index + spec snapshot(s).
     static void init(const std::string &analysis_root,
                      const AnalysisHeader &header,
                      const std::vector<AnalysisSampleRef> &samples,
