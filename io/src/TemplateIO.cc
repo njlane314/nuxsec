@@ -127,7 +127,7 @@ TemplateIO &TemplateIO::operator=(const TemplateIO &rhs)
 
 TemplateIO::~TemplateIO() = default;
 
-double TemplateIO::BinFraction(int ix, int iy) const
+double TemplateIO::bin_fraction(int ix, int iy) const
 {
     if (ix < 0 || ix >= m_nx)
     {
@@ -139,17 +139,17 @@ double TemplateIO::BinFraction(int ix, int iy) const
         {
             return 0.0;
         }
-        return m_bin_fraction[Index(ix, iy)];
+        return m_bin_fraction[index(ix, iy)];
     }
     return m_bin_fraction[ix];
 }
 
-double TemplateIO::BinYield(int ix, int iy) const
+double TemplateIO::bin_yield(int ix, int iy) const
 {
-    return BinFraction(ix, iy) * m_total_yield;
+    return bin_fraction(ix, iy) * m_total_yield;
 }
 
-double TemplateIO::BinStatError(int ix, int iy) const
+double TemplateIO::bin_stat_error(int ix, int iy) const
 {
     if (ix < 0 || ix >= m_nx)
     {
@@ -161,12 +161,12 @@ double TemplateIO::BinStatError(int ix, int iy) const
         {
             return 0.0;
         }
-        return m_bin_stat[Index(ix, iy)];
+        return m_bin_stat[index(ix, iy)];
     }
     return m_bin_stat[ix];
 }
 
-void TemplateIO::SetTotalYield(double yield)
+void TemplateIO::set_total_yield(double yield)
 {
     if (m_mutable)
     {
@@ -174,7 +174,7 @@ void TemplateIO::SetTotalYield(double yield)
     }
 }
 
-void TemplateIO::SetBinFraction(double fraction, int ix, int iy)
+void TemplateIO::set_bin_fraction(double fraction, int ix, int iy)
 {
     if (!m_mutable)
     {
@@ -190,13 +190,13 @@ void TemplateIO::SetBinFraction(double fraction, int ix, int iy)
         {
             return;
         }
-        m_bin_fraction[Index(ix, iy)] = fraction;
+        m_bin_fraction[index(ix, iy)] = fraction;
         return;
     }
     m_bin_fraction[ix] = fraction;
 }
 
-void TemplateIO::SetBinStatError(double error, int ix, int iy)
+void TemplateIO::set_bin_stat_error(double error, int ix, int iy)
 {
     if (!m_mutable)
     {
@@ -212,13 +212,13 @@ void TemplateIO::SetBinStatError(double error, int ix, int iy)
         {
             return;
         }
-        m_bin_stat[Index(ix, iy)] = error;
+        m_bin_stat[index(ix, iy)] = error;
         return;
     }
     m_bin_stat[ix] = error;
 }
 
-bool TemplateIO::CheckStats(const TH1 *hist, int verbose) const
+bool TemplateIO::check_stats(const TH1 *hist, int verbose) const
 {
     if (!hist)
     {
@@ -226,13 +226,13 @@ bool TemplateIO::CheckStats(const TH1 *hist, int verbose) const
     }
     if (!hist->GetSumw2N() && verbose > 0)
     {
-        ::Warning("TemplateIO::CheckStats",
+        ::Warning("TemplateIO::check_stats",
                   "Input hist %s has no Sumw2; stat errors may be wrong.", hist->GetName());
     }
     return true;
 }
 
-bool TemplateIO::FillFromTH1(const TH1 *hist, int rebin)
+bool TemplateIO::fill_from_th1(const TH1 *hist, int rebin)
 {
     if (!hist)
     {
@@ -261,7 +261,7 @@ bool TemplateIO::FillFromTH1(const TH1 *hist, int rebin)
         }
     }
 
-    if (!CheckStats(tmp.get(), 1))
+    if (!check_stats(tmp.get(), 1))
     {
         return false;
     }
@@ -296,7 +296,7 @@ bool TemplateIO::FillFromTH1(const TH1 *hist, int rebin)
     return true;
 }
 
-bool TemplateIO::FillFromTH2(const TH2 *hist, int rebin_x, int rebin_y)
+bool TemplateIO::fill_from_th2(const TH2 *hist, int rebin_x, int rebin_y)
 {
     if (!hist)
     {
@@ -326,7 +326,7 @@ bool TemplateIO::FillFromTH2(const TH2 *hist, int rebin_x, int rebin_y)
         }
     }
 
-    if (!CheckStats(tmp.get(), 1))
+    if (!check_stats(tmp.get(), 1))
     {
         return false;
     }
@@ -345,7 +345,7 @@ bool TemplateIO::FillFromTH2(const TH2 *hist, int rebin_x, int rebin_y)
     {
         for (int ix = 0; ix < m_nx; ++ix)
         {
-            const int ibin = Index(ix, iy);
+            const int ibin = index(ix, iy);
             const double content = tmp->GetBinContent(ix + 1, iy + 1);
             const double error = tmp->GetBinError(ix + 1, iy + 1);
 
@@ -365,12 +365,12 @@ bool TemplateIO::FillFromTH2(const TH2 *hist, int rebin_x, int rebin_y)
     return true;
 }
 
-bool TemplateIO::HasSystematic(const std::string &name) const
+bool TemplateIO::has_systematic(const std::string &name) const
 {
-    return (SystIndex(name) >= 0);
+    return (syst_index(name) >= 0);
 }
 
-int TemplateIO::SystIndex(const std::string &name) const
+int TemplateIO::syst_index(const std::string &name) const
 {
     if (name.empty())
     {
@@ -388,7 +388,7 @@ int TemplateIO::SystIndex(const std::string &name) const
     return -1;
 }
 
-void TemplateIO::AddSystematicFrac(const char *name, const TH1 *pos_frac, const TH1 *neg_frac)
+void TemplateIO::add_systematic_frac(const char *name, const TH1 *pos_frac, const TH1 *neg_frac)
 {
     if (!m_mutable)
     {
@@ -412,7 +412,7 @@ void TemplateIO::AddSystematicFrac(const char *name, const TH1 *pos_frac, const 
     }
 
     const std::string n(name);
-    if (HasSystematic(n))
+    if (has_systematic(n))
     {
         return;
     }
@@ -434,7 +434,7 @@ void TemplateIO::AddSystematicFrac(const char *name, const TH1 *pos_frac, const 
     }
 }
 
-void TemplateIO::AddSystematicFrac2D(const char *name, const TH2 *pos_frac, const TH2 *neg_frac)
+void TemplateIO::add_systematic_frac_2d(const char *name, const TH2 *pos_frac, const TH2 *neg_frac)
 {
     if (!m_mutable)
     {
@@ -458,7 +458,7 @@ void TemplateIO::AddSystematicFrac2D(const char *name, const TH2 *pos_frac, cons
     }
 
     const std::string n(name);
-    if (HasSystematic(n))
+    if (has_systematic(n))
     {
         return;
     }
@@ -472,7 +472,7 @@ void TemplateIO::AddSystematicFrac2D(const char *name, const TH2 *pos_frac, cons
     {
         for (int ix = 0; ix < m_nx; ++ix)
         {
-            TemplateSystBin &sys_bin = m_syst.back()[Index(ix, iy)];
+            TemplateSystBin &sys_bin = m_syst.back()[index(ix, iy)];
             const double pos = pos_frac->GetBinContent(ix + 1, iy + 1);
             const double neg = neg_frac->GetBinContent(ix + 1, iy + 1);
 
@@ -483,9 +483,9 @@ void TemplateIO::AddSystematicFrac2D(const char *name, const TH2 *pos_frac, cons
     }
 }
 
-bool TemplateIO::GetFloatFlag(const std::string &name) const
+bool TemplateIO::get_float_flag(const std::string &name) const
 {
-    const int index = SystIndex(name);
+    const int index = syst_index(name);
     if (index < 0)
     {
         return false;
@@ -493,9 +493,9 @@ bool TemplateIO::GetFloatFlag(const std::string &name) const
     return (m_float_flag[index] != 0);
 }
 
-bool TemplateIO::GetLogNormalFlag(const std::string &name) const
+bool TemplateIO::get_log_normal_flag(const std::string &name) const
 {
-    const int index = SystIndex(name);
+    const int index = syst_index(name);
     if (index < 0)
     {
         return false;
@@ -503,13 +503,13 @@ bool TemplateIO::GetLogNormalFlag(const std::string &name) const
     return (m_log_normal_flag[index] != 0);
 }
 
-void TemplateIO::SetFloatFlag(const std::string &name, bool on)
+void TemplateIO::set_float_flag(const std::string &name, bool on)
 {
     if (!m_mutable)
     {
         return;
     }
-    const int index = SystIndex(name);
+    const int index = syst_index(name);
     if (index < 0)
     {
         return;
@@ -517,13 +517,13 @@ void TemplateIO::SetFloatFlag(const std::string &name, bool on)
     m_float_flag[index] = (on ? 1 : 0);
 }
 
-void TemplateIO::SetLogNormalFlag(const std::string &name, bool on)
+void TemplateIO::set_log_normal_flag(const std::string &name, bool on)
 {
     if (!m_mutable)
     {
         return;
     }
-    const int index = SystIndex(name);
+    const int index = syst_index(name);
     if (index < 0)
     {
         return;
@@ -531,7 +531,7 @@ void TemplateIO::SetLogNormalFlag(const std::string &name, bool on)
     m_log_normal_flag[index] = (on ? 1 : 0);
 }
 
-void TemplateIO::Linearise(const std::vector<std::string> &global_syst_order)
+void TemplateIO::linearise(const std::vector<std::string> &global_syst_order)
 {
     if (!m_mutable)
     {
@@ -547,7 +547,7 @@ void TemplateIO::Linearise(const std::vector<std::string> &global_syst_order)
         return;
     }
 
-    const int n_syst = NSyst();
+    const int n_syst = n_syst();
     m_syst_index_outer.assign(n_syst, -1);
     m_syst_index_inner.assign(n_syst, -1);
 
@@ -607,7 +607,7 @@ void TemplateIO::Linearise(const std::vector<std::string> &global_syst_order)
     m_linearised = true;
 }
 
-double TemplateIO::BinFractionVaried(int ix, int iy, const double *pulls) const
+double TemplateIO::bin_fraction_varied(int ix, int iy, const double *pulls) const
 {
     if (!pulls)
     {
@@ -625,7 +625,7 @@ double TemplateIO::BinFractionVaried(int ix, int iy, const double *pulls) const
         }
     }
 
-    const int ibin = Index(ix, (m_ny > 1) ? iy : 0);
+    const int ibin = index(ix, (m_ny > 1) ? iy : 0);
 
     if (!m_linearised || m_syst_index_outer.empty() || m_syst_index_inner.empty())
     {
@@ -633,7 +633,7 @@ double TemplateIO::BinFractionVaried(int ix, int iy, const double *pulls) const
         for (size_t is = 0; is < m_syst.size(); ++is)
         {
             const TemplateSystBin &sys_bin = m_syst[is][ibin];
-            const double delta = sys_bin.asym ? AsymDelta(pulls[is], sys_bin.sigma_pos, sys_bin.sigma_neg)
+            const double delta = sys_bin.asym ? asym_delta(pulls[is], sys_bin.sigma_pos, sys_bin.sigma_neg)
                                               : (pulls[is] * sys_bin.sigma_pos);
             out += (m_bin_fraction[ibin] * delta);
         }
@@ -651,7 +651,7 @@ double TemplateIO::BinFractionVaried(int ix, int iy, const double *pulls) const
     {
         const int outer = m_syst_index_outer[is];
         const TemplateSystBin &sys_bin = m_syst[is][ibin];
-        const double delta = sys_bin.asym ? AsymDelta(pulls[outer], sys_bin.sigma_pos, sys_bin.sigma_neg)
+        const double delta = sys_bin.asym ? asym_delta(pulls[outer], sys_bin.sigma_pos, sys_bin.sigma_neg)
                                           : (pulls[outer] * sys_bin.sigma_pos);
         var += delta;
     }
@@ -659,7 +659,7 @@ double TemplateIO::BinFractionVaried(int ix, int iy, const double *pulls) const
     return m_lin_bin_fraction[ibin] * (1.0 + var);
 }
 
-void TemplateIO::PrepareExclusionSums()
+void TemplateIO::prepare_exclusion_sums()
 {
     for (size_t is = 0; is < m_syst.size(); ++is)
     {
@@ -688,7 +688,7 @@ void TemplateIO::PrepareExclusionSums()
     }
 }
 
-TH1 *TemplateIO::MakeTH1(const std::string &title) const
+TH1 *TemplateIO::make_th1(const std::string &title) const
 {
     if (m_ny > 1)
     {
@@ -710,7 +710,7 @@ TH1 *TemplateIO::MakeTH1(const std::string &title) const
     return hist;
 }
 
-TH2 *TemplateIO::MakeTH2(const std::string &title) const
+TH2 *TemplateIO::make_th2(const std::string &title) const
 {
     if (m_ny < 2)
     {
@@ -726,7 +726,7 @@ TH2 *TemplateIO::MakeTH2(const std::string &title) const
     {
         for (int ix = 0; ix < m_nx; ++ix)
         {
-            const int ibin = Index(ix, iy);
+            const int ibin = index(ix, iy);
             const double content = m_total_yield * m_bin_fraction[ibin];
             const double error = m_total_yield * m_bin_stat[ibin];
             hist->SetBinContent(ix + 1, iy + 1, content);
