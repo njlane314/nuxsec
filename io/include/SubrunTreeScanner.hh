@@ -15,7 +15,7 @@
 
 namespace nuxsec
 {
-SubrunTreeSummary scan_subrun_tree(const std::vector<std::string> &files);
+artio::SubrunSummary scan_subrun_tree(const std::vector<std::string> &files);
 }
 
 #endif // NUXSEC_IO_SUBRUN_TREE_SCANNER_H
