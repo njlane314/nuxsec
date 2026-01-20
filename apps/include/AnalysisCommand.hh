@@ -33,6 +33,12 @@ struct AnalysisArgs
     std::string output_root;
 };
 
+struct AnalysisInput
+{
+    nuxsec::app::SampleListEntry entry;
+    sample::SampleIO::Sample sample;
+};
+
 inline AnalysisArgs parse_analysis_args(const std::vector<std::string> &args, const std::string &usage)
 {
     if (args.size() != 2)
@@ -60,12 +66,6 @@ inline int run_analysis(const AnalysisArgs &analysis_args, const std::string &lo
     const auto &analysis = nuxsec::AnalysisConfigService::instance();
     const auto entries = nuxsec::app::read_sample_list(analysis_args.list_path);
     const auto &specs = analysis.templates_1d();
-
-    struct AnalysisInput
-    {
-        nuxsec::app::SampleListEntry entry;
-        sample::SampleIO::Sample sample;
-    };
 
     std::vector<nuxsec::io::AnalysisSampleRef> sample_refs;
     sample_refs.reserve(entries.size());
