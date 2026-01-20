@@ -40,51 +40,51 @@ class TemplateIO : public TNamed
     TemplateIO &operator=(const TemplateIO &rhs);
     ~TemplateIO() override;
 
-    int NX() const { return m_nx; }
-    int NY() const { return m_ny; }
-    int NBins() const { return m_true_bin_count; }
+    int n_x() const { return m_nx; }
+    int n_y() const { return m_ny; }
+    int n_bins() const { return m_true_bin_count; }
 
-    double XMin() const { return m_x_min; }
-    double XMax() const { return m_x_max; }
-    double YMin() const { return m_y_min; }
-    double YMax() const { return m_y_max; }
+    double x_min() const { return m_x_min; }
+    double x_max() const { return m_x_max; }
+    double y_min() const { return m_y_min; }
+    double y_max() const { return m_y_max; }
 
-    double BinFraction(int ix, int iy = -1) const;
-    double BinYield(int ix, int iy = -1) const;
-    double BinStatError(int ix, int iy = -1) const;
+    double bin_fraction(int ix, int iy = -1) const;
+    double bin_yield(int ix, int iy = -1) const;
+    double bin_stat_error(int ix, int iy = -1) const;
 
-    double TotalYield() const { return m_total_yield; }
-    void SetTotalYield(double yield);
+    double total_yield() const { return m_total_yield; }
+    void set_total_yield(double yield);
 
-    void SetBinFraction(double fraction, int ix, int iy = -1);
-    void SetBinStatError(double error, int ix, int iy = -1);
+    void set_bin_fraction(double fraction, int ix, int iy = -1);
+    void set_bin_stat_error(double error, int ix, int iy = -1);
 
-    bool FillFromTH1(const TH1 *hist, int rebin = 0);
-    bool FillFromTH2(const TH2 *hist, int rebin_x = 0, int rebin_y = 0);
+    bool fill_from_th1(const TH1 *hist, int rebin = 0);
+    bool fill_from_th2(const TH2 *hist, int rebin_x = 0, int rebin_y = 0);
 
-    int NSyst() const { return static_cast<int>(m_syst_names.size()); }
-    const std::string &SystName(int index) const { return m_syst_names.at(index); }
+    int n_syst() const { return static_cast<int>(m_syst_names.size()); }
+    const std::string &syst_name(int index) const { return m_syst_names.at(index); }
 
-    bool HasSystematic(const std::string &name) const;
-    int SystIndex(const std::string &name) const;
+    bool has_systematic(const std::string &name) const;
+    int syst_index(const std::string &name) const;
 
-    void AddSystematicFrac(const char *name, const TH1 *pos_frac, const TH1 *neg_frac);
-    void AddSystematicFrac2D(const char *name, const TH2 *pos_frac, const TH2 *neg_frac);
+    void add_systematic_frac(const char *name, const TH1 *pos_frac, const TH1 *neg_frac);
+    void add_systematic_frac_2d(const char *name, const TH2 *pos_frac, const TH2 *neg_frac);
 
-    bool GetFloatFlag(const std::string &name) const;
-    bool GetLogNormalFlag(const std::string &name) const;
-    void SetFloatFlag(const std::string &name, bool on);
-    void SetLogNormalFlag(const std::string &name, bool on);
+    bool get_float_flag(const std::string &name) const;
+    bool get_log_normal_flag(const std::string &name) const;
+    void set_float_flag(const std::string &name, bool on);
+    void set_log_normal_flag(const std::string &name, bool on);
 
-    void Linearise(const std::vector<std::string> &global_syst_order);
-    bool IsLinearised() const { return m_linearised; }
+    void linearise(const std::vector<std::string> &global_syst_order);
+    bool is_linearised() const { return m_linearised; }
 
-    double BinFractionVaried(int ix, int iy, const double *pulls) const;
+    double bin_fraction_varied(int ix, int iy, const double *pulls) const;
 
-    void PrepareExclusionSums();
+    void prepare_exclusion_sums();
 
-    TH1 *MakeTH1(const std::string &title = "") const;
-    TH2 *MakeTH2(const std::string &title = "") const;
+    TH1 *make_th1(const std::string &title = "") const;
+    TH2 *make_th2(const std::string &title = "") const;
 
     static void write_histograms(const std::string &root_path,
                                  const std::string &sample_name,
@@ -128,17 +128,17 @@ class TemplateIO : public TNamed
 
     };
 
-    int Index(int ix, int iy) const
+    int index(int ix, int iy) const
     {
         return (m_ny > 1) ? (ix + iy * m_nx) : ix;
     }
 
-    static inline double AsymDelta(double pull, double sigma_pos, double sigma_neg)
+    static inline double asym_delta(double pull, double sigma_pos, double sigma_neg)
     {
         return (pull >= 0.0) ? (pull * sigma_pos) : (pull * sigma_neg);
     }
 
-    bool CheckStats(const TH1 *hist, int verbose = 1) const;
+    bool check_stats(const TH1 *hist, int verbose = 1) const;
 
   private:
     bool m_mutable = false;
