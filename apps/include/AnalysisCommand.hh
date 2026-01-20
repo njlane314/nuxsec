@@ -31,12 +31,11 @@ struct AnalysisArgs
 {
     std::string list_path;
     std::string output_root;
-    int nthreads = 1;
 };
 
 inline AnalysisArgs parse_analysis_args(const std::vector<std::string> &args, const std::string &usage)
 {
-    if (args.size() < 2 || args.size() > 3)
+    if (args.size() != 2)
     {
         throw std::runtime_error(usage);
     }
@@ -44,18 +43,10 @@ inline AnalysisArgs parse_analysis_args(const std::vector<std::string> &args, co
     AnalysisArgs out;
     out.list_path = nuxsec::app::trim(args[0]);
     out.output_root = nuxsec::app::trim(args[1]);
-    if (args.size() == 3)
-    {
-        out.nthreads = std::stoi(nuxsec::app::trim(args[2]));
-    }
 
     if (out.list_path.empty() || out.output_root.empty())
     {
         throw std::runtime_error("Invalid arguments (empty path)");
-    }
-    if (out.nthreads < 1)
-    {
-        throw std::runtime_error("Invalid thread count (must be >= 1)");
     }
 
     return out;
@@ -63,10 +54,7 @@ inline AnalysisArgs parse_analysis_args(const std::vector<std::string> &args, co
 
 inline int run_analysis(const AnalysisArgs &analysis_args, const std::string &log_prefix)
 {
-    if (analysis_args.nthreads > 1)
-    {
-        ROOT::EnableImplicitMT(analysis_args.nthreads);
-    }
+    ROOT::EnableImplicitMT();
     TH1::SetDefaultSumw2(true);
 
     const auto &analysis = nuxsec::AnalysisConfigService::instance();
