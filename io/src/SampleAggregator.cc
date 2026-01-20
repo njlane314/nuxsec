@@ -6,7 +6,7 @@
  */
 
 #include "SampleAggregator.hh"
-#include "RunInfoSqliteReader.hh"
+#include "RunInfoService.hh"
 
 #include <stdexcept>
 #include <utility>
@@ -26,7 +26,7 @@ SampleIO::Sample SampleAggregator::aggregate(const std::string &sample_name,
     SampleIO::Sample out;
     out.sample_name = sample_name;
 
-    RunInfoSqliteReader db(db_path);
+    RunInfoService db(db_path);
 
     for (const auto &path : artio_files)
     {
