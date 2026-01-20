@@ -12,12 +12,13 @@
 #include <vector>
 
 #include "TemplateSpec.hh"
+#include "SampleIO.hh"
 
 namespace nuxsec
 {
 
 struct ProcessorEntry;
-struct Sample;
+using SampleIO = sample::SampleIO;
 
 /** \brief Compiled analysis configuration for template production. */
 class AnalysisDefinition final
@@ -30,7 +31,7 @@ class AnalysisDefinition final
     const std::vector<TemplateSpec1D> &Templates1D() const noexcept { return m_templates_1d; }
     std::string Templates1DToTsv() const;
 
-    ProcessorEntry MakeProcessorEntry(const Sample &sample) const noexcept;
+    ProcessorEntry MakeProcessorEntry(const SampleIO::Sample &sample) const noexcept;
 
   private:
     AnalysisDefinition();

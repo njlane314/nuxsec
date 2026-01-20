@@ -22,10 +22,12 @@
 #include <utility>
 #include <vector>
 
-#include "SampleTypes.hh"
+#include "SampleIO.hh"
 
 namespace nuxsec
 {
+
+using SampleIO = sample::SampleIO;
 
 namespace artio
 {
@@ -52,8 +54,8 @@ struct Stage
 struct Provenance
 {
     Stage cfg;
-    SampleKind kind = SampleKind::kUnknown;
-    BeamMode beam = BeamMode::kUnknown;
+    SampleIO::SampleKind kind = SampleIO::SampleKind::kUnknown;
+    SampleIO::BeamMode beam = SampleIO::BeamMode::kUnknown;
 
     std::vector<std::string> input_files;
 
@@ -69,7 +71,9 @@ class ArtFileProvenanceIO
   public:
     static void write(const artio::Provenance &r, const std::string &out_file);
     static artio::Provenance read(const std::string &in_file);
-    static artio::Provenance read(const std::string &in_file, SampleKind kind, BeamMode beam);
+    static artio::Provenance read(const std::string &in_file,
+                                  SampleIO::SampleKind kind,
+                                  SampleIO::BeamMode beam);
 
   private:
     static std::string read_named_string(TDirectory *d, const char *key);
@@ -88,7 +92,9 @@ class ArtFileProvenanceIO
 
     static std::vector<std::string> read_input_files(TDirectory *d);
     static std::vector<artio::RunSubrunPair> read_run_subrun_pairs(TDirectory *d);
-    static artio::Provenance read_directory(TDirectory *d, SampleKind kind, BeamMode beam);
+    static artio::Provenance read_directory(TDirectory *d,
+                                            SampleIO::SampleKind kind,
+                                            SampleIO::BeamMode beam);
 };
 
 } // namespace nuxsec

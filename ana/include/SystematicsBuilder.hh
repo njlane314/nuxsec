@@ -16,14 +16,14 @@
 #include <ROOT/RDataFrame.hxx>
 #include <TH1D.h>
 
-#include "SampleTypes.hh"
+#include "SampleIO.hh"
 #include "SystematicsSpec.hh"
 #include "TemplateSpec.hh"
 
 namespace nuxsec
 {
 
-struct Sample;
+using SampleIO = sample::SampleIO;
 
 struct SampleListEntry
 {
@@ -53,7 +53,7 @@ class SystematicsBuilder final
                          const Options &opt);
 
   private:
-    static bool IsVariedSampleKind(SampleKind k, const Options &opt);
+    static bool IsVariedSampleKind(SampleIO::SampleKind k, const Options &opt);
 
     static std::unique_ptr<TH1D> ReadNominalHist(const std::string &root_path,
                                                  const std::string &sample_name,
@@ -65,13 +65,13 @@ class SystematicsBuilder final
                              const std::string &variation,
                              const std::vector<std::pair<std::string, const TH1 *>> &hists);
 
-    static void BuildUnisim(const Sample &sample,
+    static void BuildUnisim(const SampleIO::Sample &sample,
                             const std::string &tree_name,
                             const std::vector<TemplateSpec1D> &specs,
                             const std::string &template_root_path,
                             const UnisimSpec &spec);
 
-    static void BuildMultisimJointEigenmodes(const std::vector<Sample> &samples,
+    static void BuildMultisimJointEigenmodes(const std::vector<SampleIO::Sample> &samples,
                                              const std::vector<std::string> &sample_names,
                                              const std::string &tree_name,
                                              const std::vector<TemplateSpec1D> &specs,
@@ -79,7 +79,7 @@ class SystematicsBuilder final
                                              const MultisimSpec &mspec,
                                              const Options &opt);
 
-    static int DetectUniverseCount(const Sample &sample,
+    static int DetectUniverseCount(const SampleIO::Sample &sample,
                                    const std::string &tree_name,
                                    const std::string &vec_branch);
 

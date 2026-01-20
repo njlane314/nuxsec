@@ -26,8 +26,8 @@ void ArtFileProvenanceIO::write(const artio::Provenance &r, const std::string &o
     d->cd();
 
     TNamed("stage_name", r.cfg.stage_name.c_str()).Write("stage_name", TObject::kOverwrite);
-    TNamed("sample_kind", sample_kind_name(r.kind)).Write("sample_kind", TObject::kOverwrite);
-    TNamed("beam_mode", beam_mode_name(r.beam)).Write("beam_mode", TObject::kOverwrite);
+    TNamed("sample_kind", SampleIO::SampleKindName(r.kind)).Write("sample_kind", TObject::kOverwrite);
+    TNamed("beam_mode", SampleIO::BeamModeName(r.beam)).Write("beam_mode", TObject::kOverwrite);
 
     TParameter<double>("subrun_pot_sum", r.subrun.pot_sum).Write("subrun_pot_sum", TObject::kOverwrite);
     TParameter<long long>("subrun_entries", r.subrun.n_entries).Write("subrun_entries", TObject::kOverwrite);
@@ -80,13 +80,15 @@ artio::Provenance ArtFileProvenanceIO::read(const std::string &in_file)
     }
     d->cd();
 
-    const SampleKind kind = parse_sample_kind(read_named_string(d, "sample_kind"));
-    const BeamMode beam = parse_beam_mode(read_named_string(d, "beam_mode"));
+    const SampleIO::SampleKind kind = SampleIO::ParseSampleKind(read_named_string(d, "sample_kind"));
+    const SampleIO::BeamMode beam = SampleIO::ParseBeamMode(read_named_string(d, "beam_mode"));
 
     return read_directory(d, kind, beam);
 }
 
-artio::Provenance ArtFileProvenanceIO::read(const std::string &in_file, SampleKind kind, BeamMode beam)
+artio::Provenance ArtFileProvenanceIO::read(const std::string &in_file,
+                                            SampleIO::SampleKind kind,
+                                            SampleIO::BeamMode beam)
 {
     std::unique_ptr<TFile> f(TFile::Open(in_file.c_str(), "READ"));
     if (!f || f->IsZombie())
@@ -104,7 +106,9 @@ artio::Provenance ArtFileProvenanceIO::read(const std::string &in_file, SampleKi
     return read_directory(d, kind, beam);
 }
 
-artio::Provenance ArtFileProvenanceIO::read_directory(TDirectory *d, SampleKind kind, BeamMode beam)
+artio::Provenance ArtFileProvenanceIO::read_directory(TDirectory *d,
+                                                      SampleIO::SampleKind kind,
+                                                      SampleIO::BeamMode beam)
 {
     artio::Provenance r;
     r.cfg.stage_name = read_named_string(d, "stage_name");

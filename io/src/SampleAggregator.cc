@@ -14,16 +14,16 @@
 namespace nuxsec
 {
 
-Sample SampleAggregator::aggregate(const std::string &sample_name,
-                                   const std::vector<std::string> &artio_files,
-                                   const std::string &db_path)
+SampleIO::Sample SampleAggregator::aggregate(const std::string &sample_name,
+                                             const std::vector<std::string> &artio_files,
+                                             const std::string &db_path)
 {
     if (artio_files.empty())
     {
         throw std::runtime_error("Sample aggregation requires at least one Art file provenance root file.");
     }
 
-    Sample out;
+    SampleIO::Sample out;
     out.sample_name = sample_name;
 
     RunInfoSqliteReader db(db_path);
@@ -58,7 +58,7 @@ Sample SampleAggregator::aggregate(const std::string &sample_name,
         const double db_tortgt_pot = runinfo.tortgt_sum;
         const double db_tor101_pot = runinfo.tor101_sum;
 
-        SampleFragment fragment = make_fragment(prov, path, db_tortgt_pot, db_tor101_pot);
+        SampleIO::SampleFragment fragment = make_fragment(prov, path, db_tortgt_pot, db_tor101_pot);
         out.subrun_pot_sum += fragment.subrun_pot_sum;
         out.db_tortgt_pot_sum += fragment.db_tortgt_pot;
         out.db_tor101_pot_sum += fragment.db_tor101_pot;
@@ -84,12 +84,12 @@ double SampleAggregator::compute_normalisation(double subrun_pot_sum, double db_
     return db_tortgt_pot / subrun_pot_sum;
 }
 
-SampleFragment SampleAggregator::make_fragment(const artio::Provenance &prov,
-                                               const std::string &artio_path,
-                                               double db_tortgt_pot,
-                                               double db_tor101_pot)
+SampleIO::SampleFragment SampleAggregator::make_fragment(const artio::Provenance &prov,
+                                                         const std::string &artio_path,
+                                                         double db_tortgt_pot,
+                                                         double db_tor101_pot)
 {
-    SampleFragment fragment;
+    SampleIO::SampleFragment fragment;
     fragment.fragment_name = prov.cfg.stage_name;
     fragment.artio_path = artio_path;
     fragment.subrun_pot_sum = prov.subrun.pot_sum;

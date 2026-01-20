@@ -18,8 +18,7 @@
 #include "AnalysisRdfDefinitions.hh"
 #include "AppUtils.hh"
 #include "RDataFrameFactory.hh"
-#include "SampleRootIO.hh"
-#include "SampleTypes.hh"
+#include "SampleIO.hh"
 #include "TemplateRootIO.hh"
 
 namespace nuxsec
@@ -91,7 +90,7 @@ inline int run_template(const TemplateArgs &tpl_args, const std::string &log_pre
 
     for (const auto &entry : entries)
     {
-        const nuxsec::Sample sample = nuxsec::SampleRootIO::read(entry.output_path);
+        const sample::SampleIO::Sample sample = sample::SampleIO::Read(entry.output_path);
         ROOT::RDataFrame rdf = nuxsec::RDataFrameFactory::load_sample(sample, analysis.TreeName());
         const nuxsec::ProcessorEntry proc_entry = analysis.MakeProcessorEntry(sample);
 
@@ -135,11 +134,11 @@ inline int run_template(const TemplateArgs &tpl_args, const std::string &log_pre
         nuxsec::TemplateRootIO::write_string_meta(tpl_args.output_root,
                                                   sample.sample_name,
                                                   "sample_kind",
-                                                  nuxsec::sample_kind_name(sample.kind));
+                                                  sample::SampleIO::SampleKindName(sample.kind));
         nuxsec::TemplateRootIO::write_string_meta(tpl_args.output_root,
                                                   sample.sample_name,
                                                   "beam_mode",
-                                                  nuxsec::beam_mode_name(sample.beam));
+                                                  sample::SampleIO::BeamModeName(sample.beam));
         nuxsec::TemplateRootIO::write_string_meta(tpl_args.output_root,
                                                   sample.sample_name,
                                                   "sample_rootio_path",
@@ -147,8 +146,8 @@ inline int run_template(const TemplateArgs &tpl_args, const std::string &log_pre
 
         std::cerr << "[" << log_prefix << "] analysis=" << analysis.Name()
                   << " sample=" << sample.sample_name
-                  << " kind=" << nuxsec::sample_kind_name(sample.kind)
-                  << " beam=" << nuxsec::beam_mode_name(sample.beam)
+                  << " kind=" << sample::SampleIO::SampleKindName(sample.kind)
+                  << " beam=" << sample::SampleIO::BeamModeName(sample.beam)
                   << " templates=" << specs.size()
                   << " output=" << tpl_args.output_root
                   << "\n";

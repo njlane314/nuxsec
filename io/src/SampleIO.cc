@@ -1,11 +1,11 @@
 /* -- C++ -- */
 /**
- *  @file  io/src/SampleRootIO.cc
+ *  @file  io/src/SampleIO.cc
  *
- *  @brief Implementation for SampleRootIO helpers.
+ *  @brief Implementation for SampleIO helpers.
  */
 
-#include "SampleRootIO.hh"
+#include "SampleIO.hh"
 
 #include <TDirectory.h>
 #include <TFile.h>
@@ -13,6 +13,8 @@
 #include <TParameter.h>
 #include <TTree.h>
 
+#include <algorithm>
+#include <cctype>
 #include <memory>
 #include <stdexcept>
 #include <utility>
@@ -20,7 +22,94 @@
 namespace nuxsec
 {
 
-void SampleRootIO::write(const Sample &sample, const std::string &out_file)
+namespace sample
+{
+
+const char *SampleIO::SampleKindName(SampleKind k)
+{
+    switch (k)
+    {
+    case SampleKind::kData:
+        return "data";
+    case SampleKind::kEXT:
+        return "ext";
+    case SampleKind::kOverlay:
+        return "mc_overlay";
+    case SampleKind::kDirt:
+        return "mc_dirt";
+    case SampleKind::kStrangeness:
+        return "mc_strangeness";
+    default:
+        return "unknown";
+    }
+}
+
+SampleIO::SampleKind SampleIO::ParseSampleKind(const std::string &name)
+{
+    std::string lowered = name;
+    std::transform(lowered.begin(), lowered.end(), lowered.begin(),
+                   [](unsigned char c)
+                   {
+                       return static_cast<char>(std::tolower(c));
+                   });
+
+    if (lowered == "data")
+    {
+        return SampleKind::kData;
+    }
+    if (lowered == "ext")
+    {
+        return SampleKind::kEXT;
+    }
+    if (lowered == "overlay")
+    {
+        return SampleKind::kOverlay;
+    }
+    if (lowered == "dirt")
+    {
+        return SampleKind::kDirt;
+    }
+    if (lowered == "strangeness")
+    {
+        return SampleKind::kStrangeness;
+    }
+    return SampleKind::kUnknown;
+}
+
+const char *SampleIO::BeamModeName(BeamMode b)
+{
+    switch (b)
+    {
+    case BeamMode::kNuMI:
+        return "numi";
+    case BeamMode::kBNB:
+        return "bnb";
+    default:
+        return "unknown";
+    }
+}
+
+SampleIO::BeamMode SampleIO::ParseBeamMode(const std::string &name)
+{
+    std::string lowered = name;
+    std::transform(lowered.begin(), lowered.end(), lowered.begin(),
+                   [](unsigned char c)
+                   {
+                       return static_cast<char>(std::tolower(c));
+                   });
+
+    if (lowered == "numi")
+    {
+        return BeamMode::kNuMI;
+    }
+    if (lowered == "bnb")
+    {
+        return BeamMode::kBNB;
+    }
+    return BeamMode::kUnknown;
+}
+
+void SampleIO::Write(const Sample &sample, const std::string &out_file)
 {
     std::unique_ptr<TFile> f(TFile::Open(out_file.c_str(), "UPDATE"));
     if (!f || f->IsZombie())
@@ -36,8 +125,8 @@ void SampleRootIO::write(const Sample &sample, const std::string &out_file)
     d->cd();
 
     TNamed("sample_name", sample.sample_name.c_str()).Write("sample_name", TObject::kOverwrite);
-    TNamed("sample_kind", sample_kind_name(sample.kind)).Write("sample_kind", TObject::kOverwrite);
-    TNamed("beam_mode", beam_mode_name(sample.beam)).Write("beam_mode", TObject::kOverwrite);
+    TNamed("sample_kind", SampleKindName(sample.kind)).Write("sample_kind", TObject::kOverwrite);
+    TNamed("beam_mode", BeamModeName(sample.beam)).Write("beam_mode", TObject::kOverwrite);
 
     TParameter<double>("subrun_pot_sum", sample.subrun_pot_sum).Write("subrun_pot_sum", TObject::kOverwrite);
     TParameter<double>("db_tortgt_pot_sum", sample.db_tortgt_pot_sum)
@@ -86,7 +175,7 @@ void SampleRootIO::write(const Sample &sample, const std::string &out_file)
     f->Close();
 }
 
-Sample SampleRootIO::read(const std::string &in_file)
+SampleIO::Sample SampleIO::Read(const std::string &in_file)
 {
     std::unique_ptr<TFile> f(TFile::Open(in_file.c_str(), "READ"));
     if (!f || f->IsZombie())
@@ -119,7 +208,7 @@ Sample SampleRootIO::read(const std::string &in_file)
         {
             throw std::runtime_error("Missing sample_kind metadata in SampleRootIO directory");
         }
-        out.kind = parse_sample_kind(named->GetTitle());
+        out.kind = ParseSampleKind(named->GetTitle());
     }
 
     {
@@ -129,7 +218,7 @@ Sample SampleRootIO::read(const std::string &in_file)
         {
             throw std::runtime_error("Missing beam_mode metadata in SampleRootIO directory");
         }
-        out.beam = parse_beam_mode(named->GetTitle());
+        out.beam = ParseBeamMode(named->GetTitle());
     }
 
     auto read_param_double = [d](const char *key)
@@ -190,5 +279,7 @@ Sample SampleRootIO::read(const std::string &in_file)
 
     return out;
 }
+
+} // namespace sample
 
 } // namespace nuxsec

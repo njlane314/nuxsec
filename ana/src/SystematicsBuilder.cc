@@ -22,7 +22,7 @@
 
 #include "AnalysisRdfDefinitions.hh"
 #include "RDataFrameFactory.hh"
-#include "SampleRootIO.hh"
+#include "SampleIO.hh"
 #include "TemplateRootIO.hh"
 
 namespace nuxsec
@@ -63,15 +63,15 @@ inline double rms(const std::vector<double> &x)
 
 } // namespace
 
-bool SystematicsBuilder::IsVariedSampleKind(SampleKind k, const Options &opt)
+bool SystematicsBuilder::IsVariedSampleKind(SampleIO::SampleKind k, const Options &opt)
 {
     switch (k)
     {
-    case SampleKind::kOverlay:
+    case SampleIO::SampleKind::kOverlay:
         return opt.include_overlay;
-    case SampleKind::kDirt:
+    case SampleIO::SampleKind::kDirt:
         return opt.include_dirt;
-    case SampleKind::kStrangeness:
+    case SampleIO::SampleKind::kStrangeness:
         return opt.include_strangeness;
     default:
         return false;
@@ -127,7 +127,7 @@ void SystematicsBuilder::ClampNonNegative(TH1D &h)
     }
 }
 
-int SystematicsBuilder::DetectUniverseCount(const Sample &sample,
+int SystematicsBuilder::DetectUniverseCount(const SampleIO::Sample &sample,
                                             const std::string &tree_name,
                                             const std::string &vec_branch)
 {
@@ -141,7 +141,7 @@ int SystematicsBuilder::DetectUniverseCount(const Sample &sample,
     return static_cast<int>(v[0].size());
 }
 
-void SystematicsBuilder::BuildUnisim(const Sample &sample,
+void SystematicsBuilder::BuildUnisim(const SampleIO::Sample &sample,
                                      const std::string &tree_name,
                                      const std::vector<TemplateSpec1D> &specs,
                                      const std::string &template_root_path,
@@ -152,9 +152,9 @@ void SystematicsBuilder::BuildUnisim(const Sample &sample,
     nuxsec::ProcessorEntry proc = {};
     switch (sample.kind)
     {
-    case SampleKind::kOverlay:
-    case SampleKind::kDirt:
-    case SampleKind::kStrangeness:
+    case SampleIO::SampleKind::kOverlay:
+    case SampleIO::SampleKind::kDirt:
+    case SampleIO::SampleKind::kStrangeness:
         proc.source = SourceKind::kMC;
         proc.pot_nom = sample.db_tortgt_pot_sum;
         proc.pot_eqv = sample.subrun_pot_sum;
@@ -243,7 +243,7 @@ void SystematicsBuilder::BuildUnisim(const Sample &sample,
                                                  uspec.floatable ? "1" : "0");
 }
 
-void SystematicsBuilder::BuildMultisimJointEigenmodes(const std::vector<Sample> &samples,
+void SystematicsBuilder::BuildMultisimJointEigenmodes(const std::vector<SampleIO::Sample> &samples,
                                                       const std::vector<std::string> &sample_names,
                                                       const std::string &tree_name,
                                                       const std::vector<TemplateSpec1D> &specs,
@@ -315,7 +315,7 @@ void SystematicsBuilder::BuildMultisimJointEigenmodes(const std::vector<Sample> 
 
     for (size_t sidx = 0; sidx < samples.size(); ++sidx)
     {
-        const Sample &sample = samples[sidx];
+        const SampleIO::Sample &sample = samples[sidx];
 
         ROOT::RDataFrame rdf = nuxsec::RDataFrameFactory::load_sample(sample, tree_name);
 
@@ -606,12 +606,12 @@ void SystematicsBuilder::BuildAll(const std::vector<SampleListEntry> &entries,
         ROOT::EnableImplicitMT(opt.nthreads);
     }
 
-    std::vector<Sample> mc_samples;
+    std::vector<SampleIO::Sample> mc_samples;
     std::vector<std::string> mc_names;
 
     for (const auto &e : entries)
     {
-        Sample s = SampleRootIO::read(e.output_path);
+        SampleIO::Sample s = SampleIO::Read(e.output_path);
         if (!IsVariedSampleKind(s.kind, opt))
         {
             continue;

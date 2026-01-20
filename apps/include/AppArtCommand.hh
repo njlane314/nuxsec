@@ -11,7 +11,7 @@
 
 #include "AppUtils.hh"
 #include "ArtFileProvenanceIO.hh"
-#include "SampleTypes.hh"
+#include "SampleIO.hh"
 #include "SubrunTreeScanner.hh"
 
 namespace nuxsec
@@ -31,8 +31,8 @@ struct ArtArgs
 {
     std::string artio_path;
     nuxsec::artio::Stage stage_cfg;
-    nuxsec::SampleKind sample_kind = nuxsec::SampleKind::kUnknown;
-    nuxsec::BeamMode beam_mode = nuxsec::BeamMode::kUnknown;
+    sample::SampleIO::SampleKind sample_kind = sample::SampleIO::SampleKind::kUnknown;
+    sample::SampleIO::BeamMode beam_mode = sample::SampleIO::BeamMode::kUnknown;
 };
 
 inline ArtArgs parse_art_spec(const std::string &spec)
@@ -67,13 +67,13 @@ inline ArtArgs parse_art_spec(const std::string &spec)
 
     if (fields.size() >= 4)
     {
-        out.sample_kind = nuxsec::parse_sample_kind(fields[2]);
-        out.beam_mode = nuxsec::parse_beam_mode(fields[3]);
-        if (out.sample_kind == nuxsec::SampleKind::kUnknown)
+        out.sample_kind = sample::SampleIO::ParseSampleKind(fields[2]);
+        out.beam_mode = sample::SampleIO::ParseBeamMode(fields[3]);
+        if (out.sample_kind == sample::SampleIO::SampleKind::kUnknown)
         {
             throw std::runtime_error("Bad stage sample kind: " + fields[2]);
         }
-        if (out.beam_mode == nuxsec::BeamMode::kUnknown)
+        if (out.beam_mode == sample::SampleIO::BeamMode::kUnknown)
         {
             throw std::runtime_error("Bad stage beam mode: " + fields[3]);
         }
@@ -116,9 +116,9 @@ inline int run_artio(const ArtArgs &art_args, const std::string &log_prefix)
     rec.kind = art_args.sample_kind;
     rec.beam = art_args.beam_mode;
 
-    if (rec.kind == nuxsec::SampleKind::kUnknown && is_selection_data_file(files.front()))
+    if (rec.kind == sample::SampleIO::SampleKind::kUnknown && is_selection_data_file(files.front()))
     {
-        rec.kind = nuxsec::SampleKind::kData;
+        rec.kind = sample::SampleIO::SampleKind::kData;
     }
 
     rec.subrun = nuxsec::scan_subrun_tree(files);
