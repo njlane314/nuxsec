@@ -611,7 +611,7 @@ void SystematicsBuilder::BuildAll(const std::vector<SampleListEntry> &entries,
 
     for (const auto &e : entries)
     {
-        SampleIO::Sample s = SampleIO::Read(e.output_path);
+        SampleIO::Sample s = SampleIO::read(e.output_path);
         if (!IsVariedSampleKind(s.kind, opt))
         {
             continue;

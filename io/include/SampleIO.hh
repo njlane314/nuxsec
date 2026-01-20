@@ -66,14 +66,14 @@ class SampleIO
         double normalised_pot_sum = 0.0;
     };
 
-    static const char *SampleKindName(SampleKind k);
-    static SampleKind ParseSampleKind(const std::string &name);
+    static const char *sample_kind_name(SampleKind k);
+    static SampleKind parse_sample_kind(const std::string &name);
 
-    static const char *BeamModeName(BeamMode b);
-    static BeamMode ParseBeamMode(const std::string &name);
+    static const char *beam_mode_name(BeamMode b);
+    static BeamMode parse_beam_mode(const std::string &name);
 
-    static void Write(const Sample &sample, const std::string &out_file);
-    static Sample Read(const std::string &in_file);
+    static void write(const Sample &sample, const std::string &out_file);
+    static Sample read(const std::string &in_file);
 };
 
 } // namespace sample

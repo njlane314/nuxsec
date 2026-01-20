@@ -65,8 +65,8 @@ inline void update_sample_list(const std::string &list_path,
                                const std::string &output_path)
 {
     auto entries = nuxsec::app::read_sample_list(list_path, true, false);
-    const std::string kind_name = sample::SampleIO::SampleKindName(sample.kind);
-    const std::string beam_name = sample::SampleIO::BeamModeName(sample.beam);
+    const std::string kind_name = sample::SampleIO::sample_kind_name(sample.kind);
+    const std::string beam_name = sample::SampleIO::beam_mode_name(sample.beam);
 
     bool updated = false;
     for (auto &entry : entries)
@@ -111,7 +111,7 @@ inline int run_sample(const SampleArgs &sample_args, const std::string &log_pref
 
     sample::SampleIO::Sample sample =
         nuxsec::SampleAggregator::aggregate(sample_args.sample_name, files, db_path);
-    sample::SampleIO::Write(sample, sample_args.output_path);
+    sample::SampleIO::write(sample, sample_args.output_path);
     update_sample_list(sample_args.sample_list_path, sample, sample_args.output_path);
 
     std::cerr << "[" << log_prefix << "] sample=" << sample.sample_name

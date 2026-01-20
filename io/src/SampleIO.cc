@@ -25,7 +25,7 @@ namespace nuxsec
 namespace sample
 {
 
-const char *SampleIO::SampleKindName(SampleKind k)
+const char *SampleIO::sample_kind_name(SampleKind k)
 {
     switch (k)
     {
@@ -44,7 +44,7 @@ const char *SampleIO::SampleKindName(SampleKind k)
     }
 }
 
-SampleIO::SampleKind SampleIO::ParseSampleKind(const std::string &name)
+SampleIO::SampleKind SampleIO::parse_sample_kind(const std::string &name)
 {
     std::string lowered = name;
     std::transform(lowered.begin(), lowered.end(), lowered.begin(),
@@ -76,7 +76,7 @@ SampleIO::SampleKind SampleIO::ParseSampleKind(const std::string &name)
     return SampleKind::kUnknown;
 }
 
-const char *SampleIO::BeamModeName(BeamMode b)
+const char *SampleIO::beam_mode_name(BeamMode b)
 {
     switch (b)
     {
@@ -89,7 +89,7 @@ const char *SampleIO::BeamModeName(BeamMode b)
     }
 }
 
-SampleIO::BeamMode SampleIO::ParseBeamMode(const std::string &name)
+SampleIO::BeamMode SampleIO::parse_beam_mode(const std::string &name)
 {
     std::string lowered = name;
     std::transform(lowered.begin(), lowered.end(), lowered.begin(),
@@ -109,7 +109,7 @@ SampleIO::BeamMode SampleIO::ParseBeamMode(const std::string &name)
     return BeamMode::kUnknown;
 }
 
-void SampleIO::Write(const Sample &sample, const std::string &out_file)
+void SampleIO::write(const Sample &sample, const std::string &out_file)
 {
     std::unique_ptr<TFile> f(TFile::Open(out_file.c_str(), "UPDATE"));
     if (!f || f->IsZombie())
@@ -125,8 +125,8 @@ void SampleIO::Write(const Sample &sample, const std::string &out_file)
     d->cd();
 
     TNamed("sample_name", sample.sample_name.c_str()).Write("sample_name", TObject::kOverwrite);
-    TNamed("sample_kind", SampleKindName(sample.kind)).Write("sample_kind", TObject::kOverwrite);
-    TNamed("beam_mode", BeamModeName(sample.beam)).Write("beam_mode", TObject::kOverwrite);
+    TNamed("sample_kind", sample_kind_name(sample.kind)).Write("sample_kind", TObject::kOverwrite);
+    TNamed("beam_mode", beam_mode_name(sample.beam)).Write("beam_mode", TObject::kOverwrite);
 
     TParameter<double>("subrun_pot_sum", sample.subrun_pot_sum).Write("subrun_pot_sum", TObject::kOverwrite);
     TParameter<double>("db_tortgt_pot_sum", sample.db_tortgt_pot_sum)
@@ -175,7 +175,7 @@ void SampleIO::Write(const Sample &sample, const std::string &out_file)
     f->Close();
 }
 
-SampleIO::Sample SampleIO::Read(const std::string &in_file)
+SampleIO::Sample SampleIO::read(const std::string &in_file)
 {
     std::unique_ptr<TFile> f(TFile::Open(in_file.c_str(), "READ"));
     if (!f || f->IsZombie())
@@ -208,7 +208,7 @@ SampleIO::Sample SampleIO::Read(const std::string &in_file)
         {
             throw std::runtime_error("Missing sample_kind metadata in SampleRootIO directory");
         }
-        out.kind = ParseSampleKind(named->GetTitle());
+        out.kind = parse_sample_kind(named->GetTitle());
     }
 
     {
@@ -218,7 +218,7 @@ SampleIO::Sample SampleIO::Read(const std::string &in_file)
         {
             throw std::runtime_error("Missing beam_mode metadata in SampleRootIO directory");
         }
-        out.beam = ParseBeamMode(named->GetTitle());
+        out.beam = parse_beam_mode(named->GetTitle());
     }
 
     auto read_param_double = [d](const char *key)

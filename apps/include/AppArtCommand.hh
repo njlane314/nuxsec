@@ -67,8 +67,8 @@ inline ArtArgs parse_art_spec(const std::string &spec)
 
     if (fields.size() >= 4)
     {
-        out.sample_kind = sample::SampleIO::ParseSampleKind(fields[2]);
-        out.beam_mode = sample::SampleIO::ParseBeamMode(fields[3]);
+        out.sample_kind = sample::SampleIO::parse_sample_kind(fields[2]);
+        out.beam_mode = sample::SampleIO::parse_beam_mode(fields[3]);
         if (out.sample_kind == sample::SampleIO::SampleKind::kUnknown)
         {
             throw std::runtime_error("Bad stage sample kind: " + fields[2]);
