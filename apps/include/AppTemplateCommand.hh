@@ -90,7 +90,7 @@ inline int run_template(const TemplateArgs &tpl_args, const std::string &log_pre
 
     for (const auto &entry : entries)
     {
-        const sample::SampleIO::Sample sample = sample::SampleIO::Read(entry.output_path);
+        const sample::SampleIO::Sample sample = sample::SampleIO::read(entry.output_path);
         ROOT::RDataFrame rdf = nuxsec::RDataFrameFactory::load_sample(sample, analysis.TreeName());
         const nuxsec::ProcessorEntry proc_entry = analysis.MakeProcessorEntry(sample);
 
@@ -134,11 +134,11 @@ inline int run_template(const TemplateArgs &tpl_args, const std::string &log_pre
         nuxsec::TemplateRootIO::write_string_meta(tpl_args.output_root,
                                                   sample.sample_name,
                                                   "sample_kind",
-                                                  sample::SampleIO::SampleKindName(sample.kind));
+                                                  sample::SampleIO::sample_kind_name(sample.kind));
         nuxsec::TemplateRootIO::write_string_meta(tpl_args.output_root,
                                                   sample.sample_name,
                                                   "beam_mode",
-                                                  sample::SampleIO::BeamModeName(sample.beam));
+                                                  sample::SampleIO::beam_mode_name(sample.beam));
         nuxsec::TemplateRootIO::write_string_meta(tpl_args.output_root,
                                                   sample.sample_name,
                                                   "sample_rootio_path",
@@ -146,8 +146,8 @@ inline int run_template(const TemplateArgs &tpl_args, const std::string &log_pre
 
         std::cerr << "[" << log_prefix << "] analysis=" << analysis.Name()
                   << " sample=" << sample.sample_name
-                  << " kind=" << sample::SampleIO::SampleKindName(sample.kind)
-                  << " beam=" << sample::SampleIO::BeamModeName(sample.beam)
+                  << " kind=" << sample::SampleIO::sample_kind_name(sample.kind)
+                  << " beam=" << sample::SampleIO::beam_mode_name(sample.beam)
                   << " templates=" << specs.size()
                   << " output=" << tpl_args.output_root
                   << "\n";

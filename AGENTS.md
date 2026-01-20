@@ -37,7 +37,7 @@ This file captures the coding conventions and structural patterns used in the Nu
 - Member variables frequently use prefixes:
   - p_ for pointers (e.g., p_histograms, p_container).
   - m_ for member data (e.g., m_hist, m_name).
-- Methods use PascalCase with descriptive verbs (e.g., AddHistogram, StoreHistograms, GetUniqueId).
+- Function and method names use lowercase with underscores between words (e.g., add_histogram, store_histograms, get_unique_id).
 
 ## Constants & macros
 - Macro guards and simple numeric constants are defined in .cc files.
