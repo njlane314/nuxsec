@@ -1,11 +1,11 @@
 /* -- C++ -- */
 /**
- *  @file  io/src/RunInfoService.cc
+ *  @file  io/src/RunDatabaseService.cc
  *
  *  @brief Implementation of SQLite-backed run info summaries.
  */
 
-#include "RunInfoService.hh"
+#include "RunDatabaseService.hh"
 
 #include <stdexcept>
 #include <utility>
@@ -13,7 +13,7 @@
 namespace nuxsec
 {
 
-RunInfoService::RunInfoService(std::string path)
+RunDatabaseService::RunDatabaseService(std::string path)
     : db_path_(std::move(path))
 {
     sqlite3 *db = nullptr;
@@ -30,7 +30,7 @@ RunInfoService::RunInfoService(std::string path)
     db_ = db;
 } // namespace nuxsec
 
-RunInfoService::~RunInfoService()
+RunDatabaseService::~RunDatabaseService()
 {
     if (db_)
     {
@@ -38,7 +38,7 @@ RunInfoService::~RunInfoService()
     }
 }
 
-void RunInfoService::exec(const std::string &sql) const
+void RunDatabaseService::exec(const std::string &sql) const
 {
     char *err = nullptr;
     const int rc = sqlite3_exec(db_, sql.c_str(), nullptr, nullptr, &err);
@@ -50,7 +50,7 @@ void RunInfoService::exec(const std::string &sql) const
     }
 }
 
-void RunInfoService::prepare(const std::string &sql, sqlite3_stmt **stmt) const
+void RunDatabaseService::prepare(const std::string &sql, sqlite3_stmt **stmt) const
 {
     const int rc = sqlite3_prepare_v2(db_, sql.c_str(), -1, stmt, nullptr);
     if (rc != SQLITE_OK || !stmt || !(*stmt))
@@ -59,7 +59,7 @@ void RunInfoService::prepare(const std::string &sql, sqlite3_stmt **stmt) const
     }
 }
 
-RunInfoSums RunInfoService::sum_run_info(const std::vector<artio::RunSubrunPair> &pairs) const
+RunInfoSums RunDatabaseService::sum_run_info(const std::vector<artio::RunSubrunPair> &pairs) const
 {
     if (pairs.empty())
     {

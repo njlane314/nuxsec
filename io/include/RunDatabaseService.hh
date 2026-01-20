@@ -1,12 +1,12 @@
 /* -- C++ -- */
 /**
- *  @file  io/include/RunInfoService.hh
+ *  @file  io/include/RunDatabaseService.hh
  *
  *  @brief SQLite reader for run/subrun summary queries.
  */
 
-#ifndef NUXSEC_IO_RUNINFO_SERVICE_H
-#define NUXSEC_IO_RUNINFO_SERVICE_H
+#ifndef NUXSEC_IO_RUNDATABASE_SERVICE_H
+#define NUXSEC_IO_RUNDATABASE_SERVICE_H
 
 #include <sqlite3.h>
 
@@ -34,14 +34,14 @@ struct RunInfoSums
     long long n_pairs_loaded = 0;
 };
 
-class RunInfoService
+class RunDatabaseService
 {
   public:
-    explicit RunInfoService(std::string path);
-    ~RunInfoService();
+    explicit RunDatabaseService(std::string path);
+    ~RunDatabaseService();
 
-    RunInfoService(const RunInfoService &) = delete;
-    RunInfoService &operator=(const RunInfoService &) = delete;
+    RunDatabaseService(const RunDatabaseService &) = delete;
+    RunDatabaseService &operator=(const RunDatabaseService &) = delete;
 
     RunInfoSums sum_run_info(const std::vector<artio::RunSubrunPair> &pairs) const;
 
@@ -55,4 +55,4 @@ class RunInfoService
 
 } // namespace nuxsec
 
-#endif // NUXSEC_IO_RUNINFO_SERVICE_H
+#endif // NUXSEC_IO_RUNDATABASE_SERVICE_H

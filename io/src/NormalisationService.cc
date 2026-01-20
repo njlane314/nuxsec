@@ -6,7 +6,7 @@
  */
 
 #include "NormalisationService.hh"
-#include "RunInfoService.hh"
+#include "RunDatabaseService.hh"
 
 #include <stdexcept>
 #include <utility>
@@ -26,7 +26,7 @@ SampleIO::Sample NormalisationService::aggregate(const std::string &sample_name,
     SampleIO::Sample out;
     out.sample_name = sample_name;
 
-    RunInfoService db(db_path);
+    RunDatabaseService db(db_path);
 
     for (const auto &path : artio_files)
     {
