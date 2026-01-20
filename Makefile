@@ -17,14 +17,13 @@ LDFLAGS ?= $(shell $(ROOT_CONFIG) --libs) -lsqlite3
 IO_LIB_NAME = build/lib/libNuXsecIO.so
 IO_SRC = io/src/ArtFileProvenanceIO.cc \
          io/src/RunInfoSqliteReader.cc \
-         io/src/SampleTypes.cc \
+         io/src/SampleIO.cc \
          io/src/NuXSecTemplate.cc \
          io/src/TemplateRootIO.cc
 IO_OBJ = $(IO_SRC:.cc=.o)
 
 SAMPLE_LIB_NAME = build/lib/libNuXsecSample.so
-SAMPLE_SRC = io/src/SampleAggregator.cc \
-             io/src/SampleRootIO.cc
+SAMPLE_SRC = io/src/SampleAggregator.cc
 SAMPLE_OBJ = $(SAMPLE_SRC:.cc=.o)
 
 ANA_LIB_NAME = build/lib/libNuXsecAna.so

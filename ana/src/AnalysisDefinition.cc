@@ -10,7 +10,7 @@
 #include <sstream>
 
 #include "AnalysisRdfDefinitions.hh"
-#include "Sample.hh"
+#include "SampleIO.hh"
 
 namespace nuxsec
 {
@@ -53,23 +53,23 @@ std::string AnalysisDefinition::Templates1DToTsv() const
     return os.str();
 }
 
-ProcessorEntry AnalysisDefinition::MakeProcessorEntry(const Sample &sample) const noexcept
+ProcessorEntry AnalysisDefinition::MakeProcessorEntry(const SampleIO::Sample &sample) const noexcept
 {
     ProcessorEntry proc_entry;
 
     switch (sample.kind)
     {
-    case SampleKind::kData:
+    case SampleIO::SampleKind::kData:
         proc_entry.source = SourceKind::kData;
         break;
-    case SampleKind::kEXT:
+    case SampleIO::SampleKind::kEXT:
         proc_entry.source = SourceKind::kExt;
         proc_entry.trig_nom = sample.db_tor101_pot_sum;
         proc_entry.trig_eqv = sample.subrun_pot_sum;
         break;
-    case SampleKind::kOverlay:
-    case SampleKind::kDirt:
-    case SampleKind::kStrangeness:
+    case SampleIO::SampleKind::kOverlay:
+    case SampleIO::SampleKind::kDirt:
+    case SampleIO::SampleKind::kStrangeness:
         proc_entry.source = SourceKind::kMC;
         proc_entry.pot_nom = sample.db_tortgt_pot_sum;
         proc_entry.pot_eqv = sample.subrun_pot_sum;

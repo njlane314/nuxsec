@@ -12,7 +12,7 @@
 namespace nuxsec
 {
 
-ROOT::RDataFrame RDataFrameFactory::load_sample(const Sample &sample, const std::string &tree_name)
+ROOT::RDataFrame RDataFrameFactory::load_sample(const SampleIO::Sample &sample, const std::string &tree_name)
 {
     std::vector<std::string> files = collect_files(sample);
     return ROOT::RDataFrame(tree_name, files);
@@ -30,11 +30,11 @@ ROOT::RDF::RNode RDataFrameFactory::define_variables(ROOT::RDF::RNode node,
     return updated_node;
 }
 
-std::vector<std::string> RDataFrameFactory::collect_files(const Sample &sample)
+std::vector<std::string> RDataFrameFactory::collect_files(const SampleIO::Sample &sample)
 {
     std::vector<std::string> files;
     files.reserve(sample.fragments.size());
-    for (const SampleFragment &fragment : sample.fragments)
+    for (const SampleIO::SampleFragment &fragment : sample.fragments)
     {
         files.push_back(fragment.artio_path);
     }

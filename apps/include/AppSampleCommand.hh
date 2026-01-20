@@ -11,8 +11,7 @@
 
 #include "AppUtils.hh"
 #include "SampleAggregator.hh"
-#include "SampleRootIO.hh"
-#include "SampleTypes.hh"
+#include "SampleIO.hh"
 
 namespace nuxsec
 {
@@ -62,12 +61,12 @@ inline SampleArgs parse_sample_args(const std::vector<std::string> &args, const 
 }
 
 inline void update_sample_list(const std::string &list_path,
-                               const nuxsec::Sample &sample,
+                               const sample::SampleIO::Sample &sample,
                                const std::string &output_path)
 {
     auto entries = nuxsec::app::read_sample_list(list_path, true, false);
-    const std::string kind_name = nuxsec::sample_kind_name(sample.kind);
-    const std::string beam_name = nuxsec::beam_mode_name(sample.beam);
+    const std::string kind_name = sample::SampleIO::SampleKindName(sample.kind);
+    const std::string beam_name = sample::SampleIO::BeamModeName(sample.beam);
 
     bool updated = false;
     for (auto &entry : entries)
@@ -110,8 +109,9 @@ inline int run_sample(const SampleArgs &sample_args, const std::string &log_pref
         std::filesystem::create_directories(sample_list_path.parent_path());
     }
 
-    nuxsec::Sample sample = nuxsec::SampleAggregator::aggregate(sample_args.sample_name, files, db_path);
-    nuxsec::SampleRootIO::write(sample, sample_args.output_path);
+    sample::SampleIO::Sample sample =
+        nuxsec::SampleAggregator::aggregate(sample_args.sample_name, files, db_path);
+    sample::SampleIO::Write(sample, sample_args.output_path);
     update_sample_list(sample_args.sample_list_path, sample, sample_args.output_path);
 
     std::cerr << "[" << log_prefix << "] sample=" << sample.sample_name

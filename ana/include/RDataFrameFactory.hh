@@ -13,10 +13,12 @@
 #include <string>
 #include <vector>
 
-#include "Sample.hh"
+#include "SampleIO.hh"
 
 namespace nuxsec
 {
+
+using SampleIO = sample::SampleIO;
 
 struct ColumnDefinition
 {
@@ -28,10 +30,10 @@ struct ColumnDefinition
 class RDataFrameFactory
 {
   public:
-    static ROOT::RDataFrame load_sample(const Sample &sample, const std::string &tree_name);
+    static ROOT::RDataFrame load_sample(const SampleIO::Sample &sample, const std::string &tree_name);
     static ROOT::RDF::RNode define_variables(ROOT::RDF::RNode node,
                                              const std::vector<ColumnDefinition> &definitions);
-    static std::vector<std::string> collect_files(const Sample &sample);
+    static std::vector<std::string> collect_files(const SampleIO::Sample &sample);
 };
 
 } // namespace nuxsec
