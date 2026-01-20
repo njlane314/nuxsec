@@ -16,7 +16,7 @@ LDFLAGS ?= $(shell $(ROOT_CONFIG) --libs) -lsqlite3
 
 IO_LIB_NAME = build/lib/libNuXsecIO.so
 IO_SRC = io/src/ArtFileProvenanceIO.cc \
-         io/src/RunInfoSqliteReader.cc \
+         io/src/RunInfoService.cc \
          io/src/SampleIO.cc \
          io/src/NuXSecTemplate.cc \
          io/src/TemplateRootIO.cc
