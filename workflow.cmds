@@ -1,10 +1,10 @@
 # Nuxsec workflow command cheat-sheet (numi_fhc_run1)
-# Copy a single line as needed for a specific partition/sample or an entire stage.
+# Copy a single line as needed for a specific partition/sample or an entire input.
 
-# Stage 0: build filelists for each partition (uses scripts/build_numi_fhc_run1_filelists.sh defaults)
+# Input 0: build filelists for each partition (uses scripts/build_numi_fhc_run1_filelists.sh defaults)
 USER_NAME=nlane RELEASE=v08_00_00_82 NAME=numi_fhc_run1 scripts/build_numi_fhc_run1_filelists.sh
 
-# Stage 1: art (single partition)
+# Input 1: art (single partition)
 ./nuxsec art "beam_s0:inputs/numi_fhc_run1/filelists/beam_s0.list:overlay:numi"
 ./nuxsec art "beam_s1:inputs/numi_fhc_run1/filelists/beam_s1.list:overlay:numi"
 ./nuxsec art "beam_s2:inputs/numi_fhc_run1/filelists/beam_s2.list:overlay:numi"
@@ -16,7 +16,7 @@ USER_NAME=nlane RELEASE=v08_00_00_82 NAME=numi_fhc_run1 scripts/build_numi_fhc_r
 ./nuxsec art "ext_p1:inputs/numi_fhc_run1/filelists/ext_p1.list:ext:numi"
 ./nuxsec art "ext_p2:inputs/numi_fhc_run1/filelists/ext_p2.list:ext:numi"
 
-# Stage 1 (batch): run all art entries
+# Input 1 (batch): run all art entries
 ./nuxsec art "beam_s0:inputs/numi_fhc_run1/filelists/beam_s0.list:overlay:numi" \
   && ./nuxsec art "beam_s1:inputs/numi_fhc_run1/filelists/beam_s1.list:overlay:numi" \
   && ./nuxsec art "beam_s2:inputs/numi_fhc_run1/filelists/beam_s2.list:overlay:numi" \
@@ -28,11 +28,11 @@ USER_NAME=nlane RELEASE=v08_00_00_82 NAME=numi_fhc_run1 scripts/build_numi_fhc_r
   && ./nuxsec art "ext_p1:inputs/numi_fhc_run1/filelists/ext_p1.list:ext:numi" \
   && ./nuxsec art "ext_p2:inputs/numi_fhc_run1/filelists/ext_p2.list:ext:numi"
 
-# Stage 2: sample (single sample)
+# Input 2: sample (single sample)
 ./nuxsec sample "beam:scripts/numi_fhc_run1_sample_beam.list"
 
-# Stage 2 (batch): run all sample entries
+# Input 2 (batch): run all sample entries
 ./nuxsec sample "beam:scripts/numi_fhc_run1_sample_beam.list"
 
-# Stage 3: template-make (templates ROOT from SampleRootIO_samples.tsv)
+# Input 3: template-make (templates ROOT from SampleRootIO_samples.tsv)
 ./nuxsec template-make build/out/sample/SampleRootIO_samples.tsv build/out/ana/analysis_default.root 8

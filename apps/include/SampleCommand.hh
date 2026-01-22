@@ -27,21 +27,21 @@ struct SampleArgs
     std::string sample_list_path;
 };
 
-inline SampleArgs parse_sample_spec(const std::string &spec)
+inline SampleArgs parse_sample_input(const std::string &input)
 {
-    const auto pos = spec.find(':');
+    const auto pos = input.find(':');
     if (pos == std::string::npos)
     {
-        throw std::runtime_error("Bad sample spec (expected NAME:FILELIST): " + spec);
+        throw std::runtime_error("Bad sample definition (expected NAME:FILELIST): " + input);
     }
 
     SampleArgs out;
-    out.sample_name = nuxsec::app::trim(spec.substr(0, pos));
-    out.filelist_path = nuxsec::app::trim(spec.substr(pos + 1));
+    out.sample_name = nuxsec::app::trim(input.substr(0, pos));
+    out.filelist_path = nuxsec::app::trim(input.substr(pos + 1));
 
     if (out.sample_name.empty() || out.filelist_path.empty())
     {
-        throw std::runtime_error("Bad sample spec: " + spec);
+        throw std::runtime_error("Bad sample definition: " + input);
     }
 
     out.output_path = "build/out/sample/sample_root_" + out.sample_name + ".root";
@@ -57,7 +57,7 @@ inline SampleArgs parse_sample_args(const std::vector<std::string> &args, const 
         throw std::runtime_error(usage);
     }
 
-    return parse_sample_spec(args[0]);
+    return parse_sample_input(args[0]);
 }
 
 inline void update_sample_list(const std::string &list_path,

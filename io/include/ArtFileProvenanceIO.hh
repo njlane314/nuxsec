@@ -45,15 +45,15 @@ struct SubrunSummary
     std::vector<RunSubrunPair> unique_pairs;
 };
 
-struct Stage
+struct InputProvenance
 {
-    std::string stage_name;
+    std::string input_name;
     std::string filelist_path;
 };
 
 struct Provenance
 {
-    Stage cfg;
+    InputProvenance cfg;
     SampleIO::SampleOrigin kind = SampleIO::SampleOrigin::kUnknown;
     SampleIO::BeamMode beam = SampleIO::BeamMode::kUnknown;
 

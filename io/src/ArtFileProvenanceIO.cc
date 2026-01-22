@@ -25,7 +25,7 @@ void ArtFileProvenanceIO::write(const art::Provenance &r, const std::string &out
     }
     d->cd();
 
-    TNamed("stage_name", r.cfg.stage_name.c_str()).Write("stage_name", TObject::kOverwrite);
+    TNamed("input_name", r.cfg.input_name.c_str()).Write("input_name", TObject::kOverwrite);
     TNamed("sample_kind", SampleIO::sample_kind_name(r.kind)).Write("sample_kind", TObject::kOverwrite);
     TNamed("beam_mode", SampleIO::beam_mode_name(r.beam)).Write("beam_mode", TObject::kOverwrite);
 
@@ -111,7 +111,16 @@ art::Provenance ArtFileProvenanceIO::read_directory(TDirectory *d,
                                                     SampleIO::BeamMode beam)
 {
     art::Provenance r;
-    r.cfg.stage_name = read_named_string(d, "stage_name");
+    TObject *obj = d->Get("input_name");
+    auto *named = dynamic_cast<TNamed *>(obj);
+    if (named)
+    {
+        r.cfg.input_name = named->GetTitle();
+    }
+    else
+    {
+        r.cfg.input_name = read_named_string(d, "stage_name");
+    }
     r.kind = kind;
     r.beam = beam;
 
