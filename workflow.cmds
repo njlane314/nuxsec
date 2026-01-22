@@ -28,8 +28,13 @@ USER_NAME=nlane RELEASE=v08_00_00_82 NAME=numi_fhc_run1 scripts/numi-fhc-run1-li
   && ./nuxsec art "ext_p1:inputs/numi_fhc_run1/filelists/ext_p1.list:ext:numi" \
   && ./nuxsec art "ext_p2:inputs/numi_fhc_run1/filelists/ext_p2.list:ext:numi"
 
+# Input 2: sample lists (group art outputs into logical samples)
+ls build/out/art/art_prov_beam_s*.root > scripts/numi_fhc_run1_sample_beam.list
+ls build/out/art/art_prov_strangeness_run1_fhc.root > scripts/numi_fhc_run1_sample_strangeness.list
+
 # Input 2: sample (single sample)
 ./nuxsec sample "beam:scripts/numi_fhc_run1_sample_beam.list"
+./nuxsec sample "strangeness:scripts/numi_fhc_run1_sample_strangeness.list"
 
 # Input 2 (batch): run all sample entries
 ./nuxsec sample "beam:scripts/numi_fhc_run1_sample_beam.list"
