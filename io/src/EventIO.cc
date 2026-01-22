@@ -37,8 +37,8 @@ std::string EventIO::sanitise_root_key(std::string s)
 }
 
 void EventIO::init(const std::string &out_path,
-                   const EventHeader &header,
-                   const std::vector<EventSampleRef> &sample_refs,
+                   const Header &header,
+                   const std::vector<SampleInfo> &sample_refs,
                    const std::string &event_schema_tsv,
                    const std::string &schema_tag)
 {
