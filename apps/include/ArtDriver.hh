@@ -126,7 +126,7 @@ inline int run(const Args &art_args, const std::string &log_prefix)
         rec.kind = nuxsec::sample::SampleIO::SampleOrigin::kData;
     }
 
-    rec.summary = nuxsec::SubRunInventoryService::scan_subruns(files);
+    rec.summary = nuxsec::SubRunInventoryService::scan_subruns(files, log_prefix);
 
     rec.summary.pot_sum *= pot_scale;
     rec.scale = pot_scale;
