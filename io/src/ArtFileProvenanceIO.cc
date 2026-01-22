@@ -25,7 +25,7 @@ void ArtFileProvenanceIO::write(const artio::Provenance &r, const std::string &o
     }
     d->cd();
 
-    TNamed("stage_name", r.cfg.stage_name.c_str()).Write("stage_name", TObject::kOverwrite);
+    TNamed("input_name", r.cfg.input_name.c_str()).Write("input_name", TObject::kOverwrite);
     TNamed("sample_kind", SampleIO::sample_kind_name(r.kind)).Write("sample_kind", TObject::kOverwrite);
     TNamed("beam_mode", SampleIO::beam_mode_name(r.beam)).Write("beam_mode", TObject::kOverwrite);
 
@@ -111,7 +111,14 @@ artio::Provenance ArtFileProvenanceIO::read_directory(TDirectory *d,
                                                       SampleIO::BeamMode beam)
 {
     artio::Provenance r;
-    r.cfg.stage_name = read_named_string(d, "stage_name");
+    try
+    {
+        r.cfg.input_name = read_named_string(d, "input_name");
+    }
+    catch (const std::runtime_error &)
+    {
+        r.cfg.input_name = read_named_string(d, "stage_name");
+    }
     r.kind = kind;
     r.beam = beam;
 

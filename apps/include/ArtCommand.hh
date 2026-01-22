@@ -30,7 +30,7 @@ inline bool is_selection_data_file(const std::string &path)
 struct ArtArgs
 {
     std::string artio_path;
-    nuxsec::artio::Stage stage_cfg;
+    nuxsec::artio::InputProvenance input_spec;
     sample::SampleIO::SampleKind sample_kind = sample::SampleIO::SampleKind::kUnknown;
     sample::SampleIO::BeamMode beam_mode = sample::SampleIO::BeamMode::kUnknown;
 };
@@ -53,16 +53,16 @@ inline ArtArgs parse_art_spec(const std::string &spec)
 
     if (fields.size() < 2)
     {
-        throw std::runtime_error("Bad stage spec (expected NAME:FILELIST): " + spec);
+        throw std::runtime_error("Bad input spec (expected NAME:FILELIST): " + spec);
     }
 
     ArtArgs out;
-    out.stage_cfg.stage_name = fields[0];
-    out.stage_cfg.filelist_path = fields[1];
+    out.input_spec.input_name = fields[0];
+    out.input_spec.filelist_path = fields[1];
 
-    if (out.stage_cfg.stage_name.empty() || out.stage_cfg.filelist_path.empty())
+    if (out.input_spec.input_name.empty() || out.input_spec.filelist_path.empty())
     {
-        throw std::runtime_error("Bad stage spec: " + spec);
+        throw std::runtime_error("Bad input spec: " + spec);
     }
 
     if (fields.size() >= 4)
@@ -71,19 +71,19 @@ inline ArtArgs parse_art_spec(const std::string &spec)
         out.beam_mode = sample::SampleIO::parse_beam_mode(fields[3]);
         if (out.sample_kind == sample::SampleIO::SampleKind::kUnknown)
         {
-            throw std::runtime_error("Bad stage sample kind: " + fields[2]);
+            throw std::runtime_error("Bad input sample kind: " + fields[2]);
         }
         if (out.beam_mode == sample::SampleIO::BeamMode::kUnknown)
         {
-            throw std::runtime_error("Bad stage beam mode: " + fields[3]);
+            throw std::runtime_error("Bad input beam mode: " + fields[3]);
         }
     }
     else if (fields.size() != 2)
     {
-        throw std::runtime_error("Bad stage spec (expected NAME:FILELIST[:SAMPLE_KIND:BEAM_MODE]): " + spec);
+        throw std::runtime_error("Bad input spec (expected NAME:FILELIST[:SAMPLE_KIND:BEAM_MODE]): " + spec);
     }
 
-    out.artio_path = "build/out/art/art_prov_" + out.stage_cfg.stage_name + ".root";
+    out.artio_path = "build/out/art/art_prov_" + out.input_spec.input_name + ".root";
 
     return out;
 }
@@ -108,10 +108,10 @@ inline int run_artio(const ArtArgs &art_args, const std::string &log_prefix)
         std::filesystem::create_directories(out_path.parent_path());
     }
 
-    const auto files = nuxsec::app::read_file_list(art_args.stage_cfg.filelist_path);
+    const auto files = nuxsec::app::read_file_list(art_args.input_spec.filelist_path);
 
     nuxsec::artio::Provenance rec;
-    rec.cfg = art_args.stage_cfg;
+    rec.cfg = art_args.input_spec;
     rec.input_files = files;
     rec.kind = art_args.sample_kind;
     rec.beam = art_args.beam_mode;
@@ -126,7 +126,7 @@ inline int run_artio(const ArtArgs &art_args, const std::string &log_prefix)
     rec.subrun.pot_sum *= pot_scale;
     rec.scale = pot_scale;
 
-    std::cerr << "[" << log_prefix << "] add stage=" << rec.cfg.stage_name
+    std::cerr << "[" << log_prefix << "] add input=" << rec.cfg.input_name
               << " files=" << rec.input_files.size()
               << " pairs=" << rec.subrun.unique_pairs.size()
               << " pot_sum=" << rec.subrun.pot_sum

@@ -42,7 +42,7 @@ void print_main_help(std::ostream &out)
 {
     out << "Usage: nuxsec <command> [args]\n\n"
         << "Commands:\n"
-        << "  art         Aggregate art provenance for a stage\n"
+        << "  art         Aggregate art provenance for an input\n"
         << "  sample      Aggregate Sample ROOT files from art provenance\n"
         << "  macro       Run plot macros\n"
         << "\nRun 'nuxsec <command> --help' for command-specific usage.\n";
