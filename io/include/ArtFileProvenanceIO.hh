@@ -45,7 +45,7 @@ struct Summary
     std::vector<RunSubrunPair> unique_pairs;
 };
 
-struct InputProvenance
+struct Input
 {
     std::string input_name;
     std::string filelist_path;
@@ -53,7 +53,7 @@ struct InputProvenance
 
 struct Provenance
 {
-    InputProvenance cfg;
+    Input input;
     SampleIO::SampleOrigin kind = SampleIO::SampleOrigin::kUnknown;
     SampleIO::BeamMode beam = SampleIO::BeamMode::kUnknown;
 

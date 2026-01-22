@@ -91,7 +91,7 @@ SampleIO::ProvenanceInput NormalisationService::make_entry(const art::Provenance
                                                            double db_tor101_pot)
 {
     SampleIO::ProvenanceInput entry;
-    entry.entry_name = prov.cfg.input_name;
+    entry.entry_name = prov.input.input_name;
     entry.art_path = art_path;
     entry.subrun_pot_sum = prov.summary.pot_sum;
     entry.db_tortgt_pot = db_tortgt_pot;
