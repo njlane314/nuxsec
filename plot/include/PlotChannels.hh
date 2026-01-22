@@ -28,7 +28,7 @@ class Channels
         int key = 0;
         std::string plain_name;
         std::string tex_label;
-        Color_t fill_color = kBlack;
+        Color_t fill_colour = kBlack;
         int fill_style = 1001;
     };
 
@@ -45,7 +45,7 @@ class Channels
 
     static std::string label(int code) { return properties(code).tex_label; }
     static std::string name(int code) { return properties(code).plain_name; }
-    static int color(int code) { return properties(code).fill_color; }
+    static int colour(int code) { return properties(code).fill_colour; }
     static int fill_style(int code) { return properties(code).fill_style; }
 
     static const std::vector<int> &signal_keys()
