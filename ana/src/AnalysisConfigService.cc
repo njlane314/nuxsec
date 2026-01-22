@@ -7,6 +7,8 @@
 
 #include "AnalysisConfigService.hh"
 
+#include <cstdlib>
+
 #include "ColumnDerivationService.hh"
 #include "SampleIO.hh"
 
@@ -22,7 +24,15 @@ const AnalysisConfigService &AnalysisConfigService::instance()
 AnalysisConfigService::AnalysisConfigService()
 {
     m_name = "nuxsec_default_v1";
-    m_tree_name = "MyTree";
+    const char *tree_override = std::getenv("NUXSEC_TREE_NAME");
+    if (tree_override && std::string(tree_override).size() > 0)
+    {
+        m_tree_name = tree_override;
+    }
+    else
+    {
+        m_tree_name = "Events";
+    }
 
 }
 
