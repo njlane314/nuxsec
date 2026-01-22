@@ -26,7 +26,7 @@ void ArtFileProvenanceIO::write(const art::Provenance &r, const std::string &out
     d->cd();
 
     TNamed("input_name", r.cfg.input_name.c_str()).Write("input_name", TObject::kOverwrite);
-    TNamed("sample_kind", SampleIO::sample_kind_name(r.kind)).Write("sample_kind", TObject::kOverwrite);
+    TNamed("sample_origin", SampleIO::sample_kind_name(r.kind)).Write("sample_origin", TObject::kOverwrite);
     TNamed("beam_mode", SampleIO::beam_mode_name(r.beam)).Write("beam_mode", TObject::kOverwrite);
 
     TParameter<double>("subrun_pot_sum", r.subrun.pot_sum).Write("subrun_pot_sum", TObject::kOverwrite);
@@ -80,7 +80,7 @@ art::Provenance ArtFileProvenanceIO::read(const std::string &in_file)
     }
     d->cd();
 
-    const SampleIO::SampleOrigin kind = SampleIO::parse_sample_kind(read_named_string(d, "sample_kind"));
+    const SampleIO::SampleOrigin kind = read_sample_origin(d);
     const SampleIO::BeamMode beam = SampleIO::parse_beam_mode(read_named_string(d, "beam_mode"));
 
     return read_directory(d, kind, beam);
@@ -143,6 +143,17 @@ std::string ArtFileProvenanceIO::read_named_string(TDirectory *d, const char *ke
         throw std::runtime_error("Missing TNamed for key: " + std::string(key));
     }
     return std::string(named->GetTitle());
+}
+
+SampleIO::SampleOrigin ArtFileProvenanceIO::read_sample_origin(TDirectory *d)
+{
+    TObject *obj = d->Get("sample_origin");
+    auto *named = dynamic_cast<TNamed *>(obj);
+    if (named)
+    {
+        return SampleIO::parse_sample_kind(named->GetTitle());
+    }
+    return SampleIO::parse_sample_kind(read_named_string(d, "sample_kind"));
 }
 
 std::vector<std::string> ArtFileProvenanceIO::read_input_files(TDirectory *d)

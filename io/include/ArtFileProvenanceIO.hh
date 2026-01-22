@@ -77,6 +77,7 @@ class ArtFileProvenanceIO
 
   private:
     static std::string read_named_string(TDirectory *d, const char *key);
+    static SampleIO::SampleOrigin read_sample_origin(TDirectory *d);
 
     template <typename T>
     static T read_param(TDirectory *d, const char *key)
