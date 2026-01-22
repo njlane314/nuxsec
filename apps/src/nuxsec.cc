@@ -19,12 +19,14 @@
 
 #include "AppUtils.hh"
 #include "ArtCommand.hh"
+#include "EventCommand.hh"
 #include "SampleCommand.hh"
 
 namespace
 {
 
 const char *kUsageArt = "Usage: nuxsec art NAME:FILELIST[:SAMPLE_KIND:BEAM_MODE]";
+const char *kUsageEvent = "Usage: nuxsec event SAMPLE_LIST.tsv OUTPUT.root [NTHREADS]";
 const char *kUsageSample = "Usage: nuxsec sample NAME:FILELIST";
 const char *kUsageMacro =
     "Usage: nuxsec macro MACRO.C [CALL]\n"
@@ -43,6 +45,7 @@ void print_main_help(std::ostream &out)
     out << "Usage: nuxsec <command> [args]\n\n"
         << "Commands:\n"
         << "  art         Aggregate art provenance for a stage\n"
+        << "  event       Build event-level output from aggregated samples\n"
         << "  sample      Aggregate Sample ROOT files from art provenance\n"
         << "  macro       Run plot macros\n"
         << "\nRun 'nuxsec <command> --help' for command-specific usage.\n";
@@ -114,6 +117,18 @@ int run_sample_command(const std::vector<std::string> &args)
 
     const nuxsec::app::SampleArgs sample_args = nuxsec::app::parse_sample_args(args, kUsageSample);
     return nuxsec::app::run_sample(sample_args, "nuxsec sample");
+}
+
+int run_event_command(const std::vector<std::string> &args)
+{
+    if (args.empty() || (args.size() == 1 && is_help_arg(args[0])))
+    {
+        std::cout << kUsageEvent << "\n";
+        return 0;
+    }
+
+    const nuxsec::app::EventIOArgs event_args = nuxsec::app::parse_eventio_args(args, kUsageEvent);
+    return nuxsec::app::run_eventio(event_args, "nuxsec event");
 }
 
 
@@ -301,6 +316,10 @@ int main(int argc, char **argv)
             if (command == "sample")
             {
                 return run_sample_command(args);
+            }
+            if (command == "event")
+            {
+                return run_event_command(args);
             }
             if (command == "macro")
             {
