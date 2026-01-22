@@ -100,6 +100,14 @@ ROOT::RDF::RNode ColumnDerivationService::define(ROOT::RDF::RNode node, const Pr
         {
             node = node.Define("ppfx_cv", [] { return 1.0f; });
         }
+        if (!has("weightSpline"))
+        {
+            node = node.Define("weightSpline", [] { return 1.0f; });
+        }
+        if (!has("weightTune"))
+        {
+            node = node.Define("weightTune", [] { return 1.0f; });
+        }
         if (!has("RootinoFix"))
         {
             node = node.Define("RootinoFix", [] { return 1.0; });
@@ -111,11 +119,16 @@ ROOT::RDF::RNode ColumnDerivationService::define(ROOT::RDF::RNode node, const Pr
         node = node.Define(
             "w_nominal",
             [](float w_base, float w_spline, float w_tune, float w_flux_cv, double w_root) {
+                auto sanitise_weight = [](double w) {
+                    if (!std::isfinite(w) || w <= 0.0)
+                        return 1.0;
+                    return w;
+                };
                 const double out = static_cast<double>(w_base) *
-                                   static_cast<double>(w_spline) *
-                                   static_cast<double>(w_tune) *
-                                   static_cast<double>(w_flux_cv) *
-                                   static_cast<double>(w_root);
+                                   sanitise_weight(w_spline) *
+                                   sanitise_weight(w_tune) *
+                                   sanitise_weight(w_flux_cv) *
+                                   sanitise_weight(w_root);
                 if (!std::isfinite(out))
                     return 0.0f;
                 if (out < 0.0)
