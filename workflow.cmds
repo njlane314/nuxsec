@@ -1,8 +1,8 @@
 # Nuxsec workflow command cheat-sheet (numi_fhc_run1)
 # Copy a single line as needed for a specific partition/sample or an entire input.
 
-# Input 0: build filelists for each partition (uses scripts/build_numi_fhc_run1_filelists.sh defaults)
-USER_NAME=nlane RELEASE=v08_00_00_82 NAME=numi_fhc_run1 scripts/build_numi_fhc_run1_filelists.sh
+# Input 0: build filelists for each partition (uses scripts/numi-fhc-run1-lists.sh defaults)
+USER_NAME=nlane RELEASE=v08_00_00_82 NAME=numi_fhc_run1 scripts/numi-fhc-run1-lists.sh
 
 # Input 1: art (single partition)
 ./nuxsec art "beam_s0:inputs/numi_fhc_run1/filelists/beam_s0.list:overlay:numi"
