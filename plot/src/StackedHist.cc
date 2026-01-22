@@ -270,7 +270,7 @@ void StackedHist::build_histograms()
             continue;
         }
         auto &sum = it->second;
-        sum->SetFillColor(nuxsec::plot::Channels::color(ch));
+        sum->SetFillColor(nuxsec::plot::Channels::colour(ch));
         sum->SetFillStyle(nuxsec::plot::Channels::fill_style(ch));
         sum->SetLineColor(kBlack);
         sum->SetLineWidth(1);
