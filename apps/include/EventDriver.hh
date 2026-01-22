@@ -147,13 +147,13 @@ inline int run(const Args &event_args, const std::string &log_prefix)
     for (const auto &c : int_columns)
         schema << "int\t" << c << "\n";
 
-    nuxsec::io::EventHeader header;
+    nuxsec::event::EventHeader header;
     header.analysis_name = analysis.name();
     header.analysis_tree = analysis.tree_name();
     header.sample_list_source = event_args.list_path;
 
-    nuxsec::io::EventIO::init(event_args.output_root, header, sample_refs, schema.str(), "compiled");
-    nuxsec::io::EventIO event_io(event_args.output_root, nuxsec::io::EventIO::OpenMode::kUpdate);
+    nuxsec::event::EventIO::init(event_args.output_root, header, sample_refs, schema.str(), "compiled");
+    nuxsec::event::EventIO event_io(event_args.output_root, nuxsec::event::EventIO::OpenMode::kUpdate);
 
     for (const auto &input : inputs)
     {
