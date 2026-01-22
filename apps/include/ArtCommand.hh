@@ -30,60 +30,60 @@ inline bool is_selection_data_file(const std::string &path)
 struct ArtArgs
 {
     std::string art_path;
-    nuxsec::art::Stage stage_cfg;
-    sample::SampleIO::SampleOrigin sample_kind = sample::SampleIO::SampleOrigin::kUnknown;
+    nuxsec::art::InputProvenance input_provenance;
+    sample::SampleIO::SampleOrigin sample_origin = sample::SampleIO::SampleOrigin::kUnknown;
     sample::SampleIO::BeamMode beam_mode = sample::SampleIO::BeamMode::kUnknown;
 };
 
-inline ArtArgs parse_art_spec(const std::string &spec)
+inline ArtArgs parse_art_input(const std::string &input)
 {
     std::vector<std::string> fields;
     size_t start = 0;
-    while (start <= spec.size())
+    while (start <= input.size())
     {
-        const size_t pos = spec.find(':', start);
+        const size_t pos = input.find(':', start);
         if (pos == std::string::npos)
         {
-            fields.push_back(nuxsec::app::trim(spec.substr(start)));
+            fields.push_back(nuxsec::app::trim(input.substr(start)));
             break;
         }
-        fields.push_back(nuxsec::app::trim(spec.substr(start, pos - start)));
+        fields.push_back(nuxsec::app::trim(input.substr(start, pos - start)));
         start = pos + 1;
     }
 
     if (fields.size() < 2)
     {
-        throw std::runtime_error("Bad stage spec (expected NAME:FILELIST): " + spec);
+        throw std::runtime_error("Bad input definition (expected NAME:FILELIST): " + input);
     }
 
     ArtArgs out;
-    out.stage_cfg.stage_name = fields[0];
-    out.stage_cfg.filelist_path = fields[1];
+    out.input_provenance.input_name = fields[0];
+    out.input_provenance.filelist_path = fields[1];
 
-    if (out.stage_cfg.stage_name.empty() || out.stage_cfg.filelist_path.empty())
+    if (out.input_provenance.input_name.empty() || out.input_provenance.filelist_path.empty())
     {
-        throw std::runtime_error("Bad stage spec: " + spec);
+        throw std::runtime_error("Bad input definition: " + input);
     }
 
     if (fields.size() >= 4)
     {
-        out.sample_kind = sample::SampleIO::parse_sample_kind(fields[2]);
+        out.sample_origin = sample::SampleIO::parse_sample_kind(fields[2]);
         out.beam_mode = sample::SampleIO::parse_beam_mode(fields[3]);
-        if (out.sample_kind == sample::SampleIO::SampleOrigin::kUnknown)
+        if (out.sample_origin == sample::SampleIO::SampleOrigin::kUnknown)
         {
-            throw std::runtime_error("Bad stage sample kind: " + fields[2]);
+            throw std::runtime_error("Bad input sample kind: " + fields[2]);
         }
         if (out.beam_mode == sample::SampleIO::BeamMode::kUnknown)
         {
-            throw std::runtime_error("Bad stage beam mode: " + fields[3]);
+            throw std::runtime_error("Bad input beam mode: " + fields[3]);
         }
     }
     else if (fields.size() != 2)
     {
-        throw std::runtime_error("Bad stage spec (expected NAME:FILELIST[:SAMPLE_KIND:BEAM_MODE]): " + spec);
+        throw std::runtime_error("Bad input definition (expected NAME:FILELIST[:SAMPLE_KIND:BEAM_MODE]): " + input);
     }
 
-    out.art_path = "build/out/art/art_prov_" + out.stage_cfg.stage_name + ".root";
+    out.art_path = "build/out/art/art_prov_" + out.input_provenance.input_name + ".root";
 
     return out;
 }
@@ -95,7 +95,7 @@ inline ArtArgs parse_art_args(const std::vector<std::string> &args, const std::s
         throw std::runtime_error(usage);
     }
 
-    return parse_art_spec(args[0]);
+    return parse_art_input(args[0]);
 }
 
 inline int run_art(const ArtArgs &art_args, const std::string &log_prefix)
@@ -108,12 +108,12 @@ inline int run_art(const ArtArgs &art_args, const std::string &log_prefix)
         std::filesystem::create_directories(out_path.parent_path());
     }
 
-    const auto files = nuxsec::app::read_file_list(art_args.stage_cfg.filelist_path);
+    const auto files = nuxsec::app::read_file_list(art_args.input_provenance.filelist_path);
 
     nuxsec::art::Provenance rec;
-    rec.cfg = art_args.stage_cfg;
+    rec.cfg = art_args.input_provenance;
     rec.input_files = files;
-    rec.kind = art_args.sample_kind;
+    rec.kind = art_args.sample_origin;
     rec.beam = art_args.beam_mode;
 
     if (rec.kind == sample::SampleIO::SampleOrigin::kUnknown && is_selection_data_file(files.front()))
@@ -126,7 +126,7 @@ inline int run_art(const ArtArgs &art_args, const std::string &log_prefix)
     rec.subrun.pot_sum *= pot_scale;
     rec.scale = pot_scale;
 
-    std::cerr << "[" << log_prefix << "] add stage=" << rec.cfg.stage_name
+    std::cerr << "[" << log_prefix << "] add input=" << rec.cfg.input_name
               << " files=" << rec.input_files.size()
               << " pairs=" << rec.subrun.unique_pairs.size()
               << " pot_sum=" << rec.subrun.pot_sum

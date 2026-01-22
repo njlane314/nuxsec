@@ -6,12 +6,12 @@ ROOT-based utilities for a neutrino cross-section analysis pipeline built around
 ## Core concepts (pipeline map)
 
 - **LArSoft job outputs** (partitions / shards)
-- **Art provenance aggregation** (stage-level manifests)
+- **Art provenance aggregation** (input-level manifests)
 - **Logical samples** (collection of shards + merged view)
 - **Exposure / POT accounting** (per shard, per logical sample, target POT scaling)
 - **RDataFrame construction** (source trees, friend trees, derived columns, weights)
 - **Channels / categories** (analysis topology, truth categories, control regions)
-- **Selections and template specs** (cutflow, histograms, response matrices, xsec outputs)
+- **Selections and template definitions** (cutflow, histograms, response matrices, xsec outputs)
 - **Template production and plotting** (binned templates, stacked plots)
 
 ## Repository structure
@@ -99,7 +99,7 @@ File lists are newline-delimited paths to ROOT files (blank lines and `#` commen
 
 ```bash
 cat > data.list <<'LIST'
-# stage input files
+# input file list
 /path/to/input1.root
 /path/to/input2.root
 LIST
@@ -107,12 +107,12 @@ LIST
 
 ## Example command-line workflow (sealed analysis, no runtime selections/tree/templates)
 
-Assume you run from the repo top-level (`nuxsec/`) and you already have per-stage filelists
+Assume you run from the repo top-level (`nuxsec/`) and you already have per-input filelists
 produced by your partitioning step.
 
-### 1) Stage → Art provenance ROOT (per partition/stage)
+### 1) Input → Art provenance ROOT (per partition/input)
 
-Each stage filelist is a plain text file containing the input art/selection ROOT files for that stage.
+Each input filelist is a plain text file containing the input art/selection ROOT files for that input.
 
 ```bash
 # Data (kind can be omitted if your first file is nuselection_data.root and you rely on auto-detect)
@@ -137,9 +137,9 @@ build/out/art/art_prov_overlay_bnb_run1a.root
 build/out/art/art_prov_dirt_bnb_run1a.root
 ```
 
-Repeat `nuxsec art ...` for each partition/stage (run1b, run1c, etc.).
+Repeat `nuxsec art ...` for each partition/input (run1b, run1c, etc.).
 
-### 2) Art provenance ROOT → Sample ROOT (group stages into samples)
+### 2) Art provenance ROOT → Sample ROOT (group inputs into samples)
 
 Create per-sample filelists that contain the art provenance ROOT outputs from step (1):
 
@@ -181,7 +181,7 @@ nuxsec template-make build/out/sample/samples.tsv \
 
 ### 4) Systematics and plots
 
-The CLI now includes a macro-driven plotting stage. The default plot macro generates a POT
+The CLI now includes a macro-driven plotting input. The default plot macro generates a POT
 timeline plot and writes images under `build/out/plot/`.
 
 ```bash
@@ -206,7 +206,7 @@ in your shell profile or session).
 
 ### What the user “touches” in this UX
 
-- Filelists for stages (already produced by your partitioning step).
+- Filelists for inputs (already produced by your partitioning step).
 - Per-sample grouping filelists (or a small helper script).
 - `samples.tsv` is produced automatically and becomes the stable handoff.
 - After that, users only run:

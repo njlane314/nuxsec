@@ -25,7 +25,7 @@
 namespace
 {
 
-const char *kUsageArt = "Usage: nuxsec art NAME:FILELIST[:SAMPLE_KIND:BEAM_MODE]";
+const char *kUsageArt = "Usage: nuxsec art INPUT_NAME:FILELIST[:SAMPLE_KIND:BEAM_MODE]";
 const char *kUsageEvent = "Usage: nuxsec event SAMPLE_LIST.tsv OUTPUT.root [NTHREADS]";
 const char *kUsageSample = "Usage: nuxsec sample NAME:FILELIST";
 const char *kUsageMacro =
@@ -44,9 +44,9 @@ void print_main_help(std::ostream &out)
 {
     out << "Usage: nuxsec <command> [args]\n\n"
         << "Commands:\n"
-        << "  art         Aggregate art provenance for a stage\n"
-        << "  event       Build event-level output from aggregated samples\n"
+        << "  art         Aggregate art provenance for an input\n"
         << "  sample      Aggregate Sample ROOT files from art provenance\n"
+        << "  event       Build event-level output from aggregated samples\n"
         << "  macro       Run plot macros\n"
         << "\nRun 'nuxsec <command> --help' for command-specific usage.\n";
 }
@@ -261,10 +261,10 @@ int run_macro_command(const std::vector<std::string> &args)
         {
             throw std::runtime_error(kUsageMacro);
         }
-        const std::string macro_spec = nuxsec::app::trim(rest[0]);
+        const std::string macro_name = nuxsec::app::trim(rest[0]);
         const std::string call = (rest.size() == 2) ? nuxsec::app::trim(rest[1]) : "";
 
-        const auto macro_path = resolve_macro_path(repo_root, macro_spec);
+        const auto macro_path = resolve_macro_path(repo_root, macro_name);
         if (call.empty())
         {
             return run_root_macro_exec(repo_root, macro_path);
@@ -277,9 +277,9 @@ int run_macro_command(const std::vector<std::string> &args)
         throw std::runtime_error(kUsageMacro);
     }
 
-    const std::string macro_spec = verb;
+    const std::string macro_name = verb;
     const std::string call = rest.empty() ? "" : nuxsec::app::trim(rest[0]);
-    const auto macro_path = resolve_macro_path(repo_root, macro_spec);
+    const auto macro_path = resolve_macro_path(repo_root, macro_name);
     if (call.empty())
     {
         return run_root_macro_exec(repo_root, macro_path);
