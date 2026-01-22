@@ -249,6 +249,17 @@ inline int run(const Args &event_args, const std::string &log_prefix)
         node = node.Define("is_signal_i", [](bool v) { return static_cast<int>(v); }, {"is_signal"});
         node = node.Define("recognised_signal_i", [](bool v) { return static_cast<int>(v); }, {"recognised_signal"});
 
+        using SampleOrigin = nuxsec::sample::SampleIO::SampleOrigin;
+        const auto origin = sample.origin;
+        if (origin == SampleOrigin::kOverlay)
+        {
+            node = node.Filter([](int strange) { return strange == 0; }, {"count_strange"});
+        }
+        else if (origin == SampleOrigin::kStrangeness)
+        {
+            node = node.Filter([](int strange) { return strange > 0; }, {"count_strange"});
+        }
+
         const ULong64_t n_written =
             event_io.snapshot_event_list(node,
                                          sample.sample_name,
