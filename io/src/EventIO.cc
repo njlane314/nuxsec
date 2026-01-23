@@ -156,9 +156,8 @@ ULong64_t EventIO::snapshot_event_list(ROOT::RDF::RNode node,
     options.fMode = std::filesystem::exists(m_path) ? "UPDATE" : "RECREATE";
     options.fOverwriteIfExists = overwrite_if_exists;
 
-    auto count = filtered.Count();
-    filtered.Snapshot(tree_name, m_path, columns, options);
-    return count.GetValue();
+    auto result = filtered.Snapshot(tree_name, m_path, columns, options);
+    return result.GetValue();
 }
 
 } // namespace event
