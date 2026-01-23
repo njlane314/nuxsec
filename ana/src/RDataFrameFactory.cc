@@ -9,6 +9,8 @@
 
 #include <utility>
 
+#include "ArtFileProvenanceIO.hh"
+
 namespace nuxsec
 {
 
@@ -37,7 +39,11 @@ std::vector<std::string> RDataFrameFactory::collect_files(const sample::SampleIO
     files.reserve(sample.inputs.size());
     for (const sample::SampleIO::ProvenanceInput &input : sample.inputs)
     {
-        files.push_back(input.art_path);
+        art::Provenance prov = ArtFileProvenanceIO::read(input.art_path);
+        for (const auto &path : prov.input_files)
+        {
+            files.push_back(path);
+        }
     }
 
     return files;
