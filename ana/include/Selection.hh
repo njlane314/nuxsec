@@ -143,7 +143,7 @@ inline EvalResult evaluate(const std::vector<const Entry *> &mc,
                            Preset final_selection)
 {
     auto sumw = [](ROOT::RDF::RNode n) {
-        auto r = n.Sum<float>("w_nominal");
+        auto r = n.Sum<double>("w_nominal");
         return static_cast<double>(r.GetValue());
     };
     EvalResult out;

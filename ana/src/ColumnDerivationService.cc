@@ -87,7 +87,7 @@ ROOT::RDF::RNode ColumnDerivationService::define(ROOT::RDF::RNode node, const Pr
 
     node = node.Define("w_base", [is_mc, is_ext, scale_mc, scale_ext] {
         const double scale = is_mc ? scale_mc : (is_ext ? scale_ext : 1.0);
-        return static_cast<float>(scale);
+        return scale;
     });
 
     {
@@ -118,28 +118,28 @@ ROOT::RDF::RNode ColumnDerivationService::define(ROOT::RDF::RNode node, const Pr
     {
         node = node.Define(
             "w_nominal",
-            [](float w_base, float w_spline, float w_tune, float w_flux_cv, double w_root) {
+            [](double w_base, float w_spline, float w_tune, float w_flux_cv, double w_root) {
                 auto sanitise_weight = [](double w) {
                     if (!std::isfinite(w) || w <= 0.0)
                         return 1.0;
                     return w;
                 };
-                const double out = static_cast<double>(w_base) *
+                const double out = w_base *
                                    sanitise_weight(w_spline) *
                                    sanitise_weight(w_tune) *
                                    sanitise_weight(w_flux_cv) *
                                    sanitise_weight(w_root);
                 if (!std::isfinite(out))
-                    return 0.0f;
+                    return 0.0;
                 if (out < 0.0)
-                    return 0.0f;
-                return static_cast<float>(out);
+                    return 0.0;
+                return out;
             },
             {"w_base", "weightSpline", "weightTune", "ppfx_cv", "RootinoFix"});
     }
     else
     {
-        node = node.Define("w_nominal", [](float w) { return w; }, {"w_base"});
+        node = node.Define("w_nominal", [](double w) { return w; }, {"w_base"});
     }
 
     {
@@ -181,14 +181,14 @@ ROOT::RDF::RNode ColumnDerivationService::define(ROOT::RDF::RNode node, const Pr
         {
             node = node.Define(
                 "w_template",
-                [trainable, have_ml_u](float w, bool t) {
+                [trainable, have_ml_u](double w, bool t) {
                     if (!trainable || !have_ml_u)
                         return w;
                     if (t)
-                        return 0.0f;
-                    const float keep = 1.0f - kTrainingFraction;
-                    if (keep <= 0.0f)
-                        return 0.0f;
+                        return 0.0;
+                    const double keep = 1.0 - static_cast<double>(kTrainingFraction);
+                    if (keep <= 0.0)
+                        return 0.0;
                     return w / keep;
                 },
                 {"w_nominal", "is_training"});
