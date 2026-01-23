@@ -80,12 +80,18 @@ inline void ensure_tree_present(const nuxsec::sample::SampleIO::Sample &sample,
         throw std::runtime_error("Event inputs missing ROOT files for sample: " + sample.sample_name);
     }
 
-    for (const auto &input : sample.inputs)
+    std::vector<std::string> files = nuxsec::RDataFrameFactory::collect_files(sample);
+    if (files.empty())
     {
-        std::unique_ptr<TFile> f(TFile::Open(input.art_path.c_str(), "READ"));
+        throw std::runtime_error("Event inputs missing ROOT files for sample: " + sample.sample_name);
+    }
+
+    for (const auto &path : files)
+    {
+        std::unique_ptr<TFile> f(TFile::Open(path.c_str(), "READ"));
         if (!f || f->IsZombie())
         {
-            throw std::runtime_error("Event input failed to open ROOT file: " + input.art_path);
+            throw std::runtime_error("Event input failed to open ROOT file: " + path);
         }
 
         TTree *tree = nullptr;
@@ -93,8 +99,7 @@ inline void ensure_tree_present(const nuxsec::sample::SampleIO::Sample &sample,
         if (!tree)
         {
             throw std::runtime_error(
-                "Event input missing tree '" + tree_name + "' in " + input.art_path
-                + ". Set NUXSEC_TREE_NAME to override.");
+                "Event input missing tree '" + tree_name + "' in " + path);
         }
     }
 }
