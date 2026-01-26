@@ -8,6 +8,7 @@
 #include "EventCLI.hh"
 
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -55,41 +56,10 @@ int run(const event::Args &event_args, const std::string &log_prefix)
         inputs.push_back(std::move(input));
     }
 
-    const std::string x_column = "evt_x";
-    const std::string y_column;
-    const std::vector<std::string> double_columns = {
-        "w_nominal",
-        "w_template",
-        "reco_nu_energy"
+    const std::vector<std::string> columns = {
+        "subrun",
+        "event"
     };
-    const std::vector<std::string> int_columns = {
-        "run_i",
-        "subrun_i",
-        "event_i",
-        "evt_cutmask_i",
-        "evt_category",
-        "sel_template_i",
-        "sel_reco_fv_i",
-        "sel_signal_i",
-        "sel_bkg_i",
-        "in_reco_fiducial_i",
-        "analysis_channels",
-        "scattering_mode",
-        "is_strange_i",
-        "count_strange",
-        "is_signal_i",
-        "recognised_signal_i"
-    };
-
-    std::ostringstream schema;
-    schema << "type\tname\n";
-    schema << "x\t" << x_column << "\n";
-    if (!y_column.empty())
-        schema << "y\t" << y_column << "\n";
-    for (const auto &c : double_columns)
-        schema << "double\t" << c << "\n";
-    for (const auto &c : int_columns)
-        schema << "int\t" << c << "\n";
 
     const std::string provenance_tree = "nuxsec_art_provenance/run_subrun";
     const std::string event_tree = analysis.tree_name();
@@ -104,8 +74,18 @@ int run(const event::Args &event_args, const std::string &log_prefix)
     if (!output_path.parent_path().empty())
         std::filesystem::create_directories(output_path.parent_path());
 
-    nuxsec::event::EventIO::init(event_args.output_root, header, sample_infos, schema.str(), "compiled");
-    nuxsec::event::EventIO event_io(event_args.output_root, nuxsec::event::EventIO::OpenMode::kUpdate);
+    std::ostringstream schema;
+    schema << "type\tname\n";
+    for (const auto &c : columns)
+        schema << "int\t" << c << "\n";
+
+    nuxsec::event::EventIO::init(event_args.output_root,
+                                 header,
+                                 sample_infos,
+                                 schema.str(),
+                                 "compiled");
+    nuxsec::event::EventIO event_io(event_args.output_root,
+                                    nuxsec::event::EventIO::OpenMode::kUpdate);
 
     for (const auto &input : inputs)
     {
@@ -158,15 +138,12 @@ int run(const event::Args &event_args, const std::string &log_prefix)
         std::cerr << "[" << log_prefix << "]"
                   << " stage=snapshot sample=" << sample.sample_name
                   << "\n";
-        
+
         const ULong64_t n_written =
             event_io.snapshot_event_list(node,
                                          sample.sample_name,
-                                         x_column,
-                                         y_column,
-                                         double_columns,
-                                         int_columns,
-                                         "sel_template");
+                                         columns,
+                                         "");
 
         std::cerr << "[" << log_prefix << "] analysis=" << analysis.name()
                   << " sample=" << sample.sample_name

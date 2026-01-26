@@ -61,10 +61,7 @@ public:
 
     ULong64_t snapshot_event_list(ROOT::RDF::RNode node,
                                   const std::string &sample_name,
-                                  const std::string &x_column,
-                                  const std::string &y_column,
-                                  const std::vector<std::string> &double_columns,
-                                  const std::vector<std::string> &int_columns,
+                                  const std::vector<std::string> &columns,
                                   const std::string &selection = "true",
                                   const std::string &tree_prefix = "events",
                                   bool overwrite_if_exists = true) const;
