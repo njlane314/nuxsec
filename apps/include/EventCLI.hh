@@ -24,7 +24,6 @@
 #include "AnalysisConfigService.hh"
 #include "ColumnDerivationService.hh"
 #include "EventIO.hh"
-#include "RDataFrameFactory.hh"
 #include "SampleCLI.hh"
 #include "SampleIO.hh"
 
@@ -80,7 +79,7 @@ inline void ensure_tree_present(const nuxsec::sample::SampleIO::Sample &sample,
         throw std::runtime_error("Event inputs missing ROOT files for sample: " + sample.sample_name);
     }
 
-    std::vector<std::string> files = nuxsec::RDataFrameFactory::collect_files(sample);
+    std::vector<std::string> files = sample::SampleIO::resolve_root_files(sample);
     if (files.empty())
     {
         throw std::runtime_error("Event inputs missing ROOT files for sample: " + sample.sample_name);

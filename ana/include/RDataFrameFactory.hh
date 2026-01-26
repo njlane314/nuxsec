@@ -32,7 +32,6 @@ class RDataFrameFactory
                                         const std::string &tree_name);
     static ROOT::RDF::RNode define_variables(ROOT::RDF::RNode node,
                                              const std::vector<ColumnDefinition> &definitions);
-    static std::vector<std::string> collect_files(const sample::SampleIO::Sample &sample);
 };
 
 } // namespace nuxsec
