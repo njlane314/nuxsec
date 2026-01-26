@@ -41,9 +41,19 @@ PLOT_OBJ = $(PLOT_SRC:%.cc=$(OBJ_DIR)/%.o)
 NUXSEC_NAME = build/bin/nuxsec
 NUXSEC_SRC = apps/src/nuxsec.cc
 
+ART_DRIVER_NAME = build/bin/nuxsecArtFileIOdriver
+ART_DRIVER_SRC = apps/src/nuxsecArtFileIOdriver.cc
+
+EVENT_DRIVER_NAME = build/bin/nuxsecEventIOdriver
+EVENT_DRIVER_SRC = apps/src/nuxsecEventIOdriver.cc
+
+SAMPLE_DRIVER_NAME = build/bin/nuxsecSampleIOdriver
+SAMPLE_DRIVER_SRC = apps/src/nuxsecSampleIOdriver.cc
+
 INCLUDES = -I./io/include -I./ana/include -I./plot/include -I./apps/include
 
 all: $(IO_LIB_NAME) $(SAMPLE_LIB_NAME) $(ANA_LIB_NAME) $(PLOT_LIB_NAME) \
+	 $(ART_DRIVER_NAME) $(EVENT_DRIVER_NAME) $(SAMPLE_DRIVER_NAME) \
 	 $(NUXSEC_NAME)
 
 $(IO_LIB_NAME): $(IO_OBJ)
@@ -64,8 +74,23 @@ $(PLOT_LIB_NAME): $(PLOT_OBJ)
 
 $(NUXSEC_NAME): $(NUXSEC_SRC) $(IO_LIB_NAME) $(SAMPLE_LIB_NAME) $(ANA_LIB_NAME)
 	mkdir -p $(dir $(NUXSEC_NAME))
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(NUXSEC_SRC) -Lbuild/lib -lNuxsecSample -lNuxsecIO \
-		-lNuxsecAna $(LDFLAGS) -o $(NUXSEC_NAME)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(NUXSEC_SRC) -Lbuild/lib -lNuxsecSample \
+		-lNuxsecIO -lNuxsecAna $(LDFLAGS) -o $(NUXSEC_NAME)
+
+$(ART_DRIVER_NAME): $(ART_DRIVER_SRC) $(IO_LIB_NAME)
+	mkdir -p $(dir $(ART_DRIVER_NAME))
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(ART_DRIVER_SRC) -Lbuild/lib -lNuxsecIO \
+		$(LDFLAGS) -o $(ART_DRIVER_NAME)
+
+$(EVENT_DRIVER_NAME): $(EVENT_DRIVER_SRC) $(IO_LIB_NAME) $(SAMPLE_LIB_NAME) $(ANA_LIB_NAME)
+	mkdir -p $(dir $(EVENT_DRIVER_NAME))
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(EVENT_DRIVER_SRC) -Lbuild/lib -lNuxsecSample \
+		-lNuxsecIO -lNuxsecAna $(LDFLAGS) -o $(EVENT_DRIVER_NAME)
+
+$(SAMPLE_DRIVER_NAME): $(SAMPLE_DRIVER_SRC) $(IO_LIB_NAME) $(SAMPLE_LIB_NAME)
+	mkdir -p $(dir $(SAMPLE_DRIVER_NAME))
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(SAMPLE_DRIVER_SRC) -Lbuild/lib -lNuxsecSample \
+		-lNuxsecIO $(LDFLAGS) -o $(SAMPLE_DRIVER_NAME)
 
 $(OBJ_DIR)/%.o: %.cc
 	mkdir -p $(dir $@)

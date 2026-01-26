@@ -19,10 +19,13 @@ namespace nuxsec
 namespace app
 {
 
-int run(const art::Args &art_args, const std::string &log_prefix)
+namespace art
+{
+
+int run(const Args &art_args, const std::string &log_prefix)
 {
     ROOT::EnableImplicitMT();
-    
+
     std::filesystem::path out_path(art_args.art_path);
     if (!out_path.parent_path().empty())
     {
@@ -45,11 +48,12 @@ int run(const art::Args &art_args, const std::string &log_prefix)
 
     const auto start_time = std::chrono::steady_clock::now();
     log_scan_start(log_prefix);
-    
+
     rec.summary = nuxsec::SubRunInventoryService::scan_subruns(files);
-    
+
     const auto end_time = std::chrono::steady_clock::now();
-    const double elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time).count();
+    const double elapsed_seconds =
+        std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time).count();
     log_scan_finish(log_prefix, rec.summary.n_entries, elapsed_seconds);
 
     rec.summary.pot_sum *= 1;
@@ -66,10 +70,13 @@ int run(const art::Args &art_args, const std::string &log_prefix)
     return 0;
 }
 
-}
+} // namespace art
 
-}
+} // namespace app
 
+} // namespace nuxsec
+
+#ifndef NUXSEC_DRIVER_LIB
 int main(int argc, char **argv)
 {
     return nuxsec::app::run_guarded(
@@ -80,6 +87,7 @@ int main(int argc, char **argv)
                 nuxsec::app::art::parse_args(
                     args,
                     "Usage: nuxsecArtFileIOdriver INPUT_NAME:FILELIST[:SAMPLE_KIND:BEAM_MODE]");
-            return nuxsec::app::run(art_args, "nuxsecArtFileIOdriver");
+            return nuxsec::app::art::run(art_args, "nuxsecArtFileIOdriver");
         });
 }
+#endif
