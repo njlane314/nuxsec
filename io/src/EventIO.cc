@@ -14,6 +14,8 @@
 #include <system_error>
 #include <vector>
 
+#include <ROOT/RCompressionSetting.hxx>
+#include <ROOT/RDFHelpers.hxx>
 #include <ROOT/RSnapshotOptions.hxx>
 
 #include <TFile.h>
@@ -139,12 +141,17 @@ ULong64_t EventIO::snapshot_event_list(ROOT::RDF::RNode node,
     const std::string tree_name = sample_tree_name(sample_name, tree_prefix);
 
     ROOT::RDF::RSnapshotOptions options;
-    options.fMode = std::filesystem::exists(m_path) ? "UPDATE" : "RECREATE";
+    options.fMode = "UPDATE";
     options.fOverwriteIfExists = overwrite_if_exists;
+    options.fLazy = true;
+    options.fCompressionAlgorithm = ROOT::RCompressionSetting::EAlgorithm::kLZ4;
+    options.fCompressionLevel = 1;
+    options.fBasketSize = 256 * 1024;
+    options.fAutoFlush = 100000;
 
     auto count = filtered.Count();
-    auto result = filtered.Snapshot(tree_name, m_path, columns, options);
-    result.GetValue();
+    auto snapshot = filtered.Snapshot(tree_name, m_path, columns, options);
+    ROOT::RDF::RunGraphs({count, snapshot});
     return count.GetValue();
 }
 
