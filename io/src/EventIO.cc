@@ -125,10 +125,7 @@ std::string EventIO::sample_tree_name(const std::string &sample_name,
 
 ULong64_t EventIO::snapshot_event_list(ROOT::RDF::RNode node,
                                        const std::string &sample_name,
-                                       const std::string &x_column,
-                                       const std::string &y_column,
-                                       const std::vector<std::string> &double_columns,
-                                       const std::vector<std::string> &int_columns,
+                                       const std::vector<std::string> &columns,
                                        const std::string &selection,
                                        const std::string &tree_prefix,
                                        bool overwrite_if_exists) const
@@ -140,16 +137,6 @@ ULong64_t EventIO::snapshot_event_list(ROOT::RDF::RNode node,
     }
 
     const std::string tree_name = sample_tree_name(sample_name, tree_prefix);
-
-    std::vector<std::string> columns;
-    columns.reserve(2 + double_columns.size() + int_columns.size());
-    columns.push_back(x_column);
-    if (!y_column.empty())
-        columns.push_back(y_column);
-    for (const auto &col : double_columns)
-        columns.push_back(col);
-    for (const auto &col : int_columns)
-        columns.push_back(col);
 
     ROOT::RDF::RSnapshotOptions options;
     options.fMode = std::filesystem::exists(m_path) ? "UPDATE" : "RECREATE";
