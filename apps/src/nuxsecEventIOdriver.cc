@@ -146,6 +146,12 @@ int run(const event::Args &event_args, const std::string &log_prefix)
                                          columns,
                                          "");
 
+        std::cout << "[" << log_prefix << "]"
+                  << " stage=snapshot_complete"
+                  << " sample=" << sample.sample_name
+                  << " events_written=" << n_written
+                  << "\n";
+
         std::cerr << "[" << log_prefix << "] analysis=" << analysis.name()
                   << " sample=" << sample.sample_name
                   << " kind=" << nuxsec::sample::SampleIO::sample_origin_name(sample.origin)
