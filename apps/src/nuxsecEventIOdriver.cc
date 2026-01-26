@@ -23,27 +23,29 @@ int run(const event::Args &event_args, const std::string &log_prefix)
 
     const auto &analysis = nuxsec::AnalysisConfigService::instance();
     const auto entries = nuxsec::app::read_samples(event_args.list_path);
+    
     const auto start_time = std::chrono::steady_clock::now();
     log_event_start(log_prefix, entries.size());
 
     std::vector<Input> inputs;
     inputs.reserve(entries.size());
-    std::vector<nuxsec::event::SampleInfo> sample_refs;
-    sample_refs.reserve(entries.size());
+    
+    std::vector<nuxsec::event::SampleInfo> sample_infos;
+    sample_infos.reserve(entries.size());
 
     for (const auto &entry : entries)
     {
         nuxsec::sample::SampleIO::Sample sample = nuxsec::sample::SampleIO::read(entry.output_path);
 
-        nuxsec::event::SampleInfo ref;
-        ref.sample_name = sample.sample_name;
-        ref.sample_rootio_path = entry.output_path;
-        ref.sample_origin = static_cast<int>(sample.origin);
-        ref.beam_mode = static_cast<int>(sample.beam);
-        ref.subrun_pot_sum = sample.subrun_pot_sum;
-        ref.db_tortgt_pot_sum = sample.db_tortgt_pot_sum;
-        ref.db_tor101_pot_sum = sample.db_tor101_pot_sum;
-        sample_refs.push_back(std::move(ref));
+        nuxsec::event::SampleInfo info;
+        info.sample_name = sample.sample_name;
+        info.sample_rootio_path = entry.output_path;
+        info.sample_origin = static_cast<int>(sample.origin);
+        info.beam_mode = static_cast<int>(sample.beam);
+        info.subrun_pot_sum = sample.subrun_pot_sum;
+        info.db_tortgt_pot_sum = sample.db_tortgt_pot_sum;
+        info.db_tor101_pot_sum = sample.db_tor101_pot_sum;
+        sample_infos.push_back(std::move(info));
 
         Input input;
         input.entry = entry;
@@ -106,74 +108,40 @@ int run(const event::Args &event_args, const std::string &log_prefix)
     for (const auto &input : inputs)
     {
         const nuxsec::sample::SampleIO::Sample &sample = input.sample;
+        
         std::cerr << "[" << log_prefix << "]"
                   << " stage=ensure_tree sample=" << sample.sample_name
                   << " tree=" << event_tree
                   << "\n";
+        
         ensure_tree_present(sample, event_tree);
+        
         std::cerr << "[" << log_prefix << "]"
                   << " stage=load_rdf sample=" << sample.sample_name
                   << "\n";
+        
         ROOT::RDataFrame rdf = nuxsec::RDataFrameFactory::load_sample(sample, event_tree);
+        
         std::cerr << "[" << log_prefix << "]"
                   << " stage=make_processor sample=" << sample.sample_name
                   << "\n";
+        
         const nuxsec::ProcessorEntry proc_entry = analysis.make_processor(sample);
-
         const auto &processor = nuxsec::ColumnDerivationService::instance();
+        
         std::cerr << "[" << log_prefix << "]"
                   << " stage=define_columns sample=" << sample.sample_name
                   << "\n";
+        
         ROOT::RDF::RNode node = processor.define(rdf, proc_entry);
 
-        {
-            const auto cnames = node.GetColumnNames();
-            auto has = [&](const std::string &name) {
-                return std::find(cnames.begin(), cnames.end(), name) != cnames.end();
-            };
-            if (!has("run"))
-                node = node.Define("run", [] { return static_cast<int>(0); });
-            if (!has("subrun"))
-                node = node.Define("subrun", [] { return static_cast<int>(0); });
-            if (!has("event"))
-                node = node.Define("event", [] { return static_cast<int>(0); });
-
-            if (!has("reco_nu_energy"))
-                node = node.Define("reco_nu_energy", [] { return 0.0f; });
-        }
-
-        node = node.Define(
-            "evt_cutmask",
-            [](bool t, bool fv, bool sig) {
-                uint64_t m = 0;
-                if (t)   m |= (1ull << 0);
-                if (fv)  m |= (1ull << 1);
-                if (sig) m |= (1ull << 2);
-                return m;
-            },
-            {"sel_template", "in_reco_fiducial", "recognised_signal"});
-
-        node = node.Define(
-            "evt_category",
-            [](bool s, bool b) { return s ? 1 : (b ? 0 : -1); },
-            {"sel_signal", "sel_bkg"});
-
-        node = node.Define("evt_x", [](float e) { return static_cast<double>(e); }, {"reco_nu_energy"});
         node = node.Define("run_i", "static_cast<int>(run)");
         node = node.Define("subrun_i", "static_cast<int>(subrun)");
         node = node.Define("event_i", "static_cast<int>(event)");
-        node = node.Define("evt_cutmask_i", [](uint64_t v) { return static_cast<int>(v); }, {"evt_cutmask"});
-        node = node.Define("sel_template_i", [](bool v) { return static_cast<int>(v); }, {"sel_template"});
-        node = node.Define("sel_reco_fv_i", [](bool v) { return static_cast<int>(v); }, {"sel_reco_fv"});
-        node = node.Define("sel_signal_i", [](bool v) { return static_cast<int>(v); }, {"sel_signal"});
-        node = node.Define("sel_bkg_i", [](bool v) { return static_cast<int>(v); }, {"sel_bkg"});
-        node = node.Define("in_reco_fiducial_i", [](bool v) { return static_cast<int>(v); }, {"in_reco_fiducial"});
-        node = node.Define("is_strange_i", [](bool v) { return static_cast<int>(v); }, {"is_strange"});
-        node = node.Define("is_signal_i", [](bool v) { return static_cast<int>(v); }, {"is_signal"});
-        node = node.Define("recognised_signal_i", [](bool v) { return static_cast<int>(v); }, {"recognised_signal"});
 
         using SampleOrigin = nuxsec::sample::SampleIO::SampleOrigin;
         const auto origin = sample.origin;
+        
         if (origin == SampleOrigin::kOverlay)
         {
             std::cerr << "[" << log_prefix << "]"
@@ -192,6 +160,7 @@ int run(const event::Args &event_args, const std::string &log_prefix)
         std::cerr << "[" << log_prefix << "]"
                   << " stage=snapshot sample=" << sample.sample_name
                   << "\n";
+        
         const ULong64_t n_written =
             event_io.snapshot_event_list(node,
                                          sample.sample_name,
@@ -210,8 +179,8 @@ int run(const event::Args &event_args, const std::string &log_prefix)
                   << "\n";
     }
     const auto end_time = std::chrono::steady_clock::now();
-    const double elapsed_seconds =
-        std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time).count();
+    const double elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time).count();
+    
     log_event_finish(log_prefix, entries.size(), elapsed_seconds);
 
     return 0;
