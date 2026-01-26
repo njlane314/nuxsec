@@ -57,8 +57,9 @@ int run(const event::Args &event_args, const std::string &log_prefix)
     }
 
     const std::vector<std::string> columns = {
-        "subrun",
-        "event"
+        "run",
+        "sub",
+        "evt"
     };
 
     const std::string provenance_tree = "nuxsec_art_provenance/run_subrun";
