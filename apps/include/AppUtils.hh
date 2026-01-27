@@ -112,7 +112,8 @@ inline std::vector<std::string> read_paths(const std::string &filelist_path)
     if (!fin)
     {
         throw std::runtime_error("Failed to open filelist: " + filelist_path +
-                                 " (errno=" + std::to_string(errno) + " " + std::strerror(errno) + ")");
+                                 " (errno=" + std::to_string(errno) + " " + std::strerror(errno) +
+                                 "). Ensure the filelist exists (e.g. run scripts/partition-lists.sh).");
     }
     std::vector<std::string> files;
     std::string line;
