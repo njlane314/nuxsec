@@ -196,8 +196,10 @@ inline Args parse_input(const std::string &input)
         throw std::runtime_error("Bad sample definition: " + input);
     }
 
-    out.output_path = "scratch/out/sample/sample_root_" + out.sample_name + ".root";
-    out.sample_list_path = "scratch/out/sample/samples.tsv";
+    const std::filesystem::path sample_dir =
+        nuxsec::app::stage_output_dir("NUXSEC_SAMPLE_DIR", "sample");
+    out.output_path = (sample_dir / ("sample_root_" + out.sample_name + ".root")).string();
+    out.sample_list_path = (sample_dir / "samples.tsv").string();
 
     return out;
 }

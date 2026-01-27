@@ -25,6 +25,8 @@ struct Header
     std::string provenance_tree;
     std::string event_tree;
     std::string sample_list_source;
+    std::string nuxsec_set;
+    std::string event_output_dir;
 };
 
 struct SampleInfo

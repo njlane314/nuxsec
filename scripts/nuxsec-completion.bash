@@ -7,7 +7,7 @@ _nuxsec()
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-  local commands="art sample macro help -h --help"
+  local commands="art sample event macro paths env help -h --help"
 
   _nuxsec_find_root()
   {
