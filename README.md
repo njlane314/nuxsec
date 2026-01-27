@@ -1,22 +1,11 @@
-# Nuxsec
+# nuxsec
 
 ROOT-based utilities for a neutrino cross-section analysis pipeline built around explicit analysis entities
-(Fragment → Sample → Dataset/RDF → Channel/Category → Selection → Template/Plot).
-
-## Core concepts (pipeline map)
-
-- **LArSoft job outputs** (partitions / shards)
-- **Art provenance aggregation** (input-level manifests)
-- **Logical samples** (collection of shards + merged view)
-- **Exposure / POT accounting** (per shard, per logical sample, target POT scaling)
-- **RDataFrame construction** (source trees, friend trees, derived columns, weights)
-- **Channels / categories** (analysis topology, truth categories, control regions)
-- **Selections and template definitions** (cutflow, histograms, response matrices, xsec outputs)
-- **Template production and plotting** (binned templates, stacked plots)
+(Aggregation → Sample → Dataset/RDF → Channel/Category → Selection → Template/Plot).
 
 ## Repository structure
 
-This is a COLLIE-like module layout. Each module is built as its own shared library.
+Each module is built as its own shared library.
 
 ```
 nuxsec/
@@ -27,26 +16,6 @@ nuxsec/
   scripts/ # environment helpers
 ```
 
-## Macros and executables
-
-### What the macros are used for
-
-Macro folders (for example, `io/macro/` and `ana/macro/`) are reserved for interactive ROOT
-scripts that perform post-processing and visualisation of outputs produced by the compiled
-applications. Empty `.keep` placeholders are committed so the macro directories stay tracked
-in the repository. These macros are intended for quick inspection and plotting workflows, such
-as reading output ROOT files, dumping diagnostic values, and generating plots for systematic
-variations or fit-response checks.
-
-### How they differ from applications
-
-Applications are compiled executables built by the `Makefile` that perform the core Nuxsec
-workflows: aggregating inputs, building RDF datasets, and producing the ROOT outputs used by
-downstream analysis. Macros, in contrast, are not standalone executables—they are run
-interactively inside ROOT (for example, `root -l` followed by `.L myMacro.C`) to inspect or
-visualise those outputs. In short, applications do the heavy calculations, while macros focus
-on analysis and plotting of the results.
-
 ## Requirements
 
 - C++17 compiler (e.g. `g++`)
@@ -54,6 +23,11 @@ on analysis and plotting of the results.
 - sqlite3 development headers/libs
 
 ## Build
+
+```bash
+source .container.sh
+source .setup.sh
+```
 
 ```bash
 make
@@ -69,14 +43,6 @@ This produces:
 - `build/bin/nuxsecSampleIOdriver`
 - `build/bin/nuxsecEventIOdriver`
 - `./nuxsec` (wrapper script that runs `build/bin/nuxsec`)
-
-## Analysis processing
-
-The `libNuXsecAna` library provides `nuxsec::ColumnDerivationService` and RDF construction helpers
-for defining analysis-level columns (weights, fiducial checks, channel classifications) on `ROOT::RDF::RNode`.
-
-The `nuxsec` CLI drives the art/sample/event aggregation stages and the `plot` module provides
-helper utilities for ROOT-based plotting and macro workflows.
 
 ## CLI overview
 
@@ -255,12 +221,3 @@ nuxsec macro plotPotSimple.C
 
 Shell completion for these commands is available in `scripts/nuxsec-completion.bash` (source it
 in your shell profile or session).
-
-### What the user “touches” in this UX
-
-- Filelists for inputs (already produced by your partitioning step).
-- Per-sample grouping filelists (or a small helper script).
-- `samples.tsv` is produced automatically and becomes the stable handoff.
-- After that, users only run:
-  - `nuxsec event …` (required)
-  - `nuxsec macro …` (optional, macro-driven plotting outputs).
