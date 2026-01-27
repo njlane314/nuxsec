@@ -52,7 +52,7 @@ This produces shared libraries and drivers:
 - `build/bin/nuxsecEventIOdriver`
 - `./nuxsec` (wrapper script that runs `build/bin/nuxsec`)
 
-## CLI overview
+## CLI Overview
 
 ```bash
 nuxsec -h
