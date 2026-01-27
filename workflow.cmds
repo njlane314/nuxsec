@@ -1,11 +1,10 @@
-# Nuxsec workflow command cheat-sheet (numi_fhc_run1)
-# Copy a single line as needed for a specific partition/sample or an entire input.
+# nuxsec workflow commands
 
-# Input 0: build filelists for each partition (uses scripts/partition-lists.sh defaults)
+# build filelists for each partition
 USER_NAME=nlane RELEASE=v08_00_00_82 NAME=numi_fhc_run1 
 source scripts/partition-lists.sh
 
-# Input 1: art (single partition)
+# aggregate art output
 nuxsec art "beam_s0:scratch/out/filelists/beam_s0.list:overlay:numi"
 nuxsec art "beam_s1:scratch/out/filelists/beam_s1.list:overlay:numi"
 nuxsec art "beam_s2:scratch/out/filelists/beam_s2.list:overlay:numi"
@@ -17,15 +16,13 @@ nuxsec art "ext_p0:scratch/out/filelists/ext_p0.list:ext:numi"
 nuxsec art "ext_p1:scratch/out/filelists/ext_p1.list:ext:numi"
 nuxsec art "ext_p2:scratch/out/filelists/ext_p2.list:ext:numi"
 
-# Input 2: sample lists (group art outputs into logical samples)
-bash scripts/sample-lists.sh
+# group art output into logical samples
+# can either run script
+source scripts/sample-lists.sh
 
-# Input 2: sample (single sample)
+# or samples individually
 nuxsec sample "beam:scratch/out/sample-lists/numi_fhc_run1_sample_beam.list"
 nuxsec sample "strangeness:scratch/out/sample-lists/numi_fhc_run1_sample_strangeness.list"
 
-# Input 2 (batch): run all sample entries
-nuxsec sample "beam:scratch/out/sample-lists/numi_fhc_run1_sample_beam.list"
-
-# Input 4: event (build event lists from sample list)
+# skim events from persistent samples
 nuxsec event scratch/out/sample/samples.tsv scratch/out/ana/events.root 8
