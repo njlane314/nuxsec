@@ -255,7 +255,6 @@ ULong64_t EventIO::snapshot_event_list_merged(ROOT::RDF::RNode node,
               << " sample=" << sample_name
               << " tmp_file=" << tmp_file
               << "\n";
-    ROOT::RDF::RunGraphs({count, snapshot});
     (void)snapshot.GetValue();
 
     std::cerr << "[EventIO] stage=append_begin"
