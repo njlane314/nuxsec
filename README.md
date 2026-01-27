@@ -61,11 +61,13 @@ make
 
 This produces:
 
-- `build/lib/libNuXsecIO.so`
-- `build/lib/libNuXsecSample.so`
-- `build/lib/libNuXsecAna.so`
-- `build/lib/libNuXsecPlot.so`
+- `build/lib/libNuxsecIO.so`
+- `build/lib/libNuxsecAna.so`
+- `build/lib/libNuxsecPlot.so`
 - `build/bin/nuxsec`
+- `build/bin/nuxsecArtFileIOdriver`
+- `build/bin/nuxsecSampleIOdriver`
+- `build/bin/nuxsecEventIOdriver`
 - `./nuxsec` (wrapper script that runs `build/bin/nuxsec`)
 
 ## Analysis processing
@@ -73,9 +75,26 @@ This produces:
 The `libNuXsecAna` library provides `nuxsec::ColumnDerivationService` and RDF construction helpers
 for defining analysis-level columns (weights, fiducial checks, channel classifications) on `ROOT::RDF::RNode`.
 
-The `libNuXsecPlot` library and `nuxsec` CLI build binned template histograms from
-aggregated samples and a compiled analysis definition, serving as the inputs to plotting and downstream
-cross-section fits.
+The `nuxsec` CLI drives the art/sample/event aggregation stages and the `plot` module provides
+helper utilities for ROOT-based plotting and macro workflows.
+
+## CLI overview
+
+```bash
+nuxsec -h
+```
+
+```text
+Usage: nuxsec <command> [args]
+
+Commands:
+  art         Aggregate art provenance for an input
+  sample      Aggregate Sample ROOT files from art provenance
+  event       Build event-level output from aggregated samples
+  macro       Run plot macros
+
+Run 'nuxsec <command> --help' for command-specific usage.
+```
 
 ## Runtime environment
 
@@ -105,7 +124,7 @@ cat > data.list <<'LIST'
 LIST
 ```
 
-## Example command-line workflow (sealed analysis, no runtime selections/tree/templates)
+## Example command-line workflow (template-style)
 
 Assume you run from the repo top-level (`nuxsec/`) and you already have per-input filelists
 produced by your partitioning step.
@@ -115,29 +134,22 @@ produced by your partitioning step.
 Each input filelist is a plain text file containing the input art/selection ROOT files for that input.
 
 ```bash
-# Data (kind can be omitted if your first file is nuselection_data.root and you rely on auto-detect)
-nuxsec art "data_bnb_run1a:inputs/filelists/data_bnb_run1a.txt:Data:BNB"
-
-# EXT
-nuxsec art "ext_bnb_run1a:inputs/filelists/ext_bnb_run1a.txt:EXT:BNB"
-
-# MC overlay
-nuxsec art "overlay_bnb_run1a:inputs/filelists/overlay_bnb_run1a.txt:Overlay:BNB"
-
-# Dirt
-nuxsec art "dirt_bnb_run1a:inputs/filelists/dirt_bnb_run1a.txt:Dirt:BNB"
+nuxsec art "sample_a:inputs/filelists/sample_a.txt:Data:Beam"
+nuxsec art "sample_b:inputs/filelists/sample_b.txt:EXT:Beam"
+nuxsec art "sample_c:inputs/filelists/sample_c.txt:Overlay:Beam"
+nuxsec art "sample_d:inputs/filelists/sample_d.txt:Dirt:Beam"
 ```
 
 Outputs (by code convention):
 
 ```
-build/out/art/art_prov_data_bnb_run1a.root
-build/out/art/art_prov_ext_bnb_run1a.root
-build/out/art/art_prov_overlay_bnb_run1a.root
-build/out/art/art_prov_dirt_bnb_run1a.root
+build/out/art/art_prov_sample_a.root
+build/out/art/art_prov_sample_b.root
+build/out/art/art_prov_sample_c.root
+build/out/art/art_prov_sample_d.root
 ```
 
-Repeat `nuxsec art ...` for each partition/input (run1b, run1c, etc.).
+Repeat `nuxsec art ...` for each partition/input you need.
 
 ### 2) Art provenance ROOT → Sample ROOT (group inputs into samples)
 
@@ -147,19 +159,19 @@ If you want these lists under the build tree, prefer a dedicated directory (for 
 
 ```bash
 mkdir -p build/out/lists
-ls build/out/art/art_prov_data_bnb_run1*.root    > build/out/lists/data_bnb_run1.txt
-ls build/out/art/art_prov_ext_bnb_run1*.root     > build/out/lists/ext_bnb_run1.txt
-ls build/out/art/art_prov_overlay_bnb_run1*.root > build/out/lists/overlay_bnb_run1.txt
-ls build/out/art/art_prov_dirt_bnb_run1*.root    > build/out/lists/dirt_bnb_run1.txt
+ls build/out/art/art_prov_sample_a*.root > build/out/lists/sample_a.txt
+ls build/out/art/art_prov_sample_b*.root > build/out/lists/sample_b.txt
+ls build/out/art/art_prov_sample_c*.root > build/out/lists/sample_c.txt
+ls build/out/art/art_prov_sample_d*.root > build/out/lists/sample_d.txt
 ```
 
 Then aggregate each sample:
 
 ```bash
-nuxsec sample "data_bnb_run1:build/out/lists/data_bnb_run1.txt"
-nuxsec sample "ext_bnb_run1:build/out/lists/ext_bnb_run1.txt"
-nuxsec sample "overlay_bnb_run1:build/out/lists/overlay_bnb_run1.txt"
-nuxsec sample "dirt_bnb_run1:build/out/lists/dirt_bnb_run1.txt"
+nuxsec sample "sample_a:build/out/lists/sample_a.txt"
+nuxsec sample "sample_b:build/out/lists/sample_b.txt"
+nuxsec sample "sample_c:build/out/lists/sample_c.txt"
+nuxsec sample "sample_d:build/out/lists/sample_d.txt"
 ```
 
 Outputs:
@@ -173,7 +185,7 @@ The TSV is the only input list you pass downstream.
 
 #### Separate sample lists for training versus templates/plots
 
-If you want full separation between CNN training and histogram/plot production, keep two
+If you want full separation between training and histogram/plot production, keep two
 independent sample aggregations and `samples.tsv` handoffs. This keeps the inputs disjoint
 and makes the handoff explicit.
 
@@ -182,13 +194,13 @@ and makes the handoff explicit.
 ```bash
 mkdir -p build/out/lists_train build/out/lists_plot
 
-# Training lists (use only the inputs you want for CNN training)
-for kind in data_bnb ext_bnb overlay_bnb dirt_bnb; do
+# Training lists (use only the inputs you want for training)
+for kind in sample_a sample_b sample_c sample_d; do
   ls build/out/art/art_prov_${kind}_train*.root > build/out/lists_train/${kind}_train.txt
 done
 
 # Plot/template lists (disjoint from training)
-for kind in data_bnb ext_bnb overlay_bnb dirt_bnb; do
+for kind in sample_a sample_b sample_c sample_d; do
   ls build/out/art/art_prov_${kind}_plot*.root > build/out/lists_plot/${kind}_plot.txt
 done
 ```
@@ -200,7 +212,7 @@ the outputs into per-purpose directories:
 
 ```bash
 # Training samples/TSV
-for kind in data_bnb ext_bnb overlay_bnb dirt_bnb; do
+for kind in sample_a sample_b sample_c sample_d; do
   nuxsec sample "${kind}_train:build/out/lists_train/${kind}_train.txt"
 done
 
@@ -208,7 +220,7 @@ mkdir -p build/out/sample_train
 mv build/out/sample/sample_root_* build/out/sample/samples.tsv build/out/sample_train/
 
 # Plot/template samples/TSV
-for kind in data_bnb ext_bnb overlay_bnb dirt_bnb; do
+for kind in sample_a sample_b sample_c sample_d; do
   nuxsec sample "${kind}_plot:build/out/lists_plot/${kind}_plot.txt"
 done
 
@@ -218,42 +230,28 @@ mv build/out/sample/sample_root_* build/out/sample/samples.tsv build/out/sample_
 
 **Handoffs**
 
-- `build/out/sample_train/samples.tsv` for CNN training.
+- `build/out/sample_train/samples.tsv` for training.
 - `build/out/sample_plot/samples.tsv` for templates, histograms, and plots.
 
-### 3) Samples → Analysis object (templates ROOT), sealed analysis
+### 3) Samples → Event-level output (compiled analysis)
 
 The compiled analysis definition in this repository is `nuxsec_default` with tree
 name `Events` by default. Override the input tree name by exporting `NUXSEC_TREE_NAME`
-before running the CLI. The template maker writes templates plus metadata (analysis name,
-tree name, compiled template definitions, sample bookkeeping) into a single ROOT artifact.
+before running the CLI. The event builder writes a single ROOT file containing the
+event-level tree plus metadata for the aggregated samples.
 
 ```bash
-nuxsec template-make build/out/sample/samples.tsv \
-  build/out/ana/analysis_default.root 8
+nuxsec event build/out/sample/samples.tsv build/out/event/events.root
 ```
 
-### 4) Systematics and plots
+### 4) Plotting via macros
 
-The CLI now includes a macro-driven plotting input. The default plot macro generates a POT
-timeline plot and writes images under `build/out/plot/`.
+Plotting is macro-driven. Use the `nuxsec macro` helper to run a plot macro
+(and optionally a specific function inside it).
 
 ```bash
-# Plot POT timeline (writes build/out/plot/pot_timeline.png)
-nuxsec plot
-
-# Override the output stem if you want a different filename or directory.
-nuxsec plot build/out/plot/pot_timeline_run1
+nuxsec macro plotPotSimple.C
 ```
-
-Fixed outputs (by code convention):
-
-```
-build/out/plot/pot_timeline.png
-```
-
-Systematics still use macros or extensions; there is no `systs` or `list-analyses` command
-in this repository yet.
 
 Shell completion for these commands is available in `scripts/nuxsec-completion.bash` (source it
 in your shell profile or session).
@@ -264,5 +262,5 @@ in your shell profile or session).
 - Per-sample grouping filelists (or a small helper script).
 - `samples.tsv` is produced automatically and becomes the stable handoff.
 - After that, users only run:
-  - `nuxsec template-make …` (required)
-  - `nuxsec plot …` (optional, macro-driven plotting outputs).
+  - `nuxsec event …` (required)
+  - `nuxsec macro …` (optional, macro-driven plotting outputs).
