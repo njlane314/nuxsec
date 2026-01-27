@@ -38,7 +38,7 @@ apps/  CLI entrypoints that orchestrate the pipeline
 ## Build
 
 ```bash
-make
+make all -j12
 ```
 
 This produces shared libraries and drivers:
