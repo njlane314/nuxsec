@@ -3,6 +3,7 @@
 #define NUXSEC_APPS_APP_UTILS_H
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cerrno>
 #include <chrono>
@@ -20,6 +21,8 @@
 #include <string>
 #include <thread>
 #include <vector>
+
+#include <unistd.h>
 
 #include "AppLog.hh"
 
@@ -193,10 +196,24 @@ private:
             }
             std::ostringstream out;
             out << message_
+                << " host=" << resolve_hostname()
+                << " pid=" << ::getpid()
                 << " time=" << format_timestamp()
-                << " elapsed=" << format_elapsed_seconds() << "s";
+                << " elapsed=" << format_elapsed_seconds() << "s"
+                << " interval=" << interval_.count() << "s";
             nuxsec::app::log::log_info(log_prefix_, out.str());
         }
+    }
+
+    std::string resolve_hostname() const
+    {
+        std::array<char, 256> buffer{};
+        if (::gethostname(buffer.data(), buffer.size()) != 0)
+        {
+            return "unknown";
+        }
+        buffer.back() = '\0';
+        return std::string(buffer.data());
     }
 
     std::string format_timestamp() const
