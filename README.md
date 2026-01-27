@@ -9,7 +9,7 @@ recorded provenance, samples feed into a compiled event-level analysis, and plot
 resulting outputs. This makes it easier to audit which inputs contributed to each step and to reproduce
 analysis or training artefacts later.
 
-## Architecture at a glance
+## Architecture 
 
 Each top-level module builds a shared library and exposes typed services or analysis entities. The pipeline
 also supports producing a CNN training snapshot: sample-level ROOT outputs can be materialised, split, and
@@ -22,7 +22,7 @@ plot/  stacked-histogram and channel plotting helpers
 apps/  CLI entrypoints that orchestrate the pipeline
 ```
 
-### Runtime artefacts (by convention)
+### Runtime 
 
 - `build/out/art/` stores provenance ROOT outputs from `nuxsec art`.
 - `build/out/sample/` stores per-sample ROOT outputs and `samples.tsv` produced by `nuxsec sample`.
@@ -70,7 +70,7 @@ Commands:
 Run 'nuxsec <command> --help' for command-specific usage.
 ```
 
-## Runtime environment
+## Run Environment
 
 ```bash
 source .container.sh
@@ -87,13 +87,13 @@ wrapper script:
 ./nuxsec <command> [args...]
 ```
 
-### Environment knobs
+### Environment Variables
 
 - `NUXSEC_REPO_ROOT` can be set to override the repo discovery used by the CLI.
 - `NUXSEC_TREE_NAME` selects the input tree name for the event builder (default: `Events`).
 - `NUXSEC_PLOT_DIR` and `NUXSEC_PLOT_FORMAT` control plot output location and file extension.
 
-## Input file lists
+## Input Files
 
 File lists are newline-delimited paths to ROOT files (blank lines and `#` comments are ignored):
 
@@ -105,7 +105,7 @@ cat > data.list <<'LIST'
 LIST
 ```
 
-## Minimal workflow (analysis + CNN training snapshots)
+## Minimal Workflow
 
 Assume you run from the repo root and already have per-input filelists from your partitioning step.
 
@@ -159,7 +159,7 @@ The `build/out/sample/` artefacts can feed event-level aggregation or be snapsho
 CNN training (for example, copying the per-sample ROOT outputs into a dedicated training
 dataset directory alongside a curated `samples.tsv`).
 
-**Training vs template sample sets (recommended handoff)**
+**Training vs template sample sets**
 
 Maintain two disjoint sample aggregations (training/template), but keep the logical sample
 names consistent between them so normalisations stay aligned with the logical samples.
