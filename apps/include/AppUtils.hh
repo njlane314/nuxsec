@@ -61,29 +61,9 @@ inline std::filesystem::path repo_root_dir()
 {
     if (const char *value = getenv_cstr("NUXSEC_REPO_ROOT"))
     {
-        std::filesystem::path repo_root(value);
-        if (!std::filesystem::exists(repo_root))
-        {
-            std::filesystem::create_directories(repo_root);
-        }
-        return repo_root;
+        return std::filesystem::path(value);
     }
-    std::filesystem::path current = std::filesystem::current_path();
-    std::filesystem::path cursor = current;
-    while (!cursor.empty())
-    {
-        if (std::filesystem::exists(cursor / "Makefile") &&
-            std::filesystem::exists(cursor / "apps"))
-        {
-            return cursor;
-        }
-        if (cursor == cursor.root_path())
-        {
-            break;
-        }
-        cursor = cursor.parent_path();
-    }
-    return current;
+    return std::filesystem::current_path();
 }
 
 inline std::filesystem::path out_base_dir()
@@ -126,39 +106,14 @@ inline int run_guarded(const std::function<int()> &func)
     }
 }
 
-inline std::filesystem::path resolve_filelist_path(const std::string &filelist_path)
-{
-    std::filesystem::path path(filelist_path);
-    if (path.is_absolute())
-    {
-        return path;
-    }
-    if (std::filesystem::exists(path))
-    {
-        return path;
-    }
-    std::filesystem::path repo_path = repo_root_dir() / path;
-    if (std::filesystem::exists(repo_path))
-    {
-        return repo_path;
-    }
-    return path;
-}
-
 inline std::vector<std::string> read_paths(const std::string &filelist_path)
 {
-    const std::filesystem::path resolved_path = resolve_filelist_path(filelist_path);
-    std::ifstream fin(resolved_path);
+    std::ifstream fin(filelist_path);
     if (!fin)
     {
-        std::string message = "Failed to open filelist: " + resolved_path.string();
-        if (resolved_path != std::filesystem::path(filelist_path))
-        {
-            message += " (from " + filelist_path + ")";
-        }
-        message += " (errno=" + std::to_string(errno) + " " + std::strerror(errno) +
-                   "). Ensure the filelist exists (e.g. run scripts/partition-lists.sh).";
-        throw std::runtime_error(message);
+        throw std::runtime_error("Failed to open filelist: " + filelist_path +
+                                 " (errno=" + std::to_string(errno) + " " + std::strerror(errno) +
+                                 "). Ensure the filelist exists (e.g. run scripts/partition-lists.sh).");
     }
     std::vector<std::string> files;
     std::string line;
