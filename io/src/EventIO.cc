@@ -218,7 +218,7 @@ ULong64_t EventIO::snapshot_event_list(ROOT::RDF::RNode node,
     {
         // Avoid useCP (2nd ctor arg) which routes through TFile::Cp using "file.root:/"
         // and can trigger spurious TUrl complaints on some ROOT versions.
-        TFileMerger merger; // isLocal=true, useCP=false
+        TFileMerger merger(kTRUE, kFALSE); // local merge; disable TFile::Cp ("*.root:/") path
         merger.SetFastMethod(kFALSE);
         if (!merger.OutputFile(m_path.c_str(), "UPDATE"))
             throw std::runtime_error("EventIO: failed to open output for merge: " + m_path);
