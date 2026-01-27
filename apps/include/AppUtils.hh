@@ -5,7 +5,9 @@
 #include <algorithm>
 #include <cctype>
 #include <cerrno>
+#include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -43,6 +45,52 @@ inline std::vector<std::string> collect_args(int argc, char **argv, int start_in
         args.emplace_back(argv[i]);
     }
     return args;
+}
+
+inline const char *getenv_cstr(const char *name)
+{
+    const char *value = std::getenv(name);
+    if (!value || !*value)
+    {
+        return nullptr;
+    }
+    return value;
+}
+
+inline std::filesystem::path repo_root_dir()
+{
+    if (const char *value = getenv_cstr("NUXSEC_REPO_ROOT"))
+    {
+        return std::filesystem::path(value);
+    }
+    return std::filesystem::current_path();
+}
+
+inline std::filesystem::path out_base_dir()
+{
+    if (const char *value = getenv_cstr("NUXSEC_OUT_BASE"))
+    {
+        return std::filesystem::path(value);
+    }
+    return repo_root_dir() / "scratch" / "out";
+}
+
+inline std::string workspace_set()
+{
+    if (const char *value = getenv_cstr("NUXSEC_SET"))
+    {
+        return std::string(value);
+    }
+    return "template";
+}
+
+inline std::filesystem::path stage_output_dir(const char *override_env, const std::string &stage)
+{
+    if (const char *value = getenv_cstr(override_env))
+    {
+        return std::filesystem::path(value);
+    }
+    return out_base_dir() / workspace_set() / stage;
 }
 
 inline int run_guarded(const std::function<int()> &func)

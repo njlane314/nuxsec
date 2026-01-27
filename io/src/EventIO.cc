@@ -120,6 +120,14 @@ void EventIO::init(const std::string &out_path,
     TObjString(header.provenance_tree.c_str()).Write("provenance_tree");
     TObjString(header.event_tree.c_str()).Write("event_tree");
     TObjString(header.sample_list_source.c_str()).Write("sample_list_source");
+    if (!header.nuxsec_set.empty())
+    {
+        TObjString(header.nuxsec_set.c_str()).Write("nuxsec_set");
+    }
+    if (!header.event_output_dir.empty())
+    {
+        TObjString(header.event_output_dir.c_str()).Write("event_output_dir");
+    }
 
     if (!event_schema_tsv.empty())
     {

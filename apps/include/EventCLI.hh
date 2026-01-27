@@ -131,6 +131,14 @@ inline Args parse_args(const std::vector<std::string> &args, const std::string &
         throw std::runtime_error("Invalid arguments (empty path)");
     }
 
+    std::filesystem::path output_root(out.output_root);
+    if (output_root.is_relative() && output_root.parent_path().empty())
+    {
+        const std::filesystem::path event_dir =
+            nuxsec::app::stage_output_dir("NUXSEC_EVENT_DIR", "event");
+        out.output_root = (event_dir / output_root).string();
+    }
+
     return out;
 }
 

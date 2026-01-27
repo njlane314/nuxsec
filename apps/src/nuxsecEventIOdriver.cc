@@ -70,8 +70,13 @@ int run(const event::Args &event_args, const std::string &log_prefix)
     header.provenance_tree = provenance_tree;
     header.event_tree = event_tree;
     header.sample_list_source = event_args.list_path;
+    header.nuxsec_set = nuxsec::app::workspace_set();
 
     const std::filesystem::path output_path(event_args.output_root);
+    if (!output_path.parent_path().empty())
+    {
+        header.event_output_dir = output_path.parent_path().string();
+    }
     if (!output_path.parent_path().empty())
         std::filesystem::create_directories(output_path.parent_path());
 

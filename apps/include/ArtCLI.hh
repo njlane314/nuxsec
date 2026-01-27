@@ -125,7 +125,9 @@ inline Args parse_input(const std::string &input)
         throw std::runtime_error("Bad input definition (expected NAME:FILELIST[:SAMPLE_KIND:BEAM_MODE]): " + input);
     }
 
-    out.art_path = "scratch/out/art/art_prov_" + out.input.input_name + ".root";
+    const std::filesystem::path art_dir =
+        nuxsec::app::stage_output_dir("NUXSEC_ART_DIR", "art");
+    out.art_path = (art_dir / ("art_prov_" + out.input.input_name + ".root")).string();
 
     return out;
 }

@@ -28,12 +28,48 @@ const char *kUsageMacro =
     "Usage: nuxsec macro MACRO.C [CALL]\n"
     "       nuxsec macro list\n"
     "\nEnvironment:\n"
-    "  NUXSEC_PLOT_DIR     Output directory (default: <repo>/scratch/plot)\n"
-    "  NUXSEC_PLOT_FORMAT  Output extension (default: pdf)\n";
+    "  NUXSEC_PLOT_BASE    Plot base directory (default: <repo>/scratch/plot)\n"
+    "  NUXSEC_PLOT_DIR     Output directory override (default: NUXSEC_PLOT_BASE/<set>)\n"
+    "  NUXSEC_PLOT_FORMAT  Output extension (default: pdf)\n"
+    "  NUXSEC_SET          Workspace selector (default: template)\n";
 
 bool is_help_arg(const std::string &arg)
 {
     return arg == "-h" || arg == "--help";
+}
+
+struct GlobalOptions
+{
+    std::string set;
+};
+
+GlobalOptions parse_global(int &i, int argc, char **argv)
+{
+    GlobalOptions opt;
+    for (; i < argc; ++i)
+    {
+        const std::string arg = argv[i];
+        if (arg == "--set" || arg == "-S")
+        {
+            if (i + 1 >= argc)
+            {
+                throw std::runtime_error("Missing value for --set");
+            }
+            opt.set = argv[++i];
+            continue;
+        }
+        if (arg == "--")
+        {
+            ++i;
+            break;
+        }
+        if (!arg.empty() && arg[0] == '-')
+        {
+            break;
+        }
+        break;
+    }
+    return opt;
 }
 
 void print_main_help(std::ostream &out)
@@ -44,6 +80,10 @@ void print_main_help(std::ostream &out)
         << "  sample      Aggregate Sample ROOT files from art provenance\n"
         << "  event       Build event-level output from aggregated samples\n"
         << "  macro       Run plot macros\n"
+        << "  paths       Print resolved workspace paths\n"
+        << "  env         Print environment exports for a workspace\n"
+        << "\nGlobal options:\n"
+        << "  -S, --set   Workspace selector (default: template)\n"
         << "\nRun 'nuxsec <command> --help' for command-specific usage.\n";
 }
 
@@ -76,6 +116,74 @@ std::filesystem::path find_repo_root()
     }
 
     return std::filesystem::current_path();
+}
+
+const char *getenv_cstr(const char *name)
+{
+    const char *value = std::getenv(name);
+    if (!value || !*value)
+    {
+        return nullptr;
+    }
+    return value;
+}
+
+std::string workspace_set()
+{
+    if (const char *value = getenv_cstr("NUXSEC_SET"))
+    {
+        return std::string(value);
+    }
+    return "template";
+}
+
+std::filesystem::path out_base_dir(const std::filesystem::path &repo_root)
+{
+    if (const char *value = getenv_cstr("NUXSEC_OUT_BASE"))
+    {
+        return std::filesystem::path(value);
+    }
+    return repo_root / "scratch" / "out";
+}
+
+std::filesystem::path plot_base_dir(const std::filesystem::path &repo_root)
+{
+    if (const char *value = getenv_cstr("NUXSEC_PLOT_BASE"))
+    {
+        return std::filesystem::path(value);
+    }
+    return repo_root / "scratch" / "plot";
+}
+
+std::filesystem::path stage_dir(const std::filesystem::path &repo_root,
+                                const char *override_env,
+                                const std::string &stage)
+{
+    if (const char *value = getenv_cstr(override_env))
+    {
+        return std::filesystem::path(value);
+    }
+    return out_base_dir(repo_root) / workspace_set() / stage;
+}
+
+std::filesystem::path plot_dir(const std::filesystem::path &repo_root)
+{
+    if (const char *value = getenv_cstr("NUXSEC_PLOT_DIR"))
+    {
+        return std::filesystem::path(value);
+    }
+    std::filesystem::path out = plot_base_dir(repo_root);
+    const std::string set = workspace_set();
+    if (!set.empty())
+    {
+        out /= set;
+    }
+    return out;
+}
+
+std::filesystem::path default_samples_tsv(const std::filesystem::path &repo_root)
+{
+    return out_base_dir(repo_root) / workspace_set() / "sample" / "samples.tsv";
 }
 
 std::string shell_quote(const std::string &value)
@@ -155,7 +263,7 @@ void ensure_plot_env(const std::filesystem::path &repo_root)
     }
     if (!gSystem->Getenv("NUXSEC_PLOT_DIR"))
     {
-        const auto out = (repo_root / "scratch" / "plot").string();
+        const auto out = plot_dir(repo_root).string();
         gSystem->Setenv("NUXSEC_PLOT_DIR", out.c_str());
     }
 }
@@ -219,6 +327,48 @@ void add_plot_include_paths(const std::filesystem::path &repo_root)
     gSystem->AddIncludePath(("-I" + include_path.string()).c_str());
     const auto ana_include_path = repo_root / "ana/include";
     gSystem->AddIncludePath(("-I" + ana_include_path.string()).c_str());
+}
+
+void print_paths(std::ostream &out, const std::filesystem::path &repo_root)
+{
+    out << "NUXSEC_REPO_ROOT=" << repo_root.string() << "\n";
+    out << "NUXSEC_SET=" << workspace_set() << "\n";
+    out << "NUXSEC_OUT_BASE=" << out_base_dir(repo_root).string() << "\n";
+    out << "NUXSEC_PLOT_BASE=" << plot_base_dir(repo_root).string() << "\n";
+    out << "ART_DIR=" << stage_dir(repo_root, "NUXSEC_ART_DIR", "art").string() << "\n";
+    out << "SAMPLE_DIR=" << stage_dir(repo_root, "NUXSEC_SAMPLE_DIR", "sample").string() << "\n";
+    out << "EVENT_DIR=" << stage_dir(repo_root, "NUXSEC_EVENT_DIR", "event").string() << "\n";
+    out << "PLOT_DIR=" << plot_dir(repo_root).string() << "\n";
+}
+
+int handle_env_command(const std::vector<std::string> &args,
+                       const std::filesystem::path &repo_root)
+{
+    if (!args.empty() && is_help_arg(args[0]))
+    {
+        std::cout << "Usage: nuxsec env [SET]\n";
+        return 0;
+    }
+    if (args.size() > 1)
+    {
+        throw std::runtime_error("Usage: nuxsec env [SET]");
+    }
+
+    std::string set_value = workspace_set();
+    if (!args.empty())
+    {
+        set_value = nuxsec::app::trim(args[0]);
+    }
+
+    if (set_value.empty())
+    {
+        throw std::runtime_error("Missing workspace set value");
+    }
+
+    std::cout << "export NUXSEC_SET=" << shell_quote(set_value) << "\n";
+    std::cout << "export NUXSEC_OUT_BASE=" << shell_quote(out_base_dir(repo_root).string()) << "\n";
+    std::cout << "export NUXSEC_PLOT_BASE=" << shell_quote(plot_base_dir(repo_root).string()) << "\n";
+    return 0;
 }
 
 int exec_root_macro(const std::filesystem::path &repo_root,
@@ -346,19 +496,52 @@ int main(int argc, char **argv)
     return nuxsec::app::run_guarded(
         [argc, argv]()
         {
-            if (argc < 2)
+            int i = 1;
+            const GlobalOptions global_opts = parse_global(i, argc, argv);
+            if (!global_opts.set.empty())
+            {
+                ::setenv("NUXSEC_SET", global_opts.set.c_str(), 1);
+            }
+
+            if (i >= argc)
             {
                 print_main_help(std::cerr);
                 return 1;
             }
 
-            const std::string command = argv[1];
-            const std::vector<std::string> args = nuxsec::app::collect_args(argc, argv, 2);
+            const auto repo_root = find_repo_root();
+            if (!getenv_cstr("NUXSEC_REPO_ROOT"))
+            {
+                ::setenv("NUXSEC_REPO_ROOT", repo_root.string().c_str(), 1);
+            }
+
+            const std::string command = argv[i++];
+            const std::vector<std::string> args = nuxsec::app::collect_args(argc, argv, i);
 
             if (command == "help" || command == "-h" || command == "--help")
             {
                 print_main_help(std::cout);
                 return 0;
+            }
+
+            if (command == "paths")
+            {
+                if (!args.empty() && is_help_arg(args[0]))
+                {
+                    std::cout << "Usage: nuxsec paths\n";
+                    return 0;
+                }
+                if (!args.empty())
+                {
+                    throw std::runtime_error("Usage: nuxsec paths");
+                }
+                print_paths(std::cout, repo_root);
+                return 0;
+            }
+
+            if (command == "env")
+            {
+                return handle_env_command(args, repo_root);
             }
 
             const std::pair<const char *, const char *> driver_map[] = {
@@ -370,6 +553,13 @@ int main(int argc, char **argv)
             {
                 if (command == entry.first)
                 {
+                    if (command == "event" && args.size() == 1 && !is_help_arg(args[0]))
+                    {
+                        std::vector<std::string> rewritten;
+                        rewritten.push_back(default_samples_tsv(repo_root).string());
+                        rewritten.push_back(args[0]);
+                        return dispatch_driver_command(entry.second, rewritten);
+                    }
                     return dispatch_driver_command(entry.second, args);
                 }
             }

@@ -11,7 +11,9 @@
  *        NUXSEC_PLOT_FORMAT = pdf
  *
  *  The CLI sets NUXSEC_REPO_ROOT and (if unset) NUXSEC_PLOT_DIR so plots land
- *  consistently regardless of where the binary is invoked from.
+ *  consistently regardless of where the binary is invoked from. When using
+ *  workspace switching, the CLI derives NUXSEC_PLOT_DIR from NUXSEC_PLOT_BASE
+ *  and NUXSEC_SET.
  */
 
 #ifndef NUXSEC_PLOT_PLOT_ENV_H
