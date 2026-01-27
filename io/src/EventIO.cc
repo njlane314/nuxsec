@@ -9,11 +9,13 @@
 
 #include <cctype>
 #include <chrono>
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <system_error>
+#include <unistd.h>
 #include <vector>
 
 #include <Compression.h>
@@ -21,6 +23,7 @@
 #include <ROOT/RSnapshotOptions.hxx>
 
 #include <TFile.h>
+#include <TFileMerger.h>
 #include <TObjString.h>
 #include <TROOT.h>
 #include <TTree.h>
@@ -143,9 +146,22 @@ ULong64_t EventIO::snapshot_event_list(ROOT::RDF::RNode node,
 
     const std::string tree_name = sample_tree_name(sample_name, tree_prefix);
 
+    // Snapshot to a fresh temp file (RECREATE) to avoid Snapshot+UPDATE corner-cases.
+    // Then merge the temp file into the real output file with TFileMerger.
+    std::filesystem::path tmp_dir;
+    if (const char *p = std::getenv("NUXSEC_TMPDIR"); p && *p)
+        tmp_dir = p;
+    else if (const char *p = std::getenv("TMPDIR"); p && *p)
+        tmp_dir = p;
+    else
+        tmp_dir = std::filesystem::temp_directory_path();
+
+    const std::string tmp_file =
+        (tmp_dir / ("nuxsec_snapshot_" + tree_name + "_" + std::to_string(::getpid()) + ".root")).string();
+
     ROOT::RDF::RSnapshotOptions options;
-    options.fMode = "UPDATE";
-    options.fOverwriteIfExists = overwrite_if_exists;
+    options.fMode = "RECREATE";
+    options.fOverwriteIfExists = false; // irrelevant for RECREATE
     options.fLazy = true;
     // Make snapshot writing less bursty and less CPU-heavy:
     //  - LZ4 is typically much faster than ZLIB for analysis ntuples
@@ -153,6 +169,8 @@ ULong64_t EventIO::snapshot_event_list(ROOT::RDF::RNode node,
     options.fCompressionAlgorithm = ROOT::kLZ4;
     options.fCompressionLevel = 1;
     options.fAutoFlush = -50LL * 1024 * 1024; // ~50 MB
+    // Avoid deep splitting (default is 99) which can explode branch count/cost for complex types.
+    options.fSplitLevel = 0;
 
     auto count = filtered.Count();
     constexpr ULong64_t progress_every = 1000;
@@ -169,11 +187,40 @@ ULong64_t EventIO::snapshot_event_list(ROOT::RDF::RNode node,
                                         << " elapsed_seconds=" << elapsed_seconds
                                         << "\n";
                           });
-    auto snapshot = filtered.Snapshot(tree_name, m_path, columns, options);
+    auto snapshot = filtered.Snapshot(tree_name, tmp_file, columns, options);
     std::cerr << "[EventIO] stage=snapshot_run"
               << " sample=" << sample_name
+              << " tmp_file=" << tmp_file
               << "\n";
     ROOT::RDF::RunGraphs({count, snapshot});
+
+    std::cerr << "[EventIO] stage=snapshot_merge_begin"
+              << " sample=" << sample_name
+              << " tmp_file=" << tmp_file
+              << " out_file=" << m_path
+              << "\n";
+    {
+        TFileMerger merger(kTRUE, kTRUE);
+        merger.SetFastMethod(kTRUE);
+        if (!merger.OutputFile(m_path.c_str(), "UPDATE"))
+            throw std::runtime_error("EventIO: failed to open output for merge: " + m_path);
+        if (!merger.AddFile(tmp_file.c_str()))
+            throw std::runtime_error("EventIO: failed to add temp file to merger: " + tmp_file);
+        if (!merger.Merge())
+            throw std::runtime_error("EventIO: merge failed for temp file: " + tmp_file);
+    }
+    std::cerr << "[EventIO] stage=snapshot_merge_done"
+              << " sample=" << sample_name
+              << "\n";
+
+    {
+        std::error_code ec;
+        std::filesystem::remove(tmp_file, ec);
+        if (ec)
+            std::cerr << "[EventIO] warning=failed_to_remove_tmp_file path=" << tmp_file
+                      << " err=" << ec.message() << "\n";
+    }
+
     const auto end_time = std::chrono::steady_clock::now();
     const double elapsed_seconds =
         std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time).count();
