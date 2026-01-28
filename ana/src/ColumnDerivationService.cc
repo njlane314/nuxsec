@@ -177,8 +177,7 @@ ROOT::RDF::RNode ColumnDerivationService::define(ROOT::RDF::RNode node, const Pr
         {"reco_neutrino_vertex_sce_x", "reco_neutrino_vertex_sce_y", "reco_neutrino_vertex_sce_z"});
 
     {
-        selection::Entry srec{};
-        srec.source = rec.source;
+        selection::Entry srec{rec.source, selection::FrameView{node}};
         node = selection::SelectionService::decorate(node, srec);
     }
 
