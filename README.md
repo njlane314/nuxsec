@@ -197,16 +197,23 @@ argument to filter events before writing the output.
 nuxsec --set template event scratch/out/template/event/events.root
 ```
 
-Example with an explicit selection:
+To override the event output schema, pass a columns TSV as the final positional
+argument. The TSV expects `type` and `name` columns (see `docs/event_columns.tsv`).
+If you only want to provide columns, pass `true` as the selection placeholder.
 
 ```bash
-nuxsec --set template event scratch/out/template/event/events.root "sel_triggered_muon"
+nuxsec --set template event scratch/out/template/event/events.root true docs/event_columns.tsv
 ```
 
-Muon-neutrino selection example:
+Selection strings can reference selection columns derived by the SelectionService.
+Examples:
 
 ```bash
-nuxsec --set template event scratch/out/template/event/events.root "sel_inclusive_mu_cc"
+nuxsec --set template event scratch/out/template/event/events.root sel_muon
+nuxsec --set template event scratch/out/template/event/events.root sel_inclusive_mu_cc
+nuxsec --set template event scratch/out/template/event/events.root sel_triggered_muon
+nuxsec --set template event scratch/out/template/event/events.root sel_triggered_slice
+nuxsec --set template event scratch/out/template/event/events.root sel_reco_fv
 ```
 
 4) **Plotting via macros**
