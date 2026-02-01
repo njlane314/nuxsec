@@ -146,15 +146,26 @@ ROOT::RDF::RNode ColumnDerivationService::define(ROOT::RDF::RNode node, const Pr
 
         node = node.Define(
             "is_signal",
-            [](bool is_nu_mu_cc, const ROOT::RVec<int> &lambda_decay_in_fid) {
+            [](bool is_nu_mu_cc, int ccnc, bool in_fiducial, float mu_p, float p_p, float pi_p, float lam_decay_sep) {
+                const float min_mu_p = 0.10f;
+                const float min_p_p = 0.30f;
+                const float min_pi_p = 0.10f;
+                const float min_lam_decay_sep = 0.50f;
+
                 if (!is_nu_mu_cc)
                     return false;
-                for (auto v : lambda_decay_in_fid)
-                    if (v)
-                        return true;
-                return false;
+                if (ccnc != 0)
+                    return false;
+                if (!in_fiducial)
+                    return false;
+                if (!std::isfinite(mu_p) || !std::isfinite(p_p) || !std::isfinite(pi_p) ||
+                    !std::isfinite(lam_decay_sep))
+                    return false;
+                if (mu_p < min_mu_p || p_p < min_p_p || pi_p < min_pi_p)
+                    return false;
+                return lam_decay_sep >= min_lam_decay_sep;
             },
-            {"is_nu_mu_cc", "lambda_decay_in_fid"});
+            {"is_nu_mu_cc", "int_ccnc", "in_fiducial", "mu_p", "p_p", "pi_p", "lam_decay_sep"});
     }
     else
     {
