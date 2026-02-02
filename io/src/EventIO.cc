@@ -32,8 +32,10 @@
 
 namespace nuxsec
 {
+
 namespace event
 {
+
 std::string EventIO::sanitise_root_key(std::string s)
 {
     for (char &c : s)
@@ -47,8 +49,6 @@ std::string EventIO::sanitise_root_key(std::string s)
     return s;
 }
 
-namespace
-{
 void append_tree_fast(const std::string &out_path,
                       const std::string &tmp_file,
                       const std::string &tree_name)
@@ -84,7 +84,6 @@ void append_tree_fast(const std::string &out_path,
 
     fout->Close();
     fin->Close();
-}
 }
 
 void EventIO::init(const std::string &out_path,
@@ -379,4 +378,5 @@ ULong64_t EventIO::snapshot_event_list(ROOT::RDF::RNode node,
 }
 
 }
+
 }
