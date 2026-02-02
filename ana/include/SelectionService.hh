@@ -29,7 +29,7 @@ struct FrameView
 
 struct Entry
 {
-    SourceKind source = SourceKind::kUnknown;
+    Type source = Type::kUnknown;
     FrameView nominal;
 };
 
