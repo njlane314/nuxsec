@@ -17,13 +17,13 @@
 
 namespace nuxsec
 {
+
 namespace selection
 {
 
 struct FrameView
 {
     ROOT::RDF::RNode node;
-
     ROOT::RDF::RNode rnode() const { return node; }
 };
 
@@ -43,7 +43,6 @@ enum class Preset
     Muon
 };
 
-/** \brief Selection helpers for analysis filters and summaries. */
 class SelectionService
 {
   public:
@@ -71,6 +70,7 @@ inline ROOT::RDF::RNode apply(ROOT::RDF::RNode node, Preset p, const Entry &rec)
 }
 
 } // namespace selection
+
 } // namespace nuxsec
 
 #endif // NUXSEC_ANA_SELECTION_SERVICE_H
