@@ -50,16 +50,16 @@ std::string EventIO::sanitise_root_key(std::string s)
 }
 
 void append_tree_fast(const std::string &out_path,
-                      const std::string &tmp_file,
+                      const std::string &scratch_file,
                       const std::string &tree_name)
 {
-    std::unique_ptr<TFile> fin(TFile::Open(tmp_file.c_str(), "READ"));
+    std::unique_ptr<TFile> fin(TFile::Open(scratch_file.c_str(), "READ"));
     if (!fin || fin->IsZombie())
-        throw std::runtime_error("EventIO: failed to open tmp snapshot file: " + tmp_file);
+        throw std::runtime_error("EventIO: failed to open scratch snapshot file: " + scratch_file);
 
     TTree *tin = dynamic_cast<TTree *>(fin->Get(tree_name.c_str()));
     if (!tin)
-        throw std::runtime_error("EventIO: tmp snapshot missing tree: " + tree_name + " in " + tmp_file);
+        throw std::runtime_error("EventIO: scratch snapshot missing tree: " + tree_name + " in " + scratch_file);
 
     std::unique_ptr<TFile> fout(TFile::Open(out_path.c_str(), "UPDATE"));
     if (!fout || fout->IsZombie())
@@ -84,6 +84,15 @@ void append_tree_fast(const std::string &out_path,
 
     fout->Close();
     fin->Close();
+}
+
+std::filesystem::path eventio_scratch_dir()
+{
+    if (const char *p = std::getenv("NUXSEC_OUT_BASE"); p && *p)
+        return std::filesystem::path(p) / "staging";
+    if (const char *p = std::getenv("NUXSEC_REPO_ROOT"); p && *p)
+        return std::filesystem::path(p) / "scratch" / "out" / "staging";
+    return std::filesystem::path("scratch") / "out" / "staging";
 }
 
 void EventIO::init(const std::string &out_path,
@@ -203,17 +212,22 @@ ULong64_t EventIO::snapshot_event_list_merged(ROOT::RDF::RNode node,
     if (std::find(snapshot_cols.begin(), snapshot_cols.end(), "sample_id") == snapshot_cols.end())
         snapshot_cols.push_back("sample_id");
 
-    std::filesystem::path tmp_dir;
-    if (const char *p = std::getenv("NUXSEC_TMPDIR"); p && *p)
-        tmp_dir = p;
-    else if (const char *p = std::getenv("TMPDIR"); p && *p)
-        tmp_dir = p;
-    else
-        tmp_dir = std::filesystem::temp_directory_path();
+    std::filesystem::path scratch_dir = eventio_scratch_dir();
+    {
+        std::error_code ec;
+        std::filesystem::create_directories(scratch_dir, ec);
+        if (ec)
+        {
+            throw std::runtime_error(
+                "EventIO: failed to create scratch directory: "
+                + scratch_dir.string()
+                + " (" + ec.message() + ")");
+        }
+    }
 
-    const std::string tmp_file =
-        (tmp_dir / ("nuxsec_snapshot_" + tree_name + "_" + sanitise_root_key(sample_name) + "_"
-                    + std::to_string(::getpid()) + ".root"))
+    const std::string scratch_file =
+        (scratch_dir / ("nuxsec_snapshot_" + tree_name + "_" + sanitise_root_key(sample_name) + "_"
+                        + std::to_string(::getpid()) + ".root"))
             .string();
 
     ROOT::RDF::RSnapshotOptions options;
@@ -241,27 +255,27 @@ ULong64_t EventIO::snapshot_event_list_merged(ROOT::RDF::RNode node,
                                         << "\n";
                           });
 
-    auto snapshot = filtered.Snapshot(tree_name, tmp_file, snapshot_cols, options);
+    auto snapshot = filtered.Snapshot(tree_name, scratch_file, snapshot_cols, options);
     std::cerr << "[EventIO] stage=snapshot_run"
               << " sample=" << sample_name
-              << " tmp_file=" << tmp_file
+              << " scratch_file=" << scratch_file
               << "\n";
     (void)snapshot.GetValue();
 
     std::cerr << "[EventIO] stage=append_begin"
               << " sample=" << sample_name
-              << " tmp_file=" << tmp_file
+              << " scratch_file=" << scratch_file
               << " out_file=" << m_path
               << " tree=" << tree_name
               << "\n";
-    append_tree_fast(m_path, tmp_file, tree_name);
+    append_tree_fast(m_path, scratch_file, tree_name);
     std::cerr << "[EventIO] stage=append_done sample=" << sample_name << "\n";
 
     {
         std::error_code ec;
-        std::filesystem::remove(tmp_file, ec);
+        std::filesystem::remove(scratch_file, ec);
         if (ec)
-            std::cerr << "[EventIO] warning=failed_to_remove_tmp_file path=" << tmp_file
+            std::cerr << "[EventIO] warning=failed_to_remove_scratch_file path=" << scratch_file
                       << " err=" << ec.message() << "\n";
     }
 
@@ -296,16 +310,21 @@ ULong64_t EventIO::snapshot_event_list(ROOT::RDF::RNode node,
         }
     }
 
-    std::filesystem::path tmp_dir;
-    if (const char *p = std::getenv("NUXSEC_TMPDIR"); p && *p)
-        tmp_dir = p;
-    else if (const char *p = std::getenv("TMPDIR"); p && *p)
-        tmp_dir = p;
-    else
-        tmp_dir = std::filesystem::temp_directory_path();
+    std::filesystem::path scratch_dir = eventio_scratch_dir();
+    {
+        std::error_code ec;
+        std::filesystem::create_directories(scratch_dir, ec);
+        if (ec)
+        {
+            throw std::runtime_error(
+                "EventIO: failed to create scratch directory: "
+                + scratch_dir.string()
+                + " (" + ec.message() + ")");
+        }
+    }
 
-    const std::string tmp_file =
-        (tmp_dir / ("nuxsec_snapshot_" + tree_name + "_" + std::to_string(::getpid()) + ".root")).string();
+    const std::string scratch_file =
+        (scratch_dir / ("nuxsec_snapshot_" + tree_name + "_" + std::to_string(::getpid()) + ".root")).string();
 
     ROOT::RDF::RSnapshotOptions options;
     options.fMode = "RECREATE";
@@ -331,17 +350,17 @@ ULong64_t EventIO::snapshot_event_list(ROOT::RDF::RNode node,
                                         << " elapsed_seconds=" << elapsed_seconds
                                         << "\n";
                           });
-    auto snapshot = filtered.Snapshot(tree_name, tmp_file, columns, options);
+    auto snapshot = filtered.Snapshot(tree_name, scratch_file, columns, options);
     std::cerr << "[EventIO] stage=snapshot_run"
               << " sample=" << sample_name
-              << " tmp_file=" << tmp_file
+              << " scratch_file=" << scratch_file
               << "\n";
     ROOT::RDF::RunGraphs({count, snapshot});
     (void)snapshot.GetValue();
 
     std::cerr << "[EventIO] stage=snapshot_merge_begin"
               << " sample=" << sample_name
-              << " tmp_file=" << tmp_file
+              << " scratch_file=" << scratch_file
               << " out_file=" << m_path
               << "\n";
     {
@@ -349,10 +368,10 @@ ULong64_t EventIO::snapshot_event_list(ROOT::RDF::RNode node,
         merger.SetFastMethod(kFALSE);
         if (!merger.OutputFile(m_path.c_str(), "UPDATE"))
             throw std::runtime_error("EventIO: failed to open output for merge: " + m_path);
-        if (!merger.AddFile(tmp_file.c_str()))
-            throw std::runtime_error("EventIO: failed to add temp file to merger: " + tmp_file);
+        if (!merger.AddFile(scratch_file.c_str()))
+            throw std::runtime_error("EventIO: failed to add scratch file to merger: " + scratch_file);
         if (!merger.Merge())
-            throw std::runtime_error("EventIO: merge failed for temp file: " + tmp_file);
+            throw std::runtime_error("EventIO: merge failed for scratch file: " + scratch_file);
     }
     std::cerr << "[EventIO] stage=snapshot_merge_done"
               << " sample=" << sample_name
@@ -360,9 +379,9 @@ ULong64_t EventIO::snapshot_event_list(ROOT::RDF::RNode node,
 
     {
         std::error_code ec;
-        std::filesystem::remove(tmp_file, ec);
+        std::filesystem::remove(scratch_file, ec);
         if (ec)
-            std::cerr << "[EventIO] warning=failed_to_remove_tmp_file path=" << tmp_file
+            std::cerr << "[EventIO] warning=failed_to_remove_scratch_file path=" << scratch_file
                       << " err=" << ec.message() << "\n";
     }
 
