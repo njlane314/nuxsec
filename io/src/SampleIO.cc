@@ -31,18 +31,18 @@ const char *SampleIO::sample_origin_name(SampleOrigin k)
 {
     switch (k)
     {
-    case SampleOrigin::kData:
-        return "data";
-    case SampleOrigin::kEXT:
-        return "ext";
-    case SampleOrigin::kOverlay:
-        return "overlay";
-    case SampleOrigin::kDirt:
-        return "dirt";
-    case SampleOrigin::kStrangeness:
-        return "strangeness";
-    default:
-        return "unknown";
+        case SampleOrigin::kData:
+            return "data";
+        case SampleOrigin::kEXT:
+            return "ext";
+        case SampleOrigin::kOverlay:
+            return "overlay";
+        case SampleOrigin::kDirt:
+            return "dirt";
+        case SampleOrigin::kStrangeness:
+            return "strangeness";
+        default:
+            return "unknown";
     }
 }
 
@@ -82,12 +82,12 @@ const char *SampleIO::beam_mode_name(BeamMode b)
 {
     switch (b)
     {
-    case BeamMode::kNuMI:
-        return "numi";
-    case BeamMode::kBNB:
-        return "bnb";
-    default:
-        return "unknown";
+        case BeamMode::kNuMI:
+            return "numi";
+        case BeamMode::kBNB:
+            return "bnb";
+        default:
+            return "unknown";
     }
 }
 
@@ -108,6 +108,7 @@ SampleIO::BeamMode SampleIO::parse_beam_mode(const std::string &name)
     {
         return BeamMode::kBNB;
     }
+    
     return BeamMode::kUnknown;
 }
 
@@ -131,13 +132,10 @@ void SampleIO::write(const Sample &sample, const std::string &out_file)
     TNamed("beam_mode", beam_mode_name(sample.beam)).Write("beam_mode", TObject::kOverwrite);
 
     TParameter<double>("subrun_pot_sum", sample.subrun_pot_sum).Write("subrun_pot_sum", TObject::kOverwrite);
-    TParameter<double>("db_tortgt_pot_sum", sample.db_tortgt_pot_sum)
-        .Write("db_tortgt_pot_sum", TObject::kOverwrite);
-    TParameter<double>("db_tor101_pot_sum", sample.db_tor101_pot_sum)
-        .Write("db_tor101_pot_sum", TObject::kOverwrite);
+    TParameter<double>("db_tortgt_pot_sum", sample.db_tortgt_pot_sum).Write("db_tortgt_pot_sum", TObject::kOverwrite);
+    TParameter<double>("db_tor101_pot_sum", sample.db_tor101_pot_sum).Write("db_tor101_pot_sum", TObject::kOverwrite);
     TParameter<double>("normalisation", sample.normalisation).Write("normalisation", TObject::kOverwrite);
-    TParameter<double>("normalised_pot_sum", sample.normalised_pot_sum)
-        .Write("normalised_pot_sum", TObject::kOverwrite);
+    TParameter<double>("normalised_pot_sum", sample.normalised_pot_sum).Write("normalised_pot_sum", TObject::kOverwrite);
 
     {
         TTree entries("entries", "Art file entries included in sample aggregation");
