@@ -48,7 +48,6 @@ struct ProcessorEntry
     double trig_eqv = 0.0;
 };
 
-/** \brief Apply analysis variable definitions to an RDataFrame. */
 class ColumnDerivationService
 {
   public:
