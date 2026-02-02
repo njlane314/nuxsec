@@ -4,45 +4,19 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+DOCS_DIR="${REPO_ROOT}/docs"
+BUILD_DIR="${DOCS_DIR}/_build"
 
-if [ ! -f "${REPO_ROOT}/Doxyfile" ]; then
-    echo "Can't find ${REPO_ROOT}/Doxyfile"
+if [ ! -f "${DOCS_DIR}/conf.py" ]; then
+    echo "Can't find ${DOCS_DIR}/conf.py"
     exit 1
 fi
 
-echo "Checking documentation for issues in ${REPO_ROOT}"
+echo "Checking Sphinx documentation for issues in ${DOCS_DIR}"
 
 cd "${REPO_ROOT}"
 
-# Run doxygen in a "strict mode" to ensure that everything is documented, this will put any issues in warnings.txt
-doxygen Doxyfile &> /dev/null
+sphinx-build -W --keep-going "${DOCS_DIR}" "${BUILD_DIR}"
 
-# Check for issues
-N_ISSUES=`wc -l docs/warnings.txt | cut -d ' ' -f 1`
-if [ $N_ISSUES -eq 0 ]; then
-    echo; echo "No issues found! Safe to push :)"
-    exit 0
-fi
-echo; echo "There were $N_ISSUES issues with the documentation :("
-echo "Press any key for more details..."
-read -n 1
-
-echo; echo "Raw warnings -----------------------------"
-cat docs/warnings.txt
-
-echo; echo "Interpreted warnings (may be garbled) ----"
-
-# Process the warnings.txt file to be more human readable
-COUNTER=1
-while read LINE; do
-    FILE=`echo $LINE | cut -d ':' -f 1`
-    NUM=`echo $LINE | cut -d ':' -f 2`
-    ISSUE=`echo $LINE | cut -d ':' -f 4-`
-
-    echo; echo "Issue $COUNTER: $ISSUE"
-    echo "vim +$NUM $FILE"
-
-    COUNTER=$(($COUNTER + 1))
-done < docs/warnings.txt
-
-echo; echo "^^^ Please fix the above issues before pushing code ^^^"
+echo
+echo "Sphinx build completed without warnings."
