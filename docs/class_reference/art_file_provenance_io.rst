@@ -1,12 +1,11 @@
 ArtFileProvenanceIO
 ===================
 
-ArtFileProvenanceIO
--------------------
+``ArtFileProvenanceIO`` provides the data structures and ROOT IO helpers used
+to read and write art provenance summaries.
 
-.. autoclass:: nuxsec.io.ArtFileProvenanceIO
-    :members: forward
-    :undoc-members:
-    :exclude-members:
+Location
+--------
 
-    .. automethod:: __init__
+* Header: ``io/include/ArtFileProvenanceIO.hh``
+* Namespace: ``nuxsec`` (provenance structs are under ``nuxsec::art``)

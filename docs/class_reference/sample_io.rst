@@ -1,12 +1,11 @@
 SampleIO
 ========
 
-SampleIO
+``SampleIO`` defines the sample metadata structures and ROOT IO helpers used by
+the pipeline when aggregating inputs into per-sample outputs.
+
+Location
 --------
 
-.. autoclass:: nuxsec.io.SampleIO
-    :members: forward
-    :undoc-members:
-    :exclude-members:
-
-    .. automethod:: __init__
+* Header: ``io/include/SampleIO.hh``
+* Namespace: ``nuxsec::sample``

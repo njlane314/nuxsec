@@ -1,12 +1,12 @@
 AnalysisConfigService
 =====================
 
-AnalysisConfigService
----------------------
+``AnalysisConfigService`` provides the compiled analysis configuration used by
+the event builder, including the analysis name, default tree name, and the
+processor entry for each sample.
 
-.. autoclass:: nuxsec.ana.AnalysisConfigService
-    :members: forward
-    :undoc-members:
-    :exclude-members:
+Location
+--------
 
-    .. automethod:: __init__
+* Header: ``ana/include/AnalysisConfigService.hh``
+* Namespace: ``nuxsec``

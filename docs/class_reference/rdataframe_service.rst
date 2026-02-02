@@ -1,12 +1,11 @@
 RDataFrameService
 =================
 
-RDataFrameService
------------------
+``RDataFrameService`` loads samples into ROOT ``RDataFrame`` instances and
+applies bulk column definitions for analysis workflows.
 
-.. autoclass:: nuxsec.ana.RDataFrameService
-    :members: forward
-    :undoc-members:
-    :exclude-members:
+Location
+--------
 
-    .. automethod:: __init__
+* Header: ``ana/include/RDataFrameService.hh``
+* Namespace: ``nuxsec``

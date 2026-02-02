@@ -1,12 +1,12 @@
 SelectionService
 ================
 
-SelectionService
-----------------
+``SelectionService`` defines selection presets and helper functions for
+filtering event ``RDataFrame`` streams and decorating them with selection
+columns.
 
-.. autoclass:: nuxsec.ana.SelectionService
-    :members: forward
-    :undoc-members:
-    :exclude-members:
+Location
+--------
 
-    .. automethod:: __init__
+* Header: ``ana/include/SelectionService.hh``
+* Namespace: ``nuxsec::selection``

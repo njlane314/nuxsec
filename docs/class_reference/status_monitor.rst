@@ -1,12 +1,11 @@
 StatusMonitor
 =============
 
-StatusMonitor
--------------
+``StatusMonitor`` provides lightweight status logging for long-running CLI
+operations.
 
-.. autoclass:: nuxsec.apps.StatusMonitor
-    :members: forward
-    :undoc-members:
-    :exclude-members:
+Location
+--------
 
-    .. automethod:: __init__
+* Header: ``apps/include/AppUtils.hh``
+* Namespace: ``nuxsec::app``

@@ -9,15 +9,19 @@ From FermiGrid production to SampleIO
 -------------------------------------
 
 FermiGrid production delivers art ROOT files. Nuxsec first scans them to record
-run/subrun metadata, then aggregates them into a SampleIO file.
+run/subrun metadata, then aggregates the resulting provenance outputs into a
+SampleIO file.
 
 .. code-block:: console
 
    # Register art provenance for a production file list.
    nuxsec art nue_run1:data/run1_nue.list
 
+   # Build a list of art provenance outputs from the previous step.
+   ls scratch/out/template/art/art_prov_nue_run1*.root > scratch/out/template/lists/nue_run1.txt
+
    # Build the SampleIO file and update samples.tsv.
-   nuxsec sample nue_run1:data/run1_nue.list
+   nuxsec sample nue_run1:scratch/out/template/lists/nue_run1.txt
 
 The sample step reads the beam database, sums POT, and writes a SampleIO ROOT
 file that is referenced by ``samples.tsv``.
@@ -25,16 +29,17 @@ file that is referenced by ``samples.tsv``.
 Sample list format
 ------------------
 
-Sample lists live in ``scratch/out/sample/samples.tsv`` by default. They are
-TSV files with a header row and per-sample lines such as:
+Sample lists live in ``scratch/out/<set>/sample/samples.tsv`` by default. They
+are TSV files with a header row and per-sample lines such as:
 
 .. code-block:: text
 
    # sample_name\tsample_origin\tbeam_mode\toutput_path
-   nue_run1\tdata\tbeam\tscratch/out/sample/sample_root_nue_run1.root
+   nue_run1\tdata\tbeam\tscratch/out/template/sample/sample_root_nue_run1.root
 
 Applications that build event outputs read this list to locate each sample
-ROOT file and its metadata.
+ROOT file and its metadata. The ``<set>`` segment defaults to ``template`` and
+is controlled by ``NUXSEC_SET`` or ``nuxsec --set``.
 
 Normalisation inputs
 --------------------

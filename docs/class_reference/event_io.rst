@@ -1,12 +1,12 @@
 EventIO
 =======
 
-EventIO
--------
+``EventIO`` writes event-level output trees and accompanying metadata for the
+analysis pipeline. It also provides helpers for constructing per-sample tree
+names and snapshotting filtered event lists.
 
-.. autoclass:: nuxsec.io.EventIO
-    :members: forward
-    :undoc-members:
-    :exclude-members:
+Location
+--------
 
-    .. automethod:: __init__
+* Header: ``io/include/EventIO.hh``
+* Namespace: ``nuxsec::event``

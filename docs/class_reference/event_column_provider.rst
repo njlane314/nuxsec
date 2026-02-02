@@ -1,12 +1,11 @@
 EventColumnProvider
 ===================
 
-EventColumnProvider
--------------------
+``EventColumnProvider`` loads event output column lists from the compiled
+defaults or a user-provided TSV schema.
 
-.. autoclass:: nuxsec.apps.EventColumnProvider
-    :members: forward
-    :undoc-members:
-    :exclude-members:
+Location
+--------
 
-    .. automethod:: __init__
+* Header: ``apps/include/EventColumnProvider.hh``
+* Namespace: ``nuxsec::app::event``

@@ -1,12 +1,12 @@
 ColumnDerivationService
 =======================
 
-ColumnDerivationService
------------------------
+``ColumnDerivationService`` defines derived columns for analysis
+``RDataFrame`` processing. It also defines the ``ProcessorEntry`` metadata
+structure used throughout the analysis stack.
 
-.. autoclass:: nuxsec.ana.ColumnDerivationService
-    :members: forward
-    :undoc-members:
-    :exclude-members:
+Location
+--------
 
-    .. automethod:: __init__
+* Header: ``ana/include/ColumnDerivationService.hh``
+* Namespace: ``nuxsec``
