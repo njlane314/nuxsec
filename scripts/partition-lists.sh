@@ -15,16 +15,16 @@ write_list() {
     local stage="$1"
     local dir="$2"
     local list="${OUTPUT_DIR}/${stage}.list"
-    local tmp_list
+    local scratch_list
     local pattern
     local find_args=()
     local patterns=()
-    tmp_list="$(mktemp)"
+    scratch_list="$(mktemp -p "${OUTPUT_DIR}" "scratch_list.XXXXXX")"
 
     if [[ ! -d "${dir}" ]]
     then
         echo "Warning: missing output directory: ${dir}" >&2
-        rm -f "${tmp_list}"
+        rm -f "${scratch_list}"
         return 0
     fi
 
@@ -46,20 +46,20 @@ write_list() {
     if [[ ${#find_args[@]} -eq 0 ]]
     then
         echo "Warning: no file patterns supplied" >&2
-        rm -f "${tmp_list}"
+        rm -f "${scratch_list}"
         return 0
     fi
 
-    find "${dir}" -type f \( "${find_args[@]}" \) | sort > "${tmp_list}"
+    find "${dir}" -type f \( "${find_args[@]}" \) | sort > "${scratch_list}"
 
-    if [[ ! -s "${tmp_list}" ]]
+    if [[ ! -s "${scratch_list}" ]]
     then
         echo "Warning: no ROOT files found in ${dir}" >&2
-        rm -f "${tmp_list}"
+        rm -f "${scratch_list}"
         return 0
     fi
 
-    mv "${tmp_list}" "${list}"
+    mv "${scratch_list}" "${list}"
 }
 
 write_list "beam_s0" "${BASE}/beam/s0/out"
