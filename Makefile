@@ -33,7 +33,8 @@ ANA_OBJ = $(ANA_SRC:%.cc=$(OBJ_DIR)/%.o)
 
 PLOT_LIB_NAME = build/lib/libNuxsecPlot.so
 PLOT_SRC = plot/src/Plotter.cc \
-           plot/src/StackedHist.cc
+           plot/src/StackedHist.cc \
+           plot/src/PlottingHelper.cc
 PLOT_OBJ = $(PLOT_SRC:%.cc=$(OBJ_DIR)/%.o)
 
 NUXSEC_NAME = build/bin/nuxsec
