@@ -20,7 +20,8 @@ Step 2: build a sample
 
 .. code-block:: console
 
-   nuxsec sample nue_run1:data/run1_nue.list
+   ls scratch/out/template/art/art_prov_nue_run1*.root > scratch/out/template/lists/nue_run1.txt
+   nuxsec sample nue_run1:scratch/out/template/lists/nue_run1.txt
 
 The sample aggregation step writes a SampleIO ROOT file and updates the sample
 list used by later stages.
@@ -30,8 +31,7 @@ Step 3: build event output
 
 .. code-block:: console
 
-   nuxsec event --list scratch/out/sample/samples.tsv \
-     --output scratch/out/event/event_output.root
+   nuxsec event scratch/out/template/event/event_output.root
 
 This stage applies analysis column derivations and writes an event tree that is
 ready for selections and plotting.
@@ -55,7 +55,7 @@ Example macro snippet
 .. code-block:: c++
 
    void plotFluxMinimal() {
-     TFile input("scratch/out/event/event_output.root", "READ");
+     TFile input("scratch/out/template/event/event_output.root", "READ");
      TTree *events = static_cast<TTree *>(input.Get("events"));
      events->Draw("nu_energy >> h_flux(50, 0.0, 5.0)");
    }

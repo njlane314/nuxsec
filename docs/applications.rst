@@ -39,6 +39,7 @@ A typical workflow is:
 3. Produce event output with column derivations.
 4. Run macros to produce plots.
 
-Each application writes its outputs under ``scratch/out`` by default, and
-plotting artefacts are written under ``scratch/plot`` unless overridden by
-environment variables.
+Each application writes its outputs under ``scratch/out/<set>`` by default, and
+plotting artefacts are written under ``scratch/plot/<set>`` unless overridden by
+environment variables. The ``<set>`` segment defaults to ``template`` and is
+controlled by ``NUXSEC_SET`` or ``nuxsec --set``.

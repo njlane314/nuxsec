@@ -1,12 +1,11 @@
 NormalisationService
 ====================
 
-NormalisationService
---------------------
+``NormalisationService`` builds per-sample normalisation values from art
+provenance totals and run database metadata.
 
-.. autoclass:: nuxsec.io.NormalisationService
-    :members: forward
-    :undoc-members:
-    :exclude-members:
+Location
+--------
 
-    .. automethod:: __init__
+* Header: ``io/include/NormalisationService.hh``
+* Namespace: ``nuxsec``

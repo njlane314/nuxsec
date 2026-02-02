@@ -32,19 +32,21 @@ Quick start commands
    # 1) Register a production input with art provenance.
    nuxsec art my_sample:data/filelist.txt
 
-   # 2) Build a SampleIO output ROOT file and update samples.tsv.
-   nuxsec sample my_sample:data/filelist.txt
+   # 2) Build a list of art provenance outputs from step (1).
+   ls scratch/out/template/art/art_prov_my_sample*.root > scratch/out/template/lists/my_sample.txt
 
-   # 3) Build the event-level output from the samples list.
-   nuxsec event --list scratch/out/sample/samples.tsv \
-     --output scratch/out/event/event_output.root
+   # 3) Build a SampleIO output ROOT file and update samples.tsv.
+   nuxsec sample my_sample:scratch/out/template/lists/my_sample.txt
 
-   # 4) Run a plotting macro from plot/macro.
+   # 4) Build the event-level output from the default samples list.
+   nuxsec event scratch/out/template/event/event_output.root
+
+   # 5) Run a plotting macro from plot/macro.
    nuxsec macro plotFluxMinimal.C
 
-After step (3) you will have an event tree with analysis columns in the
-specified output ROOT file. After step (4) plots are written under the plot
-output directory (``scratch/plot`` by default).
+After step (4) you will have an event tree with analysis columns in the
+specified output ROOT file. After step (5) plots are written under the plot
+output directory (``scratch/plot/<set>`` by default).
 
 Workspace tips
 --------------

@@ -1,12 +1,11 @@
 Plotter
 =======
 
-Plotter
--------
+``Plotter`` orchestrates stacked histogram rendering, global plot styling, and
+common formatting utilities.
 
-.. autoclass:: nuxsec.plot.Plotter
-    :members: forward
-    :undoc-members:
-    :exclude-members:
+Location
+--------
 
-    .. automethod:: __init__
+* Header: ``plot/include/Plotter.hh``
+* Namespace: ``nuxsec::plot``

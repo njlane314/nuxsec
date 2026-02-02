@@ -1,12 +1,11 @@
 Channels
 ========
 
-Channels
+``Channels`` defines plot channel metadata such as labels and colours for
+stacked histogram rendering.
+
+Location
 --------
 
-.. autoclass:: nuxsec.plot.Channels
-    :members: forward
-    :undoc-members:
-    :exclude-members:
-
-    .. automethod:: __init__
+* Header: ``plot/include/PlotChannels.hh``
+* Namespace: ``nuxsec::plot``

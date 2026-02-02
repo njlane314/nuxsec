@@ -1,12 +1,11 @@
 StackedHist
 ===========
 
-StackedHist
------------
+``StackedHist`` encapsulates stacked histogram construction and styling for
+plots built from multiple sample entries.
 
-.. autoclass:: nuxsec.plot.StackedHist
-    :members: forward
-    :undoc-members:
-    :exclude-members:
+Location
+--------
 
-    .. automethod:: __init__
+* Header: ``plot/include/StackedHist.hh``
+* Namespace: ``nuxsec::plot``

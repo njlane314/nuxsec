@@ -34,15 +34,9 @@ Repository layout
 
 Modules live at the repository root and follow a consistent layout:
 
-* ``ana/``: analysis-level utilities and orchestration.
-* ``io/``: input/output helpers and data access.
+* ``ana/``: analysis configuration, selection logic, and column derivations.
+* ``io/``: input/output helpers, provenance capture, and data access.
 * ``plot/``: plotting utilities and presentation helpers.
-* ``sample/``: sample definitions and metadata management.
-* ``pot/``: probability or potential-related utilities.
-* ``rdf/``: ROOT RDataFrame integrations.
-* ``sel/``: selection logic and filtering.
-* ``syst/``: systematic variation handling.
-* ``stat/``: statistical tooling.
 
 Each module typically contains:
 
@@ -53,6 +47,7 @@ Each module typically contains:
 Supporting folders include:
 
 * ``apps/`` for small executables and command-line entry points.
+* ``cols/`` for TSV column schema references used by the event builder.
 * ``docs/`` for Sphinx configuration and documentation sources.
 * ``scripts/`` for helper scripts and workflows.
 * ``lib/`` for build outputs (shared libraries).
@@ -62,16 +57,13 @@ Architecture at a glance
 
 Nuxsec takes a layered approach to analysis development:
 
-* **Data access and layout** live in ``io/`` and ``rdf/`` to provide a consistent
-  interface to ROOT trees and ``RDataFrame`` workflows.
-* **Selections and corrections** are captured in ``sel/`` and ``syst/`` so they
-  can be reused across analyses and systematics studies.
-* **Analysis orchestration** is grouped under ``ana/``, typically responsible
-  for stitching together datasets, selections, and outputs.
-* **Statistical tools** in ``stat/`` provide shared machinery for inference and
-  limit-setting workflows.
+* **Data access and provenance** live in ``io/`` to provide a consistent
+  interface to ROOT trees, SampleIO metadata, and run database lookups.
+* **Analysis configuration and selections** live in ``ana/`` so derived columns
+  and selection recipes are compiled and reusable.
 * **Plots and presentation** live in ``plot/`` to keep visualisation logic
   separate from event processing.
+* **CLI drivers** in ``apps/`` orchestrate the pipeline stages.
 
 This separation keeps low-level data access stable while allowing higher-level
 analysis code to iterate rapidly.

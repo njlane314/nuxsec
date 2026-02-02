@@ -8,7 +8,7 @@ Nuxsec is organised as a set of C++ modules with headers in ``include/`` and
 implementation files in ``src/``. The repository also ships small executables
 in ``apps/`` and helper scripts in ``scripts/``. When exploring the codebase,
 start by identifying the module that matches your task (for example
-``ana/`` for analysis-level tooling or ``sel/`` for selection logic).
+``ana/`` for analysis-level tooling or ``io/`` for data access).
 
 The most effective way to learn the codebase is to trace a feature end-to-end:
 begin with a command-line executable, locate the module that implements the
@@ -51,18 +51,13 @@ Module orientation
 
 Use these cues to decide where new functionality should live:
 
-* **Data access**: ``io/`` and ``rdf/`` handle file I/O, tree layouts, and
-  ``RDataFrame`` conveniences.
-* **Selections**: ``sel/`` is the home for reusable filters, object definitions,
-  and selection recipes.
-* **Systematics**: ``syst/`` encapsulates variations and corrections applied to
-  event-level quantities.
-* **Analysis orchestration**: ``ana/`` ties datasets, selections, and outputs
-  together into runnable workflows.
-* **Statistical utilities**: ``stat/`` stores shared statistical tooling and
-  analysis summaries.
+* **Data access**: ``io/`` handles file I/O, tree layouts, provenance capture,
+  and normalisation helpers.
+* **Analysis configuration and selections**: ``ana/`` provides ``RDataFrame``
+  services, derived columns, and selection presets.
 * **Plotting**: ``plot/`` keeps visualisation and plotting style logic separate
   from computation.
+* **CLI drivers**: ``apps/`` hosts the command-line entry points.
 
 Documentation checklist
 -----------------------
@@ -86,15 +81,13 @@ Where to look for data definitions
 
 Some module-level cues to help orient a new contributor:
 
-* ``io/`` and ``rdf/`` modules for input data layouts and ROOT
-  ``RDataFrame`` usage.
-* ``sel/`` for selection logic and filter definitions.
-* ``syst/`` for systematic variation handling.
-* ``stat/`` for statistical model helpers.
+* ``io/`` for input data layouts, provenance output, and SampleIO metadata.
+* ``ana/`` for derived column definitions and selection logic.
+* ``cols/event_columns.tsv`` for the event output schema reference.
 
 If you need to locate column naming conventions or event layouts, search within
-the ``io/`` module first, then trace any references into ``rdf/`` or ``ana/``.
-The ``cols/event_columns.tsv`` file provides a reference list of tracked event
+the ``io/`` module first, then trace any references into ``ana/``. The
+``cols/event_columns.tsv`` file provides a reference list of tracked event
 columns.
 
 Contributing notes

@@ -1,12 +1,11 @@
 RunDatabaseService
 ==================
 
-RunDatabaseService
-------------------
+``RunDatabaseService`` queries the run database and aggregates run/subrun
+summaries needed for POT and trigger counts.
 
-.. autoclass:: nuxsec.io.RunDatabaseService
-    :members: forward
-    :undoc-members:
-    :exclude-members:
+Location
+--------
 
-    .. automethod:: __init__
+* Header: ``io/include/RunDatabaseService.hh``
+* Namespace: ``nuxsec``
