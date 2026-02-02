@@ -13,8 +13,7 @@
 namespace nuxsec
 {
 
-RunDatabaseService::RunDatabaseService(std::string path)
-    : db_path_(std::move(path))
+RunDatabaseService::RunDatabaseService(std::string path) : db_path_(std::move(path))
 {
     sqlite3 *db = nullptr;
     const int rc = sqlite3_open_v2(db_path_.c_str(), &db, SQLITE_OPEN_READONLY, nullptr);
@@ -28,7 +27,7 @@ RunDatabaseService::RunDatabaseService(std::string path)
         throw std::runtime_error("Failed to open SQLite DB: " + db_path_ + " : " + msg);
     }
     db_ = db;
-} // namespace nuxsec
+}
 
 RunDatabaseService::~RunDatabaseService()
 {
