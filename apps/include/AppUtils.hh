@@ -205,11 +205,7 @@ private:
         const auto now = std::chrono::system_clock::now();
         const std::time_t now_time = std::chrono::system_clock::to_time_t(now);
         std::tm tm_snapshot;
-#if defined(_WIN32)
-        localtime_s(&tm_snapshot, &now_time);
-#else
         localtime_r(&now_time, &tm_snapshot);
-#endif
         std::ostringstream out;
         out << std::put_time(&tm_snapshot, "%Y-%m-%dT%H:%M:%S%z");
         return out.str();
