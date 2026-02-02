@@ -357,10 +357,42 @@ std::filesystem::path resolve_macro_path(const std::filesystem::path &repo_root,
 
 void add_plot_include_paths(const std::filesystem::path &repo_root)
 {
-    const auto include_path = repo_root / "plot/include";
-    gSystem->AddIncludePath(("-I" + include_path.string()).c_str());
-    const auto ana_include_path = repo_root / "ana/include";
-    gSystem->AddIncludePath(("-I" + ana_include_path.string()).c_str());
+    auto add = [&](const std::filesystem::path &p)
+    {
+        gSystem->AddIncludePath(("-I" + p.string()).c_str());
+    };
+    add(repo_root / "plot" / "include");
+    add(repo_root / "ana" / "include");
+    add(repo_root / "io" / "include");
+    add(repo_root / "apps" / "include");
+}
+
+void ensure_plot_lib_loaded(const std::filesystem::path &repo_root)
+{
+    const auto lib_dir = repo_root / "build" / "lib";
+    if (std::filesystem::exists(lib_dir))
+    {
+        // Allow ROOT/cling to find project shared libraries when running macros.
+        gSystem->AddDynamicPath(lib_dir.string().c_str());
+    }
+
+    // NOTE: nuxsec binary links IO + ANA, but not PLOT. Plot macros need this loaded.
+    const auto plot_lib = lib_dir / "libNuxsecPlot.so";
+    if (std::filesystem::exists(plot_lib))
+    {
+        const int rc = gSystem->Load(plot_lib.string().c_str());
+        if (rc < 0)
+        {
+            throw std::runtime_error("Failed to load plot library: " + plot_lib.string());
+        }
+        return;
+    }
+
+    const int rc = gSystem->Load("libNuxsecPlot.so");
+    if (rc < 0)
+    {
+        throw std::runtime_error("Failed to load plot library: libNuxsecPlot.so");
+    }
 }
 
 void print_paths(std::ostream &out, const std::filesystem::path &repo_root)
@@ -417,6 +449,7 @@ int exec_root_macro(const std::filesystem::path &repo_root,
 {
     ensure_plot_env(repo_root);
     add_plot_include_paths(repo_root);
+    ensure_plot_lib_loaded(repo_root);
 
     if (!std::filesystem::exists(macro_path))
     {
