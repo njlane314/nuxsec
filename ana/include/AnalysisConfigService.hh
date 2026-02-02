@@ -17,7 +17,7 @@ namespace nuxsec
 {
 
 struct ProcessorEntry;
-/** \brief Compiled analysis configuration. */
+
 class AnalysisConfigService final
 {
   public:
