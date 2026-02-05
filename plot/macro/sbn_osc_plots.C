@@ -95,20 +95,35 @@ static double toy_xsec(double E_GeV) {
 
 static void SetNiceStyle() {
   gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
   gStyle->SetTitleFont(42, "XYZ");
   gStyle->SetLabelFont(42, "XYZ");
   gStyle->SetTitleSize(0.050, "XYZ");
   gStyle->SetLabelSize(0.045, "XYZ");
   gStyle->SetTitleOffset(1.10, "X");
-  gStyle->SetTitleOffset(1.25, "Y");
-  gStyle->SetPadLeftMargin(0.13);
+  gStyle->SetTitleOffset(1.35, "Y");
+  // Slightly roomier margins: avoids clipped y-titles and gives a clean header band.
+  gStyle->SetPadLeftMargin(0.15);
   gStyle->SetPadBottomMargin(0.12);
-  gStyle->SetPadTopMargin(0.07);
+  gStyle->SetPadTopMargin(0.10);
   gStyle->SetPadRightMargin(0.12);
   gStyle->SetLegendBorderSize(0);
   gStyle->SetLineWidth(2);
   gStyle->SetPadTickX(1);
   gStyle->SetPadTickY(1);
+}
+
+// Two-line header drawn in the *top margin* (so it doesn't collide with top ticks).
+static void DrawHeader(const char* line1, const char* line2 = nullptr) {
+  TLatex lat;
+  lat.SetNDC(true);
+  lat.SetTextFont(42);
+  lat.SetTextSize(0.040);
+  lat.DrawLatex(0.15, 0.965, line1);
+  if (line2 && std::string(line2).size() > 0) {
+    lat.SetTextSize(0.034);
+    lat.DrawLatex(0.15, 0.925, line2);
+  }
 }
 
 void sbn_prob_vs_LE() {
@@ -120,7 +135,8 @@ void sbn_prob_vs_LE() {
   const std::vector<int> colors = {kBlack, kBlue+1, kRed+1};
 
   const int N = 1400;
-  const double xMin = 0.0, xMax = 5.0;    // L/E in km/GeV
+  // Extend L/E so even the smallest Δm² curve shows a full max/min within the frame.
+  const double xMin = 0.0, xMax = 10.0;    // L/E in km/GeV
 
   TCanvas* c = new TCanvas("c_prob_le", "", 900, 650);
   TMultiGraph* mg = new TMultiGraph();
@@ -142,7 +158,7 @@ void sbn_prob_vs_LE() {
     gs.push_back(g);
   }
 
-  mg->SetTitle(";L/E  [km/GeV];P(#nu_{#mu}#rightarrow#nu_{e})  (effective 2-flavour)");
+  mg->SetTitle(";L/E  [km/GeV];P_{#mu e}");
   mg->Draw("A");
   mg->GetXaxis()->SetNdivisions(510);
   mg->GetYaxis()->SetRangeUser(0.0, 1.05*sin22th);
@@ -155,11 +171,8 @@ void sbn_prob_vs_LE() {
   }
   leg->Draw();
 
-  TLatex lat;
-  lat.SetNDC(true);
-  lat.SetTextFont(42);
-  lat.SetTextSize(0.038);
-  lat.DrawLatex(0.15, 0.88, Form("sin^{2}2#theta = %.3f", sin22th));
+  DrawHeader("Vacuum SBL: oscillation phase #propto #Delta m^{2}#times(L/E)",
+             Form("P_{#mu e}=sin^{2}2#theta#times sin^{2}(1.267#Delta m^{2}L/E),  sin^{2}2#theta=%.3f", sin22th));
 
   c->SaveAs("sbn_prob_vs_LE.pdf");
 }
@@ -170,7 +183,8 @@ void sbn_prob_vs_E() {
 
   const double dm2     = 1.0;     // eV^2
   const double sin22th = 0.01;
-  const std::vector<double> L = {0.10, 0.30, 0.60}; // km (e.g. near/intermediate/far)
+  // Choose baselines so the first oscillation maximum sits inside ~0.2–3 GeV for Δm²=1 eV².
+  const std::vector<double> L = {0.30, 0.60, 1.20}; // km
   const std::vector<int> colors = {kBlack, kBlue+1, kRed+1};
 
   const int N = 1400;
@@ -196,7 +210,7 @@ void sbn_prob_vs_E() {
     gs.push_back(g);
   }
 
-  mg->SetTitle(";E_{#nu}  [GeV];P(#nu_{#mu}#rightarrow#nu_{e})  (effective 2-flavour)");
+  mg->SetTitle(";E_{#nu}  [GeV];P_{#mu e}");
   mg->Draw("A");
   mg->GetXaxis()->SetNdivisions(510);
   mg->GetYaxis()->SetRangeUser(0.0, 1.05*sin22th);
@@ -209,11 +223,8 @@ void sbn_prob_vs_E() {
   }
   leg->Draw();
 
-  TLatex lat;
-  lat.SetNDC(true);
-  lat.SetTextFont(42);
-  lat.SetTextSize(0.038);
-  lat.DrawLatex(0.15, 0.88, Form("#Delta m^{2}=%.2f eV^{2},  sin^{2}2#theta=%.3f", dm2, sin22th));
+  DrawHeader("Vacuum SBL: changing L shifts oscillation features in E_{#nu}",
+             Form("#Delta m^{2}=%.2f eV^{2},  sin^{2}2#theta=%.3f  (curves: L)", dm2, sin22th));
 
   c->SaveAs("sbn_prob_vs_E.pdf");
 }
@@ -231,10 +242,11 @@ void sbn_oscillogram() {
   const double Lmin = 0.05, Lmax = 2.0;   // km
 
   TCanvas* c = new TCanvas("c_oscillogram", "", 950, 700);
-  gStyle->SetPadRightMargin(0.16);
+  // Give the color palette breathing room without mutating global style.
+  c->SetRightMargin(0.18);
 
   TH2D* h = new TH2D("h_osc",
-                     ";E_{#nu}  [GeV];Baseline L  [km];P(#nu_{#mu}#rightarrow#nu_{e})",
+                     ";E_{#nu}  [GeV];Baseline L  [km];P_{#mu e}",
                      nE, Emin, Emax, nL, Lmin, Lmax);
 
   for (int ix = 1; ix <= nE; ++ix) {
@@ -250,11 +262,8 @@ void sbn_oscillogram() {
   h->SetMaximum(sin22th);
   h->Draw("COLZ");
 
-  TLatex lat;
-  lat.SetNDC(true);
-  lat.SetTextFont(42);
-  lat.SetTextSize(0.038);
-  lat.DrawLatex(0.14, 0.92, Form("#Delta m^{2}=%.2f eV^{2},  sin^{2}2#theta=%.3f", dm2, sin22th));
+  DrawHeader("Oscillogram: constant L/E bands (vacuum, 2-flavour)",
+             Form("#Delta m^{2}=%.2f eV^{2},  sin^{2}2#theta=%.3f", dm2, sin22th));
 
   c->SaveAs("sbn_oscillogram.pdf");
 }
@@ -263,7 +272,8 @@ void sbn_smear() {
   SetNiceStyle();
   gROOT->SetBatch(kTRUE);
 
-  const double dm2     = 1.0;   // eV^2
+  // Use a faster-oscillation benchmark so resolution damping is visually obvious.
+  const double dm2     = 3.0;   // eV^2
   const double sin22th = 0.01;
   const double L       = 0.60;  // km
 
@@ -291,7 +301,7 @@ void sbn_smear() {
     gs.push_back(g);
   }
 
-  mg->SetTitle(";E_{#nu}  [GeV];#LT P(#nu_{#mu}#rightarrow#nu_{e}) #GT  (Gaussian energy averaging)");
+  mg->SetTitle(";E_{#nu}  [GeV];#LT P_{#mu e} #GT");
   mg->Draw("A");
   mg->GetXaxis()->SetNdivisions(510);
   mg->GetYaxis()->SetRangeUser(0.0, 1.05*sin22th);
@@ -304,11 +314,8 @@ void sbn_smear() {
   }
   leg->Draw();
 
-  TLatex lat;
-  lat.SetNDC(true);
-  lat.SetTextFont(42);
-  lat.SetTextSize(0.038);
-  lat.DrawLatex(0.15, 0.88, Form("L=%.2f km,  #Delta m^{2}=%.2f eV^{2},  sin^{2}2#theta=%.3f", L, dm2, sin22th));
+  DrawHeader("Energy resolution averages rapid oscillations #rightarrow damping",
+             Form("Gaussian smearing in E:  L=%.2f km,  #Delta m^{2}=%.2f eV^{2},  sin^{2}2#theta=%.3f", L, dm2, sin22th));
 
   c->SaveAs("sbn_smearing_damping.pdf");
 }
@@ -317,7 +324,8 @@ void sbn_bias() {
   SetNiceStyle();
   gROOT->SetBatch(kTRUE);
 
-  const double dm2     = 1.0;   // eV^2
+  // Faster-oscillation benchmark so a small scale bias makes a visible phase shift.
+  const double dm2     = 3.0;   // eV^2
   const double sin22th = 0.10;  // larger so phase-shift is visually obvious
   const double L       = 0.60;  // km
 
@@ -347,7 +355,7 @@ void sbn_bias() {
     gs.push_back(g);
   }
 
-  mg->SetTitle(";E_{rec}  [GeV];P(#nu_{#mu}#rightarrow#nu_{#mu})  (effective 2-flavour)");
+  mg->SetTitle(";E_{rec}  [GeV];P_{#mu#mu}");
   mg->Draw("A");
   mg->GetXaxis()->SetNdivisions(510);
   mg->GetYaxis()->SetRangeUser(1.0 - 1.2*sin22th, 1.01);
@@ -360,11 +368,8 @@ void sbn_bias() {
   leg->AddEntry(gs[2], "-2% energy scale", "l");
   leg->Draw();
 
-  TLatex lat;
-  lat.SetNDC(true);
-  lat.SetTextFont(42);
-  lat.SetTextSize(0.038);
-  lat.DrawLatex(0.15, 0.88, Form("L=%.2f km,  #Delta m^{2}=%.2f eV^{2},  sin^{2}2#theta=%.2f", L, dm2, sin22th));
+  DrawHeader("Energy-scale bias shifts oscillation phase in E_{rec}",
+             Form("E_{rec}=(1+b)E_{true}:  L=%.2f km,  #Delta m^{2}=%.2f eV^{2},  sin^{2}2#theta=%.2f", L, dm2, sin22th));
 
   c->SaveAs("sbn_energy_scale_bias.pdf");
 }
@@ -379,42 +384,57 @@ void sbn_nearfar() {
   const double Lnear   = 0.10;  // km
   const double Lfar    = 0.60;  // km
 
-  const int nb = 120;
+  // Use a smooth graph instead of a coarse bin-by-bin ratio to avoid jagged steps.
+  const int N = 2000;
   const double Emin = 0.2, Emax = 3.0;
 
-  TH1D* hN = new TH1D("hN", ";E_{#nu}  [GeV];Shape-normalised rate (arb.)", nb, Emin, Emax);
-  TH1D* hF = new TH1D("hF", ";E_{#nu}  [GeV];Shape-normalised rate (arb.)", nb, Emin, Emax);
-
-  for (int i = 1; i <= nb; ++i) {
-    const double E = hN->GetBinCenter(i);
-    const double N0 = toy_flux(E) * toy_xsec(E);
-
-    hN->SetBinContent(i, N0 * P_surv(Lnear, E, dm2, sin22th));
-    hF->SetBinContent(i, N0 * P_surv(Lfar,  E, dm2, sin22th));
+  std::vector<double> E(N), rN(N), rF(N);
+  for (int i = 0; i < N; ++i) {
+    const double t = (N == 1) ? 0.0 : (double)i / (double)(N - 1);
+    E[i] = Emin + (Emax - Emin) * t;
+    const double N0 = toy_flux(E[i]) * toy_xsec(E[i]);
+    rN[i] = N0 * P_surv(Lnear, E[i], dm2, sin22th);
+    rF[i] = N0 * P_surv(Lfar,  E[i], dm2, sin22th);
   }
 
-  // Shape normalise (remove trivial normalisation differences).
-  const double IN = hN->Integral("width");
-  const double IF = hF->Integral("width");
-  if (IN > 0) hN->Scale(1.0/IN);
-  if (IF > 0) hF->Scale(1.0/IF);
+  auto trapz = [&](const std::vector<double>& y) -> double {
+    double sum = 0.0;
+    for (int i = 0; i < N - 1; ++i) {
+      const double dx = E[i+1] - E[i];
+      sum += 0.5 * (y[i] + y[i+1]) * dx;
+    }
+    return sum;
+  };
 
-  TH1D* hR = (TH1D*)hF->Clone("hR");
-  hR->SetTitle(";E_{#nu}  [GeV];(Far spectrum)/(Near spectrum)  (shape-normalised)");
-  hR->Divide(hN);
+  const double IN = trapz(rN);
+  const double IF = trapz(rF);
+
+  TGraph* gR = new TGraph(N);
+  for (int i = 0; i < N; ++i) {
+    const double n = (IN > 0.0) ? (rN[i] / IN) : rN[i];
+    const double f = (IF > 0.0) ? (rF[i] / IF) : rF[i];
+    const double R = (n > 0.0)  ? (f / n)      : 0.0;
+    gR->SetPoint(i, E[i], R);
+  }
 
   TCanvas* c = new TCanvas("c_nearfar", "", 900, 650);
-  hR->SetLineWidth(3);
-  hR->SetLineColor(kBlack);
-  hR->GetYaxis()->SetRangeUser(0.8, 1.2);
-  hR->Draw("HIST");
+  gR->SetLineWidth(3);
+  gR->SetLineColor(kBlack);
+  gR->SetTitle(";E_{#nu}  [GeV];Far/Near (shape norm.)");
+  gR->Draw("AL");
+  gR->GetXaxis()->SetNdivisions(510);
+  gR->GetYaxis()->SetRangeUser(0.90, 1.10);
 
-  TLatex lat;
-  lat.SetNDC(true);
-  lat.SetTextFont(42);
-  lat.SetTextSize(0.038);
-  lat.DrawLatex(0.15, 0.88, Form("L_{near}=%.2f km, L_{far}=%.2f km,  #Delta m^{2}=%.2f eV^{2},  sin^{2}2#theta=%.2f",
-                                 Lnear, Lfar, dm2, sin22th));
+  // Reference line at unity.
+  TLine* one = new TLine(Emin, 1.0, Emax, 1.0);
+  one->SetLineStyle(2);
+  one->SetLineWidth(2);
+  one->SetLineColor(kGray+2);
+  one->Draw("SAME");
+
+  DrawHeader("Near/Far shape ratio isolates oscillation-driven distortions",
+             Form("Toy flux#timesxsec (shape-normalised):  L_{near}=%.2f km, L_{far}=%.2f km,  #Delta m^{2}=%.2f eV^{2},  sin^{2}2#theta=%.2f",
+                  Lnear, Lfar, dm2, sin22th));
 
   c->SaveAs("sbn_nearfar_ratio.pdf");
 }
@@ -436,11 +456,13 @@ void sbn_dm2_sin22_template() {
                          10, 1e-4, 1.0);
   frame->Draw();
 
-  TLatex lat;
-  lat.SetNDC(true);
-  lat.SetTextFont(42);
-  lat.SetTextSize(0.038);
-  lat.DrawLatex(0.15, 0.92, "Template: overlay allowed/excluded contours (two-column text files)");
+  frame->GetXaxis()->SetMoreLogLabels(true);
+  frame->GetXaxis()->SetNoExponent(true);
+  frame->GetYaxis()->SetMoreLogLabels(true);
+  frame->GetYaxis()->SetNoExponent(true);
+
+  DrawHeader("Sterile-parameter plane (vacuum SBL limit)",
+             "Overlay allowed/excluded contours (TGraph from two-column text files)");
 
   // Example (uncomment after you have files):
   // TGraph* g_allowed = new TGraph("data/allowed_region.txt"); // columns: dm2  sin22th
@@ -472,8 +494,8 @@ void sbn_plot_all() {
   sbn_dm2_sin22_template();
 }
 
-void sbn_osc_plots(const char* which = "prob_le") {
-  std::string w(which ? which : "prob_le");
+void sbn_osc_plots(const char* which = "all") {
+  std::string w(which ? which : "all");
 
   if      (w == "prob_le")            sbn_prob_vs_LE();
   else if (w == "prob_E")             sbn_prob_vs_E();
