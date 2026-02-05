@@ -103,6 +103,10 @@ void configure_style()
     nuxsec::plot::Plotter{}.set_global_style();
     // We'll draw a custom right axis; avoid default RHS ticks.
     gStyle->SetPadTickY(0);
+    // Subtle dotted grid (closer to typical "timeline" figures).
+    gStyle->SetGridStyle(3);
+    gStyle->SetGridColor(kGray + 1);
+    gStyle->SetGridWidth(1);
     TGaxis::SetMaxDigits(3);
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6, 30, 0)
     gStyle->SetTimeOffset(0, "gmt");
@@ -482,7 +486,7 @@ void draw_plot(const TH1D &h_bnb, const TH1D &h_fhc, const TH1D &h_rhc,
     TPad *legend_pad = new TPad("pad_legend", "pad_legend", 0.0, split, 1.0, 1.0);
 
     main_pad->SetTopMargin(0.02);
-    main_pad->SetBottomMargin(0.18);
+    main_pad->SetBottomMargin(0.20);
     main_pad->SetLeftMargin(ml);
     main_pad->SetRightMargin(mr);
 
@@ -509,13 +513,15 @@ void draw_plot(const TH1D &h_bnb, const TH1D &h_fhc, const TH1D &h_rhc,
     frame->GetXaxis()->SetTimeDisplay(1);
     frame->GetXaxis()->SetTimeOffset(0, "gmt");
     frame->GetXaxis()->SetTimeFormat("%Y");
-    frame->GetXaxis()->SetNdivisions(509);
+    // Avoid duplicate year labels like "2016 2016" when ROOT optimizes time ticks.
+    // Keep fewer major divisions for a year-only axis.
+    frame->GetXaxis()->SetNdivisions(505);
     frame->GetXaxis()->SetLabelSize(0.045);
     frame->GetXaxis()->SetTitle("Year");
     frame->GetXaxis()->SetTitleSize(0.045);
     frame->GetXaxis()->SetTitleOffset(1.10);
 
-    frame->GetYaxis()->SetTitle("Accumulated POT (x 10^{20})");
+    frame->GetYaxis()->SetTitle("Accumulated POT (#times 10^{20})");
     frame->GetYaxis()->SetNdivisions(507);
     frame->GetYaxis()->SetTitleSize(0.045);
     frame->GetYaxis()->SetLabelSize(0.045);
@@ -528,7 +534,7 @@ void draw_plot(const TH1D &h_bnb, const TH1D &h_fhc, const TH1D &h_rhc,
 
     for (size_t i = 0; i < runs.size(); ++i)
     {
-        const float alpha = (i % 2 == 0) ? 0.18f : 0.10f;
+        const float alpha = (i % 2 == 0) ? 0.14f : 0.08f;
         TBox *b = new TBox(runs[i].x1, 0.0, runs[i].x2, d.y_pot_max);
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6, 22, 0)
         b->SetFillColorAlpha(band_col, alpha);
@@ -569,6 +575,13 @@ void draw_plot(const TH1D &h_bnb, const TH1D &h_fhc, const TH1D &h_rhc,
         g.SetMarkerSize(msize);
     };
 
+    // Distinct line styles (and matching outlines) so beam modes remain readable
+    // with the black underlay.
+    const Int_t ls_total = 1; // solid
+    const Int_t ls_bnb   = 2; // dashed
+    const Int_t ls_fhc   = 3; // dotted
+    const Int_t ls_rhc   = 4; // dash-dot
+
     // Cumulative step curves
     TGraph g_total(d.x_step.size(), d.x_step.data(), d.y_total.data());
     TGraph g_bnb(d.x_step.size(), d.x_step.data(), d.y_bnb.data());
@@ -581,15 +594,15 @@ void draw_plot(const TH1D &h_bnb, const TH1D &h_fhc, const TH1D &h_rhc,
     TGraph g_fhc_outline(d.x_step.size(), d.x_step.data(), d.y_fhc.data());
     TGraph g_rhc_outline(d.x_step.size(), d.x_step.data(), d.y_rhc.data());
 
-    style_line(g_total_outline, kBlack, 1, 3);
-    style_line(g_bnb_outline,   kBlack, 1, 3);
-    style_line(g_fhc_outline,   kBlack, 1, 3);
-    style_line(g_rhc_outline,   kBlack, 1, 3);
+    style_line(g_total_outline, kBlack, ls_total, 3);
+    style_line(g_bnb_outline,   kBlack, ls_bnb,   3);
+    style_line(g_fhc_outline,   kBlack, ls_fhc,   3);
+    style_line(g_rhc_outline,   kBlack, ls_rhc,   3);
 
-    style_line(g_total, col_total, 1, 2);
-    style_line(g_bnb,   col_bnb,   2, 2);
-    style_line(g_fhc,   col_fhc,   2, 2);
-    style_line(g_rhc,   col_rhc,   2, 2);
+    style_line(g_total, col_total, ls_total, 2);
+    style_line(g_bnb,   col_bnb,   ls_bnb,   2);
+    style_line(g_fhc,   col_fhc,   ls_fhc,   2);
+    style_line(g_rhc,   col_rhc,   ls_rhc,   2);
 
     g_total_outline.Draw("L SAME");
     g_bnb_outline.Draw("L SAME");
@@ -636,23 +649,30 @@ void draw_plot(const TH1D &h_bnb, const TH1D &h_fhc, const TH1D &h_rhc,
         const double fhc   = d.pot_fhc;
         const double rhc   = d.pot_rhc;
 
-        TLatex info;
-        info.SetNDC(true);
-        info.SetTextFont(42);
-        info.SetTextSize(0.040);
-        info.SetTextAlign(13);
+        TLatex infoL;
+        infoL.SetNDC(true);
+        infoL.SetTextFont(42);
+        infoL.SetTextSize(0.038);
+        infoL.SetTextAlign(13); // left, top
 
         const std::string s0 = utc_date_ymd(tmin);
         const std::string s1 = utc_date_ymd(tmax);
 
-        const double y0 = 0.03;
-        info.DrawLatex(ml + 0.01, y0 + 0.06, Form("%s  --  %s", s0.c_str(), s1.c_str()));
-        info.DrawLatex(ml + 0.01, y0 + 0.02, Form("Total POT: %.3g", total));
+        const double y0 = 0.025;
+        infoL.DrawLatex(ml + 0.01, y0 + 0.080, Form("%s  --  %s", s0.c_str(), s1.c_str()));
+        infoL.DrawLatex(ml + 0.01, y0 + 0.030, Form("Total POT: %.3g", total));
         if (total > 0)
         {
-            info.DrawLatex(0.55, y0 + 0.06, Form("BNB: %.3g (%.1f%%)", bnb, 100.0 * bnb / total));
-            info.DrawLatex(0.55, y0 + 0.02, Form("NuMI FHC: %.3g (%.1f%%)   NuMI RHC: %.3g (%.1f%%)",
-                                                fhc, 100.0 * fhc / total, rhc, 100.0 * rhc / total));
+            // Right-anchored so the NuMI breakdown doesn't get clipped by the pad edge.
+            TLatex infoR;
+            infoR.SetNDC(true);
+            infoR.SetTextFont(42);
+            infoR.SetTextSize(0.038);
+            infoR.SetTextAlign(33); // right, top
+            const double xr = 1.0 - mr - 0.01;
+            infoR.DrawLatex(xr, y0 + 0.080, Form("BNB: %.3g (%.1f%%)", bnb, 100.0 * bnb / total));
+            infoR.DrawLatex(xr, y0 + 0.030, Form("NuMI FHC: %.3g (%.1f%%)   NuMI RHC: %.3g (%.1f%%)",
+                                                 fhc, 100.0 * fhc / total, rhc, 100.0 * rhc / total));
         }
     }
 
