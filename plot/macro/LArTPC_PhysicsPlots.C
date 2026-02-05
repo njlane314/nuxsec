@@ -1214,7 +1214,7 @@ void LArTPC_PhysicsPlots(const char* which = "all", const char* outPrefix = "LAr
     std::cout << "Wrote " << pdf << "\n";
   }
   else {
-    const TString pdf = base + "_" + w + ".pdf";
+    const TString pdf = base + "_" + TString(w) + ".pdf";
     pages.front()->SaveAs(pdf.Data());
     std::cout << "Wrote " << pdf << "\n";
   }
