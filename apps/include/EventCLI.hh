@@ -89,7 +89,7 @@ inline void ensure_tree_present(const SampleIO::Sample &sample,
     }
 }
 
-struct Args
+struct EventArgs
 {
     std::string list_path;
     std::string output_root;
@@ -97,20 +97,20 @@ struct Args
     std::string columns_tsv_path;
 };
 
-struct Input
+struct EventInput
 {
     SampleListEntry entry;
     SampleIO::Sample sample;
 };
 
-inline Args parse_args(const std::vector<std::string> &args, const std::string &usage)
+inline EventArgs parse_event_args(const std::vector<std::string> &args, const std::string &usage)
 {
     if (args.size() < 2 || args.size() > 4)
     {
         throw std::runtime_error(usage);
     }
 
-    Args out;
+    EventArgs out;
     out.list_path = trim(args.at(0));
     out.output_root = trim(args.at(1));
     if (args.size() > 2)
@@ -138,7 +138,7 @@ inline Args parse_args(const std::vector<std::string> &args, const std::string &
     return out;
 }
 
-int run(const Args &event_args, const std::string &log_prefix);
+int run(const EventArgs &event_args, const std::string &log_prefix);
 
 
 
