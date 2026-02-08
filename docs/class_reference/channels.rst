@@ -8,4 +8,4 @@ Location
 --------
 
 * Header: ``plot/include/PlotChannels.hh``
-* Namespace: ``nuxsec::plot``
+* Namespace: ``global``

@@ -11,10 +11,6 @@
 #include <string>
 #include <vector>
 
-namespace nuxsec
-{
-namespace selection
-{
 
 const float SelectionService::trigger_min_beam_pe = 0.f;
 const float SelectionService::trigger_max_veto_pe = 20.f;
@@ -27,7 +23,6 @@ const float SelectionService::muon_min_track_length = 10.0f;
 const float SelectionService::muon_max_track_distance = 4.0f;
 const unsigned SelectionService::muon_required_generation = 2u;
 
-namespace
 {
 
 constexpr float min_x = 5.f;
@@ -244,5 +239,3 @@ bool SelectionService::is_in_reco_volume(float x, float y, float z) noexcept
     return is_in_active_volume(x, y, z) && (z < reco_gap_min_z || z > reco_gap_max_z);
 }
 
-} // namespace selection
-} // namespace nuxsec

@@ -30,11 +30,7 @@
 #include <TROOT.h>
 #include <TTree.h>
 
-namespace nuxsec
-{
 
-namespace event
-{
 
 std::string EventIO::sanitise_root_key(std::string s)
 {

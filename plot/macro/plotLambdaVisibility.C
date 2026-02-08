@@ -17,14 +17,12 @@
 #include <cmath>
 #include <iostream>
 
-namespace phys { // PDG masses [GeV]
   constexpr double mL  = 1.115683;
   constexpr double mp  = 0.9382720813;
   constexpr double mpi = 0.13957039;
 }
 
 // --- tiny configuration block (edit here) ---
-namespace cfg {
   const char* file     = "mc.root";
   const char* tree     = "events";
   const char* br_pL    = "lambda_p_exit"; // Λ momentum at nuclear exit [GeV/c]
@@ -37,15 +35,15 @@ namespace cfg {
 }
 
 void plotLambdaVisibility() {
-  nuxsec::plot::Plotter{}.set_global_style();
+  Plotter{}.set_global_style();
   gStyle->SetOptStat(0);
 
   // --------- Analytic two-body constants (Λ→pπ) ----------
-  const double Ep_star  = (phys::mL*phys::mL + phys::mp*phys::mp  - phys::mpi*phys::mpi)/(2.0*phys::mL);
-  const double Epi_star = (phys::mL*phys::mL + phys::mpi*phys::mpi - phys::mp*phys::mp )/(2.0*phys::mL);
-  const double p_star   = std::sqrt(std::max(0.0, Ep_star*Ep_star - phys::mp*phys::mp));
-  const double Ep_min   = std::sqrt(phys::mp*phys::mp  + cfg::pmin_p*cfg::pmin_p);
-  const double Epi_min  = std::sqrt(phys::mpi*phys::mpi + cfg::pmin_pi*cfg::pmin_pi);
+  const double Ep_star  = (mL*mL + mp*mp  - mpi*mpi)/(2.0*mL);
+  const double Epi_star = (mL*mL + mpi*mpi - mp*mp )/(2.0*mL);
+  const double p_star   = std::sqrt(std::max(0.0, Ep_star*Ep_star - mp*mp));
+  const double Ep_min   = std::sqrt(mp*mp  + pmin_p*pmin_p);
+  const double Epi_min  = std::sqrt(mpi*mpi + pmin_pi*pmin_pi);
   const double pvis     = 0.42; // Λ visibility threshold [GeV/c]
 
   // --------- Analytic visibility fraction F_kin(p_Λ) ----------
@@ -53,9 +51,9 @@ void plotLambdaVisibility() {
   auto gF = new TGraph(N);
   gF->SetLineWidth(3);
   for (int i=0; i<N; ++i) {
-    const double p = cfg::xlow + (cfg::xhigh - cfg::xlow)*(i + 0.5)/N;
-    const double E = std::sqrt(p*p + phys::mL*phys::mL);
-    const double gamma = E/phys::mL;
+    const double p = xlow + (xhigh - xlow)*(i + 0.5)/N;
+    const double E = std::sqrt(p*p + mL*mL);
+    const double gamma = E/mL;
     const double beta  = (E>0.0) ? p/E : 0.0;
 
     double frac = 0.0;
@@ -73,33 +71,33 @@ void plotLambdaVisibility() {
 
   // --------- MC efficiency vs p_Λ (exit-defined denominator) ----------
   TEfficiency* eff = nullptr;
-  if (gSystem->AccessPathName(cfg::file)) {
-    std::cout << "Warning: MC file '" << cfg::file
+  if (gSystem->AccessPathName(file)) {
+    std::cout << "Warning: MC file '" << file
               << "' not found; skipping MC efficiency overlay.\n";
   } else {
-    TFile f(cfg::file, "READ");
+    TFile f(file, "READ");
     if (f.IsZombie()) {
-      std::cout << "Warning: MC file '" << cfg::file
+      std::cout << "Warning: MC file '" << file
                 << "' could not be opened; skipping MC efficiency overlay.\n";
     } else {
-      TTree* T = (TTree*) f.Get(cfg::tree);
+      TTree* T = (TTree*) f.Get(tree);
       if (!T) {
-        std::cout << "Warning: tree '" << cfg::tree
-                  << "' not found in '" << cfg::file
+        std::cout << "Warning: tree '" << tree
+                  << "' not found in '" << file
                   << "'; skipping MC efficiency overlay.\n";
-      } else if (!T->GetBranch(cfg::br_pL)
-                 || !T->GetBranch(cfg::br_isSig)
-                 || !T->GetBranch(cfg::br_isSel)) {
-        std::cout << "Warning: required branches not found in '" << cfg::file
+      } else if (!T->GetBranch(br_pL)
+                 || !T->GetBranch(br_isSig)
+                 || !T->GetBranch(br_isSel)) {
+        std::cout << "Warning: required branches not found in '" << file
                   << "'; skipping MC efficiency overlay.\n";
       } else {
         double pL = 0.0; int isSig=0, isSel=0;
-        T->SetBranchAddress(cfg::br_pL,    &pL);
-        T->SetBranchAddress(cfg::br_isSig, &isSig);
-        T->SetBranchAddress(cfg::br_isSel, &isSel);
+        T->SetBranchAddress(br_pL,    &pL);
+        T->SetBranchAddress(br_isSig, &isSig);
+        T->SetBranchAddress(br_isSel, &isSel);
 
         eff = new TEfficiency("eff",";p_{#Lambda} at Nuclear Exit [GeV/c];#varepsilon_{fid} (MC)",
-                              cfg::nbins, cfg::xlow, cfg::xhigh);
+                              nbins, xlow, xhigh);
         eff->SetStatisticOption(TEfficiency::kFCP);
 
         const Long64_t n = T->GetEntries();
@@ -114,7 +112,7 @@ void plotLambdaVisibility() {
 
   // --------- Draw ----------
   TCanvas c("c","Λ visibility & MC efficiency", 900, 650);
-  auto* frame = c.DrawFrame(cfg::xlow, 0.0, cfg::xhigh, 1.05,
+  auto* frame = c.DrawFrame(xlow, 0.0, xhigh, 1.05,
                             ";p_{#Lambda} at Nuclear Exit [GeV/c];Kinematic Visibility Efficiency");
   frame->GetYaxis()->SetTitleOffset(1.15);
 
@@ -129,6 +127,6 @@ void plotLambdaVisibility() {
   leg.AddEntry(&L,  Form("p^{vis}_{#Lambda} = %.2f GeV/c", pvis), "l");
   leg.Draw();
 
-  const std::string out = nuxsec::plot::plot_output_file("lambda_visibility_efficiency").string();
+  const std::string out = plot_output_file("lambda_visibility_efficiency").string();
   c.SaveAs(out.c_str());
 }

@@ -11,11 +11,7 @@
 #include <string>
 #include <vector>
 
-namespace nuxsec
-{
 
-namespace sample
-{
 
 class SampleIO
 {
@@ -79,8 +75,6 @@ class SampleIO
     static Sample read(const std::string &in_file);
 };
 
-} // namespace sample
 
-} // namespace nuxsec
 
 #endif // NUXSEC_IO_SAMPLE_IO_H

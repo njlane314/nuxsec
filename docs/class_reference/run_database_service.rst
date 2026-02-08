@@ -8,4 +8,4 @@ Location
 --------
 
 * Header: ``io/include/RunDatabaseService.hh``
-* Namespace: ``nuxsec``
+* Namespace: ``global``

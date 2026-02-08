@@ -34,10 +34,10 @@ selection helpers in ``SelectionService``.
 
 .. code-block:: c++
 
-   ROOT::RDataFrame frame = nuxsec::RDataFrameService::load_sample(sample, "Events");
-   auto enriched = nuxsec::ColumnDerivationService::instance().define(frame, processor);
-   auto filtered = nuxsec::selection::SelectionService::apply(
-       enriched, nuxsec::selection::Preset::Muon, selection_entry);
+   ROOT::RDataFrame frame = RDataFrameService::load_sample(sample, "Events");
+   auto enriched = ColumnDerivationService::instance().define(frame, processor);
+   auto filtered = SelectionService::apply(
+       enriched, Preset::Muon, selection_entry);
 
 This module keeps analysis-level logic centralised so applications and macros
 can use a consistent set of derived columns and selection labels.
@@ -72,10 +72,10 @@ A simplified flow that connects these modules is:
 
 .. code-block:: c++
 
-   ROOT::RDataFrame frame = nuxsec::RDataFrameService::load_sample(sample, "Events");
-   auto enriched = nuxsec::ColumnDerivationService::instance().define(frame, processor);
-   auto filtered = nuxsec::selection::SelectionService::apply(
-       enriched, nuxsec::selection::Preset::Muon, selection_entry);
+   ROOT::RDataFrame frame = RDataFrameService::load_sample(sample, "Events");
+   auto enriched = ColumnDerivationService::instance().define(frame, processor);
+   auto filtered = SelectionService::apply(
+       enriched, Preset::Muon, selection_entry);
 
 This pattern keeps the data definition and provenance in ``io/``, analysis
 columns and selections in ``ana/``, and final presentation in ``plot/``.

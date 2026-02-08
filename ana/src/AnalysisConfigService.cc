@@ -12,8 +12,6 @@
 #include "ColumnDerivationService.hh"
 #include "SampleIO.hh"
 
-namespace nuxsec
-{
 
 const AnalysisConfigService &AnalysisConfigService::instance()
 {
@@ -27,23 +25,23 @@ AnalysisConfigService::AnalysisConfigService()
     m_tree_name = "nuselection/EventSelectionFilter";
 }
 
-ProcessorEntry AnalysisConfigService::make_processor(const sample::SampleIO::Sample &sample) const noexcept
+ProcessorEntry AnalysisConfigService::make_processor(const SampleIO::Sample &sample) const noexcept
 {
     ProcessorEntry proc_entry;
 
     switch (sample.origin)
     {
-    case sample::SampleIO::SampleOrigin::kData:
+    case SampleIO::SampleOrigin::kData:
         proc_entry.source = Type::kData;
         break;
-    case sample::SampleIO::SampleOrigin::kEXT:
+    case SampleIO::SampleOrigin::kEXT:
         proc_entry.source = Type::kExt;
         proc_entry.trig_nom = sample.db_tor101_pot_sum;
         proc_entry.trig_eqv = sample.subrun_pot_sum;
         break;
-    case sample::SampleIO::SampleOrigin::kOverlay:
-    case sample::SampleIO::SampleOrigin::kDirt:
-    case sample::SampleIO::SampleOrigin::kStrangeness:
+    case SampleIO::SampleOrigin::kOverlay:
+    case SampleIO::SampleOrigin::kDirt:
+    case SampleIO::SampleOrigin::kStrangeness:
         proc_entry.source = Type::kMC;
         proc_entry.pot_nom = sample.db_tortgt_pot_sum;
         proc_entry.pot_eqv = sample.subrun_pot_sum;
@@ -56,4 +54,3 @@ ProcessorEntry AnalysisConfigService::make_processor(const sample::SampleIO::Sam
     return proc_entry;
 }
 
-} // namespace nuxsec

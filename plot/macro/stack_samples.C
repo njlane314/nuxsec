@@ -27,10 +27,6 @@
 #include "SampleCLI.hh"
 #include "SampleIO.hh"
 
-namespace nuxsec
-{
-namespace plot
-{
 
 int stack_samples_impl(const std::string &expr,
                        const std::string &samples_tsv,
@@ -46,7 +42,7 @@ int stack_samples_impl(const std::string &expr,
     const std::string list_path = samples_tsv.empty() ? default_samples_tsv() : samples_tsv;
     std::cout << "[stack_samples] samples_tsv=" << list_path << "\n";
 
-    const auto sample_list = app::sample::read_samples(list_path);
+    const auto sample_list = read_samples(list_path);
 
     const auto &analysis = AnalysisConfigService::instance();
     const std::string tree_name = analysis.tree_name();
@@ -61,7 +57,7 @@ int stack_samples_impl(const std::string &expr,
 
     for (const auto &sl : sample_list)
     {
-        sample::SampleIO::Sample sample = sample::SampleIO::read(sl.output_path);
+        SampleIO::Sample sample = SampleIO::read(sl.output_path);
 
         ROOT::RDataFrame rdf = RDataFrameService::load_sample(sample, tree_name);
 
@@ -69,7 +65,7 @@ int stack_samples_impl(const std::string &expr,
         const auto &deriver = ColumnDerivationService::instance();
         ROOT::RDF::RNode node = deriver.define(rdf, proc_entry);
 
-        using SO = sample::SampleIO::SampleOrigin;
+        using SO = SampleIO::SampleOrigin;
         if (sample.origin == SO::kOverlay)
         {
             node = node.Filter([](int strange) { return strange == 0; }, {"count_strange"});
@@ -86,7 +82,7 @@ int stack_samples_impl(const std::string &expr,
             entry.selection.nominal.node = entry.selection.nominal.node.Filter(extra_sel);
         }
         entry.pot_nom = pick_pot_nom(sample);
-        entry.beamline = sample::SampleIO::beam_mode_name(sample.beam); // "numi" or "bnb"
+        entry.beamline = SampleIO::beam_mode_name(sample.beam); // "numi" or "bnb"
         entry.period = {};
 
         const Entry *eptr = &entry;
@@ -115,8 +111,6 @@ int stack_samples_impl(const std::string &expr,
     return 0;
 }
 
-} // namespace plot
-} // namespace nuxsec
 
 int stack_samples(const std::string &expr = "reco_muon_p",
                   const std::string &samples_tsv = "",
@@ -127,7 +121,7 @@ int stack_samples(const std::string &expr = "reco_muon_p",
                   const std::string &extra_sel = "true",
                   bool use_logy = false)
 {
-    return nuxsec::plot::stack_samples_impl(expr,
+    return stack_samples_impl(expr,
                                             samples_tsv,
                                             nbins,
                                             xmin,

@@ -27,13 +27,7 @@
 #include "PlotChannels.hh"
 #include "Plotter.hh"
 
-namespace nuxsec
-{
-namespace plot
-{
 
-namespace
-{
 
 void apply_total_errors(TH1D &h, const TMatrixDSym *cov, const std::vector<double> *syst_bin)
 {
@@ -55,14 +49,13 @@ void apply_total_errors(TH1D &h, const TMatrixDSym *cov, const std::vector<doubl
     }
 }
 
-} // namespace
 
 StackedHist::StackedHist(TH1DModel spec, Options opt, std::vector<const Entry *> mc, std::vector<const Entry *> data)
     : spec_(std::move(spec)),
       opt_(std::move(opt)),
       mc_(std::move(mc)),
       data_(std::move(data)),
-      plot_name_(nuxsec::plot::Plotter::sanitise(spec_.id)),
+      plot_name_(Plotter::sanitise(spec_.id)),
       output_directory_(opt_.out_dir)
 {
 }
@@ -176,7 +169,7 @@ void StackedHist::build_histograms()
     sig_hist_.reset();
     signal_scale_ = 1.0;
     std::map<int, std::vector<ROOT::RDF::RResultPtr<TH1D>>> booked;
-    const auto &channels = nuxsec::plot::Channels::mc_keys();
+    const auto &channels = Channels::mc_keys();
 
     for (size_t ie = 0; ie < mc_.size(); ++ie)
     {
@@ -185,7 +178,7 @@ void StackedHist::build_histograms()
         {
             continue;
         }
-        auto n0 = selection::apply(e->rnode(), spec_.sel, e->selection);
+        auto n0 = apply(e->rnode(), spec_.sel, e->selection);
         auto n = (spec_.expr.empty() ? n0 : n0.Define("_nx_expr_", spec_.expr));
         const std::string var = spec_.expr.empty() ? spec_.id : "_nx_expr_";
         for (int ch : channels)
@@ -247,8 +240,8 @@ void StackedHist::build_histograms()
             continue;
         }
         auto &sum = it->second;
-        sum->SetFillColor(nuxsec::plot::Channels::colour(ch));
-        sum->SetFillStyle(nuxsec::plot::Channels::fill_style(ch));
+        sum->SetFillColor(Channels::colour(ch));
+        sum->SetFillStyle(Channels::fill_style(ch));
         sum->SetLineColor(kBlack);
         sum->SetLineWidth(1);
         stack_->Add(sum.get(), "HIST");
@@ -279,7 +272,7 @@ void StackedHist::build_histograms()
             {
                 continue;
             }
-            auto n0 = selection::apply(e->rnode(), spec_.sel, e->selection);
+            auto n0 = apply(e->rnode(), spec_.sel, e->selection);
             auto n = (spec_.expr.empty() ? n0 : n0.Define("_nx_expr_", spec_.expr));
             const std::string var = spec_.expr.empty() ? spec_.id : "_nx_expr_";
             parts.push_back(n.Histo1D(spec_.model("_data_src" + std::to_string(ie)), var));
@@ -497,14 +490,14 @@ void StackedHist::draw_legend(TPad *p)
     {
         int ch = chan_order_.at(i);
         double sum = mc_ch_hists_[i]->Integral();
-        std::string label = nuxsec::plot::Channels::label(ch);
+        std::string label = Channels::label(ch);
         if (label == "#emptyset")
         {
             label = "\xE2\x88\x85";
         }
         if (opt_.annotate_numbers)
         {
-            label += " : " + nuxsec::plot::Plotter::fmt_commas(sum, 2);
+            label += " : " + Plotter::fmt_commas(sum, 2);
         }
         auto proxy = std::unique_ptr<TH1D>(static_cast<TH1D *>(
             mc_ch_hists_[i]->Clone((spec_.id + "_leg_ch" + std::to_string(ch)).c_str())));
@@ -588,7 +581,7 @@ void StackedHist::draw_watermark(TPad *p, double total_mc) const
 
     const std::string line1 = "#bf{#muBooNE Simulation, Preliminary}";
 
-    const auto sum_pot = [](const std::vector<const nuxsec::plot::Entry *> &entries) {
+    const auto sum_pot = [](const std::vector<const Entry *> &entries) {
         constexpr double rel_tol = 1e-6;
         double total = 0.0;
         std::map<std::pair<std::string, std::string>, std::vector<double>> seen;
@@ -639,7 +632,7 @@ void StackedHist::draw_watermark(TPad *p, double total_mc) const
 
     const std::string pot_str = pot_value > 0.0 ? format_pot(pot_value) : "N/A";
 
-    const auto first_non_empty = [](const std::vector<const nuxsec::plot::Entry *> &entries, auto getter) -> std::string {
+    const auto first_non_empty = [](const std::vector<const Entry *> &entries, auto getter) -> std::string {
         for (const auto *e : entries)
         {
             if (!e)
@@ -702,7 +695,7 @@ void StackedHist::draw_watermark(TPad *p, double total_mc) const
         }
         try
         {
-            label = nuxsec::plot::Plotter::fmt_commas(std::stod(label), 0);
+            label = Plotter::fmt_commas(std::stod(label), 0);
         }
         catch (...)
         {
@@ -728,13 +721,13 @@ void StackedHist::draw_watermark(TPad *p, double total_mc) const
     std::string region_label = opt_.analysis_region_label;
     if (region_label.empty())
     {
-        region_label = selection::SelectionService::selection_label(spec_.sel);
+        region_label = SelectionService::selection_label(spec_.sel);
     }
 
     const std::string line2 = "Beam(s), Run(s): " + beam_name + ", " + runs_str +
                               " (" + pot_str + " POT)";
     const std::string line3 = "Analysis Region: " + region_label + " (" +
-                              nuxsec::plot::Plotter::fmt_commas(total_mc, 2) + " events)";
+                              Plotter::fmt_commas(total_mc, 2) + " events)";
 
     TLatex watermark;
     watermark.SetNDC();
@@ -784,5 +777,3 @@ void StackedHist::draw_and_save(const std::string &image_format)
     canvas.SaveAs(out.c_str());
 }
 
-} // namespace plot
-} // namespace nuxsec

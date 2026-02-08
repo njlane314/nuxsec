@@ -10,8 +10,6 @@
 #include <stdexcept>
 #include <utility>
 
-namespace nuxsec
-{
 
 RunDatabaseService::RunDatabaseService(std::string path) : db_path_(std::move(path))
 {
@@ -58,7 +56,7 @@ void RunDatabaseService::prepare(const std::string &sql, sqlite3_stmt **stmt) co
     }
 }
 
-RunInfoSums RunDatabaseService::sum_run_info(const std::vector<art::Subrun> &pairs) const
+RunInfoSums RunDatabaseService::sum_run_info(const std::vector<Subrun> &pairs) const
 {
     if (pairs.empty())
     {

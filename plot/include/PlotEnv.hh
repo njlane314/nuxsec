@@ -25,10 +25,6 @@
 #include <string_view>
 #include <system_error>
 
-namespace nuxsec
-{
-namespace plot
-{
 
 inline constexpr int kCanvasWidth = 1200;
 inline constexpr int kCanvasHeight = 700;
@@ -127,7 +123,5 @@ inline std::filesystem::path plot_output_file(std::string_view base,
     return resolve_output_file({}, base, ext);
 }
 
-} // namespace plot
-} // namespace nuxsec
 
 #endif

@@ -8,4 +8,4 @@ Location
 --------
 
 * Header: ``apps/include/EventColumnProvider.hh``
-* Namespace: ``nuxsec::app::event``
+* Namespace: ``global``

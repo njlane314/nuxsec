@@ -7,14 +7,8 @@
 #include <sstream>
 #include <string>
 
-namespace nuxsec
-{
 
-namespace app
-{
 
-namespace log
-{
 
 enum class Level
 {
@@ -105,10 +99,7 @@ inline void log_stage(const std::string &log_prefix,
     log_info(log_prefix, out.str());
 }
 
-} // namespace log
 
-} // namespace app
 
-} // namespace nuxsec
 
 #endif // NUXSEC_APPS_APPLOG_H

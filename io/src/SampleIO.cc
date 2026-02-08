@@ -21,11 +21,7 @@
 
 #include "ArtFileProvenanceIO.hh"
 
-namespace nuxsec
-{
 
-namespace sample
-{
 
 const char *SampleIO::sample_origin_name(SampleOrigin k)
 {
@@ -333,7 +329,7 @@ std::vector<std::string> SampleIO::resolve_root_files(const Sample &sample)
 
     for (const ProvenanceInput &input : sample.inputs)
     {
-        const art::Provenance prov = ArtFileProvenanceIO::read(input.art_path);
+        const Provenance prov = ArtFileProvenanceIO::read(input.art_path);
         files.insert(files.end(), prov.input_files.begin(), prov.input_files.end());
     }
 
@@ -343,6 +339,4 @@ std::vector<std::string> SampleIO::resolve_root_files(const Sample &sample)
     return files;
 }
 
-} // namespace sample
 
-} // namespace nuxsec

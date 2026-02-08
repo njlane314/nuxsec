@@ -18,18 +18,12 @@
 #include "SampleIO.hh"
 #include "SubRunInventoryService.hh"
 
-namespace nuxsec
-{
 
-namespace app
-{
 
-namespace art
-{
 
 inline void log_scan_start(const std::string &log_prefix)
 {
-    nuxsec::app::log::log_info(log_prefix, "action=subrun_scan status=start");
+    log_info(log_prefix, "action=subrun_scan status=start");
 }
 
 inline void log_scan_finish(const std::string &log_prefix,
@@ -38,10 +32,10 @@ inline void log_scan_finish(const std::string &log_prefix,
 {
     std::ostringstream out;
     out << "action=subrun_scan status=complete entries="
-        << nuxsec::app::log::format_count(total)
+        << format_count(total)
         << " elapsed_s=" << std::fixed << std::setprecision(1)
         << elapsed_seconds;
-    nuxsec::app::log::log_success(log_prefix, out.str());
+    log_success(log_prefix, out.str());
 }
 
 inline bool is_selection_data_file(const std::string &path)
@@ -54,10 +48,10 @@ inline bool is_selection_data_file(const std::string &path)
 struct Args
 {
     std::string art_path;
-    nuxsec::art::Input input;
-    nuxsec::sample::SampleIO::SampleOrigin sample_origin =
-        nuxsec::sample::SampleIO::SampleOrigin::kUnknown;
-    nuxsec::sample::SampleIO::BeamMode beam_mode = nuxsec::sample::SampleIO::BeamMode::kUnknown;
+    Input input;
+    SampleIO::SampleOrigin sample_origin =
+        SampleIO::SampleOrigin::kUnknown;
+    SampleIO::BeamMode beam_mode = SampleIO::BeamMode::kUnknown;
 };
 
 inline Args parse_input(const std::string &input)
@@ -69,10 +63,10 @@ inline Args parse_input(const std::string &input)
         const size_t pos = input.find(':', start);
         if (pos == std::string::npos)
         {
-            fields.push_back(nuxsec::app::trim(input.substr(start)));
+            fields.push_back(trim(input.substr(start)));
             break;
         }
-        fields.push_back(nuxsec::app::trim(input.substr(start, pos - start)));
+        fields.push_back(trim(input.substr(start, pos - start)));
         start = pos + 1;
     }
 
@@ -92,13 +86,13 @@ inline Args parse_input(const std::string &input)
 
     if (fields.size() >= 4)
     {
-        out.sample_origin = nuxsec::sample::SampleIO::parse_sample_origin(fields[2]);
-        out.beam_mode = nuxsec::sample::SampleIO::parse_beam_mode(fields[3]);
-        if (out.sample_origin == nuxsec::sample::SampleIO::SampleOrigin::kUnknown)
+        out.sample_origin = SampleIO::parse_sample_origin(fields[2]);
+        out.beam_mode = SampleIO::parse_beam_mode(fields[3]);
+        if (out.sample_origin == SampleIO::SampleOrigin::kUnknown)
         {
             throw std::runtime_error("Bad input sample kind: " + fields[2]);
         }
-        if (out.beam_mode == nuxsec::sample::SampleIO::BeamMode::kUnknown)
+        if (out.beam_mode == SampleIO::BeamMode::kUnknown)
         {
             throw std::runtime_error("Bad input beam mode: " + fields[3]);
         }
@@ -109,7 +103,7 @@ inline Args parse_input(const std::string &input)
     }
 
     const std::filesystem::path art_dir =
-        nuxsec::app::stage_output_dir("NUXSEC_ART_DIR", "art");
+        stage_output_dir("NUXSEC_ART_DIR", "art");
     out.art_path = (art_dir / ("art_prov_" + out.input.input_name + ".root")).string();
 
     return out;

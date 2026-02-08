@@ -12,16 +12,12 @@
 #include "AppUtils.hh"
 #include "SampleCLI.hh"
 
-namespace nuxsec
-{
 
-namespace app
-{
 
-int run(const sample::Args &sample_args, const std::string &log_prefix)
+int run(const Args &sample_args, const std::string &log_prefix)
 {
     const std::string db_path = "/exp/uboone/data/uboonebeam/beamdb/run.db";
-    const auto files = nuxsec::app::read_paths(sample_args.filelist_path);
+    const auto files = read_paths(sample_args.filelist_path);
 
     std::filesystem::path output_path(sample_args.output_path);
     if (!output_path.parent_path().empty())
@@ -36,13 +32,13 @@ int run(const sample::Args &sample_args, const std::string &log_prefix)
     }
 
     const auto start_time = std::chrono::steady_clock::now();
-    nuxsec::app::sample::log_sample_start(log_prefix, files.size());
+    log_sample_start(log_prefix, files.size());
 
-    nuxsec::app::StatusMonitor status_monitor(
+    StatusMonitor status_monitor(
         log_prefix,
         "action=sample_build status=running message=processing");
-    nuxsec::sample::SampleIO::Sample sample =
-        nuxsec::NormalisationService::build_sample(sample_args.sample_name,
+    SampleIO::Sample sample =
+        NormalisationService::build_sample(sample_args.sample_name,
                                                    files,
                                                    db_path);
 
@@ -50,10 +46,10 @@ int run(const sample::Args &sample_args, const std::string &log_prefix)
 
     const auto end_time = std::chrono::steady_clock::now();
     const double elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time).count();
-    nuxsec::app::sample::log_sample_finish(log_prefix, sample.inputs.size(), elapsed_seconds);
+    log_sample_finish(log_prefix, sample.inputs.size(), elapsed_seconds);
     
-    nuxsec::sample::SampleIO::write(sample, sample_args.output_path);
-    nuxsec::app::sample::update_sample_list(sample_args.sample_list_path, sample, sample_args.output_path);
+    SampleIO::write(sample, sample_args.output_path);
+    update_sample_list(sample_args.sample_list_path, sample, sample_args.output_path);
 
     std::ostringstream log_message;
     log_message << "action=sample_write status=complete sample=" << sample.sample_name
@@ -64,7 +60,7 @@ int run(const sample::Args &sample_args, const std::string &log_prefix)
                 << " normalised_pot_sum=" << sample.normalised_pot_sum
                 << " output=" << sample_args.output_path
                 << " sample_list=" << sample_args.sample_list_path;
-    nuxsec::app::log::log_success(log_prefix, log_message.str());
+    log_success(log_prefix, log_message.str());
 
     return 0;
 }
@@ -75,14 +71,14 @@ int run(const sample::Args &sample_args, const std::string &log_prefix)
 
 int main(int argc, char **argv)
 {
-    return nuxsec::app::run_guarded(
+    return run_guarded(
         "nuxsecSampleIOdriver",
         [argc, argv]()
         {
-            const std::vector<std::string> args = nuxsec::app::collect_args(argc, argv);
-            const nuxsec::app::sample::Args sample_args =
-                nuxsec::app::sample::parse_args(
+            const std::vector<std::string> args = collect_args(argc, argv);
+            const Args sample_args =
+                parse_args(
                     args, "Usage: nuxsecSampleIOdriver NAME:FILELIST");
-            return nuxsec::app::run(sample_args, "nuxsecSampleIOdriver");
+            return run(sample_args, "nuxsecSampleIOdriver");
         });
 }

@@ -13,10 +13,6 @@
 
 #include "PlotDescriptors.hh"
 
-namespace nuxsec
-{
-namespace plot
-{
 
 class StackedHist;
 
@@ -48,7 +44,5 @@ class Plotter
     Options opt_;
 };
 
-} // namespace plot
-} // namespace nuxsec
 
 #endif // NUXSEC_PLOT_PLOTTER_H

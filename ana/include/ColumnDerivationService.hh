@@ -11,8 +11,6 @@
 #include <ROOT/RDataFrame.hxx>
 #include <ROOT/RVec.hxx>
 
-namespace nuxsec
-{
 
 enum class Type
 {
@@ -60,6 +58,5 @@ class ColumnDerivationService
 
 };
 
-} // namespace nuxsec
 
 #endif // NUXSEC_ANA_COLUMN_DERIVATION_SERVICE_H

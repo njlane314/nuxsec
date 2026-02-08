@@ -26,8 +26,6 @@
 
 #include "AppUtils.hh"
 
-namespace
-{
 
 const char *kUsageMacro =
     "Usage: nuxsec macro MACRO.C [CALL]\n"
@@ -429,7 +427,7 @@ int handle_env_command(const std::vector<std::string> &args,
     std::string set_value = workspace_set();
     if (!args.empty())
     {
-        set_value = nuxsec::app::trim(args[0]);
+        set_value = trim(args[0]);
     }
 
     if (set_value.empty())
@@ -512,7 +510,7 @@ int handle_macro_command(const std::vector<std::string> &args)
     const auto repo_root = find_repo_root();
     ensure_plot_env(repo_root);
 
-    const std::string verb = nuxsec::app::trim(args[0]);
+    const std::string verb = trim(args[0]);
     std::vector<std::string> rest;
     rest.reserve(args.size() > 0 ? args.size() - 1 : 0);
     for (size_t i = 1; i < args.size(); ++i)
@@ -536,8 +534,8 @@ int handle_macro_command(const std::vector<std::string> &args)
         {
             throw std::runtime_error(kUsageMacro);
         }
-        const std::string macro_name = nuxsec::app::trim(rest[0]);
-        const std::string call = (rest.size() == 2) ? nuxsec::app::trim(rest[1]) : "";
+        const std::string macro_name = trim(rest[0]);
+        const std::string call = (rest.size() == 2) ? trim(rest[1]) : "";
 
         const auto macro_path = resolve_macro_path(repo_root, macro_name);
         if (call.empty())
@@ -553,7 +551,7 @@ int handle_macro_command(const std::vector<std::string> &args)
     }
 
     const std::string macro_name = verb;
-    const std::string call = rest.empty() ? "" : nuxsec::app::trim(rest[0]);
+    const std::string call = rest.empty() ? "" : trim(rest[0]);
     const auto macro_path = resolve_macro_path(repo_root, macro_name);
     if (call.empty())
     {
@@ -573,7 +571,7 @@ StatusOptions parse_status_args(const std::vector<std::string> &args)
     StatusOptions opts;
     for (size_t i = 0; i < args.size(); ++i)
     {
-        const std::string arg = nuxsec::app::trim(args[i]);
+        const std::string arg = trim(args[i]);
         if (arg == "--interval" || arg == "-i")
         {
             if (i + 1 >= args.size())
@@ -691,7 +689,7 @@ int handle_status_command(const std::vector<std::string> &args,
     {
         start_message << " count=" << opts.count;
     }
-    nuxsec::app::log::log_info("nuxsec", start_message.str());
+    log_info("nuxsec", start_message.str());
 
     long long completed = 0;
     while (opts.count == 0 || completed < opts.count)
@@ -699,13 +697,13 @@ int handle_status_command(const std::vector<std::string> &args,
         const auto executables = collect_executables(repo_root);
         std::ostringstream summary;
         summary << "action=exe_status_scan status=complete executables="
-                << nuxsec::app::log::format_count(
+                << format_count(
                        static_cast<long long>(executables.size()));
-        nuxsec::app::log::log_info("nuxsec", summary.str());
+        log_info("nuxsec", summary.str());
 
         if (executables.empty())
         {
-            nuxsec::app::log::log_warning(
+            log_warning(
                 "nuxsec",
                 "action=exe_status status=empty message=No executables found");
         }
@@ -717,7 +715,7 @@ int handle_status_command(const std::vector<std::string> &args,
                 message << "action=exe_status status=ok exe="
                         << path.filename().string()
                         << " path=" << path.string();
-                nuxsec::app::log::log_info("nuxsec", message.str());
+                log_info("nuxsec", message.str());
             }
         }
 
@@ -874,7 +872,7 @@ std::vector<CommandEntry> build_command_table(const std::filesystem::path &repo_
 
 int main(int argc, char **argv)
 {
-    return nuxsec::app::run_guarded(
+    return run_guarded(
         "nuxsec",
         [argc, argv]()
         {
@@ -898,7 +896,7 @@ int main(int argc, char **argv)
             }
 
             const std::string command = argv[i++];
-            const std::vector<std::string> args = nuxsec::app::collect_args(argc, argv, i);
+            const std::vector<std::string> args = collect_args(argc, argv, i);
 
             const auto command_table = build_command_table(repo_root);
             for (const auto &entry : command_table)

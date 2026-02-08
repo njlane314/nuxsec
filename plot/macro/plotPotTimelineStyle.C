@@ -47,8 +47,6 @@
 #include "../include/Plotter.hh"
 #include "../include/PlotEnv.hh"
 
-namespace
-{
 
 // -------------------- Paths --------------------
 
@@ -100,7 +98,7 @@ std::string utc_date_ymd(time_t t)
 
 void configure_style()
 {
-    nuxsec::plot::Plotter{}.set_global_style();
+    Plotter{}.set_global_style();
     // We'll draw a custom right axis; avoid default RHS ticks.
     gStyle->SetPadTickY(0);
     // Subtle dotted grid (closer to typical "timeline" figures).
@@ -475,8 +473,8 @@ void draw_plot(const TH1D &h_bnb, const TH1D &h_fhc, const TH1D &h_rhc,
                const std::string &outfile)
 {
     TCanvas canvas("c", "POT timeline",
-                   nuxsec::plot::kCanvasWidth,
-                   nuxsec::plot::kCanvasHeight);
+                   kCanvasWidth,
+                   kCanvasHeight);
 
     // Two pads: top legend strip + main plot.
     const double ml = 0.08;
@@ -643,7 +641,6 @@ void draw_plot(const TH1D &h_bnb, const TH1D &h_fhc, const TH1D &h_rhc,
     right_axis.Draw();
 
     // Small date range + totals, in the bottom margin (NDC in pad coordinates)
-    {
         const double total = d.pot_total;
         const double bnb   = d.pot_bnb;
         const double fhc   = d.pot_fhc;
@@ -809,13 +806,12 @@ void plotPotTimelineStyleInternal(const char *out = nullptr)
         runs = infer_run_periods(hBNB, hFHC, hRHC, active_threshold_pot, merge_gap_seconds);
     }
 
-    const auto out_path = nuxsec::plot::resolve_output_file(out ? out : "", "pot_timeline_style");
+    const auto out_path = resolve_output_file(out ? out : "", "pot_timeline_style");
     const std::string outfile = out_path.string();
 
     draw_plot(hBNB, hFHC, hRHC, d, runs, tmin, tmax, outfile);
 }
 
-} // namespace
 
 int nuxsec_plot(const char *out = nullptr)
 {

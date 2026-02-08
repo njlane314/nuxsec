@@ -7,10 +7,8 @@
 
 #include "ArtFileProvenanceIO.hh"
 
-namespace nuxsec
-{
 
-void ArtFileProvenanceIO::write(const art::Provenance &r, const std::string &out_file)
+void ArtFileProvenanceIO::write(const Provenance &r, const std::string &out_file)
 {
     std::unique_ptr<TFile> f(TFile::Open(out_file.c_str(), "UPDATE"));
     if (!f || f->IsZombie())
@@ -26,8 +24,8 @@ void ArtFileProvenanceIO::write(const art::Provenance &r, const std::string &out
     d->cd();
 
     TNamed("input_name", r.input.input_name.c_str()).Write("input_name", TObject::kOverwrite);
-    TNamed("sample_origin", sample::SampleIO::sample_origin_name(r.kind)).Write("sample_origin", TObject::kOverwrite);
-    TNamed("beam_mode", sample::SampleIO::beam_mode_name(r.beam)).Write("beam_mode", TObject::kOverwrite);
+    TNamed("sample_origin", SampleIO::sample_origin_name(r.kind)).Write("sample_origin", TObject::kOverwrite);
+    TNamed("beam_mode", SampleIO::beam_mode_name(r.beam)).Write("beam_mode", TObject::kOverwrite);
 
     TParameter<double>("subrun_pot_sum", r.summary.pot_sum).Write("subrun_pot_sum", TObject::kOverwrite);
     TParameter<long long>("subrun_entries", r.summary.n_entries).Write("subrun_entries", TObject::kOverwrite);
@@ -64,7 +62,7 @@ void ArtFileProvenanceIO::write(const art::Provenance &r, const std::string &out
     f->Close();
 }
 
-art::Provenance ArtFileProvenanceIO::read(const std::string &in_file)
+Provenance ArtFileProvenanceIO::read(const std::string &in_file)
 {
     std::unique_ptr<TFile> f(TFile::Open(in_file.c_str(), "READ"));
     if (!f || f->IsZombie())
@@ -79,15 +77,15 @@ art::Provenance ArtFileProvenanceIO::read(const std::string &in_file)
     }
     d->cd();
 
-    const sample::SampleIO::SampleOrigin kind = read_sample_origin(d);
-    const sample::SampleIO::BeamMode beam = sample::SampleIO::parse_beam_mode(read_named_string(d, "beam_mode"));
+    const SampleIO::SampleOrigin kind = read_sample_origin(d);
+    const SampleIO::BeamMode beam = SampleIO::parse_beam_mode(read_named_string(d, "beam_mode"));
 
     return read_directory(d, kind, beam);
 }
 
-art::Provenance ArtFileProvenanceIO::read(const std::string &in_file,
-                                          sample::SampleIO::SampleOrigin kind,
-                                          sample::SampleIO::BeamMode beam)
+Provenance ArtFileProvenanceIO::read(const std::string &in_file,
+                                          SampleIO::SampleOrigin kind,
+                                          SampleIO::BeamMode beam)
 {
     std::unique_ptr<TFile> f(TFile::Open(in_file.c_str(), "READ"));
     if (!f || f->IsZombie())
@@ -105,11 +103,11 @@ art::Provenance ArtFileProvenanceIO::read(const std::string &in_file,
     return read_directory(d, kind, beam);
 }
 
-art::Provenance ArtFileProvenanceIO::read_directory(TDirectory *d,
-                                                    sample::SampleIO::SampleOrigin kind,
-                                                    sample::SampleIO::BeamMode beam)
+Provenance ArtFileProvenanceIO::read_directory(TDirectory *d,
+                                                    SampleIO::SampleOrigin kind,
+                                                    SampleIO::BeamMode beam)
 {
-    art::Provenance r;
+    Provenance r;
     TObject *obj = d->Get("input_name");
     auto *named = dynamic_cast<TNamed *>(obj);
     if (named)
@@ -146,16 +144,16 @@ std::string ArtFileProvenanceIO::read_named_string(TDirectory *d, const char *ke
     return std::string(named->GetTitle());
 }
 
-sample::SampleIO::SampleOrigin ArtFileProvenanceIO::read_sample_origin(TDirectory *d)
+SampleIO::SampleOrigin ArtFileProvenanceIO::read_sample_origin(TDirectory *d)
 {
     TObject *obj = d->Get("sample_origin");
     auto *named = dynamic_cast<TNamed *>(obj);
     if (named)
     {
-        return sample::SampleIO::parse_sample_origin(named->GetTitle());
+        return SampleIO::parse_sample_origin(named->GetTitle());
     }
     
-    return sample::SampleIO::parse_sample_origin(read_named_string(d, "sample_kind"));
+    return SampleIO::parse_sample_origin(read_named_string(d, "sample_kind"));
 }
 
 std::vector<std::string> ArtFileProvenanceIO::read_input_files(TDirectory *d)
@@ -184,7 +182,7 @@ std::vector<std::string> ArtFileProvenanceIO::read_input_files(TDirectory *d)
     return files;
 }
 
-std::vector<art::Subrun> ArtFileProvenanceIO::read_run_subrun_pairs(TDirectory *d)
+std::vector<Subrun> ArtFileProvenanceIO::read_run_subrun_pairs(TDirectory *d)
 {
     TObject *obj = d->Get("run_subrun");
     auto *tree = dynamic_cast<TTree *>(obj);
@@ -200,15 +198,14 @@ std::vector<art::Subrun> ArtFileProvenanceIO::read_run_subrun_pairs(TDirectory *
     tree->SetBranchAddress("subrun", &subrun);
 
     const Long64_t n = tree->GetEntries();
-    std::vector<art::Subrun> pairs;
+    std::vector<Subrun> pairs;
     pairs.reserve(static_cast<size_t>(n));
     for (Long64_t i = 0; i < n; ++i)
     {
         tree->GetEntry(i);
-        pairs.push_back(art::Subrun{static_cast<int>(run), static_cast<int>(subrun)});
+        pairs.push_back(Subrun{static_cast<int>(run), static_cast<int>(subrun)});
     }
     
     return pairs;
 }
 
-} // namespace nuxsec

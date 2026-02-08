@@ -20,10 +20,6 @@
 
 #include "../../ana/include/SelectionService.hh"
 
-namespace nuxsec
-{
-namespace plot
-{
 
 enum class CutDir
 {
@@ -39,7 +35,7 @@ struct CutSpec
 
 struct Entry
 {
-    selection::Entry selection;
+    Entry selection;
     double pot_nom = 0.0;
     double pot_eqv = 0.0;
     std::string beamline;
@@ -85,7 +81,7 @@ struct TH1DModel
     int nbins = 1;
     double xmin = 0.0;
     double xmax = 1.0;
-    selection::Preset sel = selection::Preset::Muon;
+    Preset sel = Preset::Muon;
 
     ROOT::RDF::TH1DModel model(const std::string &suffix = "") const
     {
@@ -137,7 +133,5 @@ struct TH1DModel
     }
 };
 
-} // namespace plot
-} // namespace nuxsec
 
 #endif // NUXSEC_PLOT_DESCRIPTORS_H

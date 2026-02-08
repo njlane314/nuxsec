@@ -8,4 +8,4 @@ Location
 --------
 
 * Header: ``io/include/SubRunInventoryService.hh``
-* Namespace: ``nuxsec``
+* Namespace: ``global``
