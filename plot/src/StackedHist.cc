@@ -27,7 +27,8 @@
 #include "PlotChannels.hh"
 #include "Plotter.hh"
 
-
+namespace nu
+{
 
 void apply_total_errors(TH1D &h, const TMatrixDSym *cov, const std::vector<double> *syst_bin)
 {
@@ -777,3 +778,4 @@ void StackedHist::draw_and_save(const std::string &image_format)
     canvas.SaveAs(out.c_str());
 }
 
+} // namespace nu

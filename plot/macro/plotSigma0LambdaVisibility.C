@@ -23,6 +23,8 @@
 #include <cmath>
 #include <iostream>
 
+using namespace nu;
+
   constexpr double mS0 = 1.192642;     // Σ0
   constexpr double mL  = 1.115683;     // Λ
   constexpr double mp  = 0.9382720813; // p

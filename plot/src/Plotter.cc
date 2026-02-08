@@ -22,7 +22,8 @@
 #include "PlotEnv.hh"
 #include "StackedHist.hh"
 
-
+namespace nu
+{
 
 void apply_env_defaults(Options &opt)
 {
@@ -190,3 +191,4 @@ void Plotter::set_global_style() const
     gROOT->ForceStyle();
 }
 
+} // namespace nu

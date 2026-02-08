@@ -22,6 +22,9 @@
 #include "../../ana/include/SelectionService.hh"
 
 
+namespace nu
+{
+
 enum class CutDir
 {
     LessThan,
@@ -133,6 +136,8 @@ struct TH1DModel
         return out;
     }
 };
+
+} // namespace nu
 
 
 #endif // NUXSEC_PLOT_DESCRIPTORS_H

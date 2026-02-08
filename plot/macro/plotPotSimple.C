@@ -27,6 +27,8 @@
 #include "../include/Plotter.hh"
 #include "../include/PlotEnv.hh"
 
+using namespace nu;
+
 
 std::string db_root()
 {
