@@ -2,7 +2,8 @@
 /**
  *  @file  plot/include/Plotter.hh
  *
- *  @brief Plot orchestration helpers.
+ *  @brief Plot orchestration helpers that configure, build, and render output
+ *         plots for analysis reporting.
  */
 
 #ifndef NUXSEC_PLOT_PLOTTER_H

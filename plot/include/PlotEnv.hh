@@ -2,7 +2,8 @@
 /**
  *  @file  plot/include/PlotEnv.hh
  *
- *  @brief Environment helpers for plot output locations and formats.
+ *  @brief Environment helpers for plot output locations and formats, handling
+ *         repository-relative paths and default plotting conventions.
  *
  *  Conventions:
  *    - All *relative* plot outputs are rooted under NUXSEC_PLOT_DIR.

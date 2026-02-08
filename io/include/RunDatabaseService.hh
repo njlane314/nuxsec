@@ -2,7 +2,8 @@
 /**
  *  @file  io/include/RunDatabaseService.hh
  *
- *  @brief SQLite reader for run/subrun summary queries.
+ *  @brief SQLite reader for run and subrun summary queries, providing
+ *         lightweight access to bookkeeping metadata.
  */
 
 #ifndef NUXSEC_IO_RUNDATABASE_SERVICE_H

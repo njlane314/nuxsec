@@ -2,7 +2,8 @@
 /**
  *  @file  ana/include/RDataFrameService.hh
  *
- *  @brief Sample loading and variable definitions for ROOT RDataFrame.
+ *  @brief Sample loading and variable definitions for ROOT RDataFrame,
+ *         covering input configuration and dataframe initialisation.
  */
 
 #ifndef NUXSEC_ANA_RDATA_FRAME_SERVICE_H

@@ -1,4 +1,10 @@
 /* -- C++ -- */
+/**
+ *  @file  apps/include/SampleCLI.hh
+ *
+ *  @brief CLI helpers that manage sample-level workflows, from input handling
+ *         through reporting and normalisation for data preparation tasks.
+ */
 #ifndef NUXSEC_APPS_SAMPLECLI_H
 #define NUXSEC_APPS_SAMPLECLI_H
 

@@ -2,7 +2,8 @@
 /**
  *  @file  io/include/SubRunInventoryService.hh
  *
- *  @brief Declarations for SubRun inventory helpers.
+ *  @brief Declarations for SubRun inventory helpers that track availability,
+ *         counts, and metadata summaries.
  */
 
 #ifndef NUXSEC_IO_SUBRUN_INVENTORY_SERVICE_H

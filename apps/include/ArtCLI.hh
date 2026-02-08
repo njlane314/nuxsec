@@ -1,4 +1,11 @@
 /* -- C++ -- */
+/**
+ *  @file  apps/include/ArtCLI.hh
+ *
+ *  @brief CLI helpers that orchestrate art file processing and related
+ *         provenance-driven workflows, coordinating input discovery and
+ *         reporting.
+ */
 #ifndef NUXSEC_APPS_ARTCLI_H
 #define NUXSEC_APPS_ARTCLI_H
 

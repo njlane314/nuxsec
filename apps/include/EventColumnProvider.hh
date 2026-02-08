@@ -2,7 +2,8 @@
 /**
  *  @file  apps/include/EventColumnProvider.hh
  *
- *  @brief Column provider for event output schemas.
+ *  @brief Column provider that assembles event output schemas with consistent
+ *         names, metadata, and formatting for downstream CLI reporting.
  */
 
 #ifndef NUXSEC_APPS_EVENT_COLUMN_PROVIDER_H

@@ -1,4 +1,11 @@
 /* -- C++ -- */
+/**
+ *  @file  apps/include/AppUtils.hh
+ *
+ *  @brief Utility helpers that support application command-line execution,
+ *         including shared parsing, formatting, and I/O conveniences used by
+ *         multiple app entry points.
+ */
 #ifndef NUXSEC_APPS_APP_UTILS_H
 #define NUXSEC_APPS_APP_UTILS_H
 

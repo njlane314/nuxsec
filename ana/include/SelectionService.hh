@@ -2,7 +2,8 @@
 /**
  *  @file  ana/include/SelectionService.hh
  *
- *  @brief Selection helpers for analysis filters and summaries.
+ *  @brief Selection helpers for analysis filters and summaries, describing
+ *         selection names, cuts, and bookkeeping outputs.
  */
 
 #ifndef NUXSEC_ANA_SELECTION_SERVICE_H

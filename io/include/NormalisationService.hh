@@ -2,7 +2,8 @@
 /**
  *  @file  io/include/NormalisationService.hh
  *
- *  @brief Sample normalisation service helpers.
+ *  @brief Sample normalisation service helpers that define scaling and weight
+ *         adjustments for consistent analysis bookkeeping.
  */
 
 #ifndef NUXSEC_IO_NORMALISATION_SERVICE_H

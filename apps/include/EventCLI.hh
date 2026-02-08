@@ -1,4 +1,10 @@
 /* -- C++ -- */
+/**
+ *  @file  apps/include/EventCLI.hh
+ *
+ *  @brief CLI helpers that drive event-level workflows, including configuration,
+ *         input selection, and summary output for analysis-ready datasets.
+ */
 #ifndef NUXSEC_APPS_EVENTCLI_H
 #define NUXSEC_APPS_EVENTCLI_H
 
