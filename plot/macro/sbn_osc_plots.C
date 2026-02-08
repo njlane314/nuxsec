@@ -24,6 +24,11 @@
 //   root -l -q 'sbn_osc_plots.C("3fl_DUNE_app_CP")'             // Pμe(E) at DUNE baseline, δCP scan (ν and ν̄)
 //   root -l -q 'sbn_osc_plots.C("3fl_DUNE_matter_ordering")'     // constant-density matter: ordering + ν/ν̄
 //   root -l -q 'sbn_osc_plots.C("3fl_lbl_oscillogram")'          // 3-flavour (vacuum) oscillogram (Pμe vs L,E)
+//   root -l -q 'sbn_osc_plots.C("3fl_biprob_DUNE")'              // bi-probability (CP ellipse): DUNE-like
+//   root -l -q 'sbn_osc_plots.C("3fl_biprob_SBND")'              // bi-probability: SBND (SBN)
+//   root -l -q 'sbn_osc_plots.C("3fl_biprob_MicroBooNE")'         // bi-probability: MicroBooNE (SBN)
+//   root -l -q 'sbn_osc_plots.C("3fl_biprob_ICARUS")'            // bi-probability: ICARUS (SBN)
+//   root -l -q 'sbn_osc_plots.C("3fl_biprob_SBN")'               // all SBN bi-probability plots
 //   root -l -q 'sbn_osc_plots.C("3fl_all")'
 //   root -l -q 'sbn_osc_plots.C("all")'
 //
@@ -878,6 +883,179 @@ void sbn_3fl_lbl_oscillogram() {
   c->SaveAs("sbn_3fl_lbl_oscillogram.pdf");
 }
 
+// -------------------------------------------------------------------
+// Bi-probability (CP ellipse) plots: P(νμ→νe) vs P(ν̄μ→ν̄e), δCP swept
+//   - Vacuum version (exact with complex U): ν̄ implemented as δ → -δ.
+//   - Shows ordering (NO vs IO) and the δCP “ellipse geometry”.
+// -------------------------------------------------------------------
+
+static void BiProbPointVac(double L_km, double E_GeV, bool inverted,
+                           double delta_deg, double& Pnu, double& Pnub)
+{
+  const double LE = (E_GeV > 0.0) ? (L_km / E_GeV) : 0.0;
+
+  // ν
+  const OscParams3fl pnu = inverted ? ParamsIO(delta_deg) : ParamsNO(delta_deg);
+  Mat3 U_nu;
+  std::array<double,3> m2_nu;
+  BuildVacuumObjects(pnu, m2_nu, U_nu);
+  Pnu = P_vac_3fl(1, 0, LE, m2_nu, U_nu);
+
+  // ν̄ in vacuum: U -> U*  ⇔  δ -> -δ (same ordering)
+  const OscParams3fl pnub = inverted ? ParamsIO(-delta_deg) : ParamsNO(-delta_deg);
+  Mat3 U_nb;
+  std::array<double,3> m2_nb;
+  BuildVacuumObjects(pnub, m2_nb, U_nb);
+  Pnub = P_vac_3fl(1, 0, LE, m2_nb, U_nb);
+}
+
+static TGraph* MakeBiProbCurveVac(double L_km, double E_GeV, bool inverted,
+                                  int N = 361,
+                                  double dmin_deg = -180.0,
+                                  double dmax_deg = +180.0)
+{
+  TGraph* g = new TGraph(N);
+  for (int i = 0; i < N; ++i) {
+    const double t = (N == 1) ? 0.0 : (double)i / (double)(N - 1);
+    const double delta = dmin_deg + (dmax_deg - dmin_deg) * t;
+    double Pnu = 0.0, Pnub = 0.0;
+    BiProbPointVac(L_km, E_GeV, inverted, delta, Pnu, Pnub);
+    g->SetPoint(i, Pnu, Pnub);
+  }
+  return g;
+}
+
+static TGraph* MakeBiProbMarkerVac(double L_km, double E_GeV, bool inverted,
+                                   double delta_deg, int color, int mstyle)
+{
+  double Pnu = 0.0, Pnub = 0.0;
+  BiProbPointVac(L_km, E_GeV, inverted, delta_deg, Pnu, Pnub);
+  TGraph* g = new TGraph(1);
+  g->SetPoint(0, Pnu, Pnub);
+  g->SetMarkerColor(color);
+  g->SetMarkerStyle(mstyle);
+  g->SetMarkerSize(1.2);
+  return g;
+}
+
+static void DrawBiProbVac(const char* cname,
+                          const char* outPdf,
+                          const char* subtitle,
+                          double L_km, double E_GeV,
+                          double axisMax,
+                          bool annotateDeltaMarkers)
+{
+  SetNiceStyle();
+  gROOT->SetBatch(kTRUE);
+
+  TCanvas* c = new TCanvas(cname, "", 900, 700);
+
+  // Frame
+  TH2D* frame = new TH2D(Form("frame_%s", cname),
+                         ";P(#nu_{#mu}#rightarrow#nu_{e});P(#bar{#nu}_{#mu}#rightarrow#bar{#nu}_{e})",
+                         10, 0.0, axisMax,
+                         10, 0.0, axisMax);
+  frame->Draw();
+  frame->GetXaxis()->SetNdivisions(510);
+  frame->GetYaxis()->SetNdivisions(510);
+  frame->GetXaxis()->SetNoExponent(false);
+  frame->GetYaxis()->SetNoExponent(false);
+
+  // Curves: ordering
+  TGraph* gNO = MakeBiProbCurveVac(L_km, E_GeV, false);
+  TGraph* gIO = MakeBiProbCurveVac(L_km, E_GeV, true);
+
+  gNO->SetLineColor(kBlue+1);
+  gNO->SetLineWidth(3);
+
+  gIO->SetLineColor(kRed+1);
+  gIO->SetLineWidth(3);
+  gIO->SetLineStyle(2);
+
+  gNO->Draw("L SAME");
+  gIO->Draw("L SAME");
+
+  // Optional δCP markers (use NO markers only to keep the plot readable).
+  TGraph* m_d90 = nullptr;
+  TGraph* m_d0  = nullptr;
+  TGraph* m_p90 = nullptr;
+  TGraph* m_p180 = nullptr;
+  if (annotateDeltaMarkers) {
+    m_d90  = MakeBiProbMarkerVac(L_km, E_GeV, false, -90.0, kBlue+1, 20); // circle
+    m_d0   = MakeBiProbMarkerVac(L_km, E_GeV, false,   0.0, kBlue+1, 21); // square
+    m_p90  = MakeBiProbMarkerVac(L_km, E_GeV, false, +90.0, kBlue+1, 22); // triangle
+    m_p180 = MakeBiProbMarkerVac(L_km, E_GeV, false, 180.0, kBlue+1, 29); // star
+    m_d90 ->Draw("P SAME");
+    m_d0  ->Draw("P SAME");
+    m_p90 ->Draw("P SAME");
+    m_p180->Draw("P SAME");
+  }
+
+  TLegend* leg = new TLegend(0.52, 0.70, 0.88, 0.88);
+  leg->SetTextFont(42);
+  leg->SetTextSize(0.034);
+  leg->SetFillStyle(0);
+  leg->AddEntry(gNO, "NO (solid): #delta_{CP} sweep", "l");
+  leg->AddEntry(gIO, "IO (dashed): #delta_{CP} sweep", "l");
+  if (annotateDeltaMarkers) {
+    leg->AddEntry(m_d90,  "Markers (NO): #delta=-90^{#circ}", "p");
+    leg->AddEntry(m_d0,   "Markers (NO): #delta=0",          "p");
+    leg->AddEntry(m_p90,  "Markers (NO): #delta=+90^{#circ}","p");
+    leg->AddEntry(m_p180, "Markers (NO): #delta=180^{#circ}","p");
+  }
+  leg->Draw();
+
+  DrawHeader("Bi-probability (CP ellipse): P_{#mu e}(#nu) vs P_{#mu e}(#bar{#nu})",
+             Form("%s   (vacuum)   L=%.2f km,  E=%.2f GeV", subtitle, L_km, E_GeV));
+
+  c->SaveAs(outPdf);
+}
+
+// DUNE-like: choose E near the first maximum (~2.5 GeV for 1300 km).
+void sbn_3fl_biprob_DUNE() {
+  DrawBiProbVac("c_3fl_biprob_DUNE",
+                "sbn_3fl_biprob_DUNE.pdf",
+                "DUNE-like",
+                1300.0, 2.50,
+                0.20,
+                true);
+}
+
+// SBN: BNB peak energy ~0.7 GeV; baselines from target to detectors (approx).
+// Standard 3-flavour effects are tiny here; the ellipse collapses very near the origin.
+void sbn_3fl_biprob_SBND() {
+  DrawBiProbVac("c_3fl_biprob_SBND",
+                "sbn_3fl_biprob_SBND.pdf",
+                "SBN: SBND",
+                0.11, 0.70,
+                1.2e-6,
+                false);
+}
+
+void sbn_3fl_biprob_MicroBooNE() {
+  DrawBiProbVac("c_3fl_biprob_MicroBooNE",
+                "sbn_3fl_biprob_MicroBooNE.pdf",
+                "SBN: MicroBooNE",
+                0.47, 0.70,
+                1.2e-6,
+                false);
+}
+
+void sbn_3fl_biprob_ICARUS() {
+  DrawBiProbVac("c_3fl_biprob_ICARUS",
+                "sbn_3fl_biprob_ICARUS.pdf",
+                "SBN: ICARUS",
+                0.60, 0.70,
+                1.2e-6,
+                false);
+}
+
+void sbn_3fl_biprob_SBN() {
+  sbn_3fl_biprob_SBND();
+  sbn_3fl_biprob_MicroBooNE();
+  sbn_3fl_biprob_ICARUS();
+}
+
 void sbn_3fl_all() {
   // Keep the original “SBL zoom” set (now with Pμτ added).
   sbn_fig1p9_all();
@@ -891,6 +1069,10 @@ void sbn_3fl_all() {
   sbn_3fl_DUNE_app_CP();
   sbn_3fl_DUNE_matter_ordering();
   sbn_3fl_lbl_oscillogram();
+
+  // Advanced: CP-ellipse (bi-probability) views for DUNE and SBN.
+  sbn_3fl_biprob_DUNE();
+  sbn_3fl_biprob_SBN();
 }
 
 void sbn_prob_vs_LE() {
@@ -1287,6 +1469,11 @@ void sbn_osc_plots(const char* which = "all") {
   else if (w == "3fl_DUNE_app_CP")             sbn_3fl_DUNE_app_CP();
   else if (w == "3fl_DUNE_matter_ordering")    sbn_3fl_DUNE_matter_ordering();
   else if (w == "3fl_lbl_oscillogram")         sbn_3fl_lbl_oscillogram();
+  else if (w == "3fl_biprob_DUNE")             sbn_3fl_biprob_DUNE();
+  else if (w == "3fl_biprob_SBND")             sbn_3fl_biprob_SBND();
+  else if (w == "3fl_biprob_MicroBooNE")       sbn_3fl_biprob_MicroBooNE();
+  else if (w == "3fl_biprob_ICARUS")           sbn_3fl_biprob_ICARUS();
+  else if (w == "3fl_biprob_SBN")              sbn_3fl_biprob_SBN();
   else if (w == "3fl_all")                     sbn_3fl_all();
   else if (w == "all")                sbn_plot_all();
   else {
@@ -1295,6 +1482,7 @@ void sbn_osc_plots(const char* which = "all") {
               << "fig1p9_a, fig1p9_b, fig1p9_c, fig1p9_d, fig1p9_e, fig1p9_f, fig1p9_all, "
               << "3fl_LE_overview, 3fl_LE_long_mu_channels, 3fl_LE_ordering_vac, "
               << "3fl_T2K_app_CP, 3fl_NOvA_app_CP, 3fl_DUNE_app_CP, 3fl_DUNE_matter_ordering, 3fl_lbl_oscillogram, 3fl_all, "
+              << "3fl_biprob_DUNE, 3fl_biprob_SBND, 3fl_biprob_MicroBooNE, 3fl_biprob_ICARUS, 3fl_biprob_SBN, "
               << "all\n";
   }
 }
