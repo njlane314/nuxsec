@@ -12,7 +12,13 @@ NLOHMANN_JSON_CFLAGS := -isystem $(NLOHMANN_JSON_INC)
 endif
 
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra $(shell $(ROOT_CONFIG) --cflags) $(NLOHMANN_JSON_CFLAGS)
-LDFLAGS ?= $(shell $(ROOT_CONFIG) --libs) -lsqlite3
+
+ROOT_LIBS ?= $(shell $(ROOT_CONFIG) --libs)
+ifeq (,$(wildcard /usr/lib64/libssl.so.10 /usr/lib/x86_64-linux-gnu/libssl.so.10))
+ROOT_LIBS := $(filter-out -lNet,$(ROOT_LIBS))
+endif
+
+LDFLAGS ?= $(ROOT_LIBS) -lsqlite3 -lxxhash
 
 IO_LIB_NAME = build/lib/libNuxsecIO.so
 IO_SRC = io/src/ArtFileProvenanceIO.cc \
