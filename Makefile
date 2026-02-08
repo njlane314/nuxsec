@@ -12,13 +12,7 @@ NLOHMANN_JSON_CFLAGS := -isystem $(NLOHMANN_JSON_INC)
 endif
 
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra $(shell $(ROOT_CONFIG) --cflags) $(NLOHMANN_JSON_CFLAGS)
-
-ROOT_LIBS ?= $(shell $(ROOT_CONFIG) --libs)
-ifeq (,$(wildcard /usr/lib64/libssl.so.10 /usr/lib/x86_64-linux-gnu/libssl.so.10))
-ROOT_LIBS := $(filter-out -lNet,$(ROOT_LIBS))
-endif
-
-LDFLAGS ?= $(ROOT_LIBS) -lsqlite3 -lxxhash
+LDFLAGS ?= $(shell $(ROOT_CONFIG) --libs) -lsqlite3
 
 IO_LIB_NAME = build/lib/libNuxsecIO.so
 IO_SRC = io/src/ArtFileProvenanceIO.cc \
@@ -26,7 +20,6 @@ IO_SRC = io/src/ArtFileProvenanceIO.cc \
          io/src/NormalisationService.cc \
          io/src/RunDatabaseService.cc \
          io/src/SampleIO.cc \
-         io/src/SnapshotService.cc \
          io/src/SubRunInventoryService.cc
 OBJ_DIR = build/obj
 IO_OBJ = $(IO_SRC:%.cc=$(OBJ_DIR)/%.o)
@@ -34,7 +27,6 @@ IO_OBJ = $(IO_SRC:%.cc=$(OBJ_DIR)/%.o)
 ANA_LIB_NAME = build/lib/libNuxsecAna.so
 ANA_SRC = ana/src/AnalysisConfigService.cc \
           ana/src/ColumnDerivationService.cc \
-          ana/src/EventSampleFilterService.cc \
           ana/src/RDataFrameService.cc \
           ana/src/SelectionService.cc
 ANA_OBJ = $(ANA_SRC:%.cc=$(OBJ_DIR)/%.o)
