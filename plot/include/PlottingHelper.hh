@@ -2,7 +2,8 @@
 /**
  *  @file  plot/include/PlottingHelper.hh
  *
- *  @brief Plotting helper utilities and stack_samples implementation.
+ *  @brief Plotting helper utilities and stack_samples implementation, providing
+ *         reusable routines for assembling stacked histograms.
  */
 
 #ifndef NUXSEC_PLOT_PLOTTING_HELPER_H

@@ -2,7 +2,8 @@
 /**
  *  @file  plot/include/PlotDescriptors.hh
  *
- *  @brief Plot configuration descriptors.
+ *  @brief Plot configuration descriptors that define plot metadata, labels,
+ *         and binning settings for output visualisations.
  */
 
 #ifndef NUXSEC_PLOT_DESCRIPTORS_H

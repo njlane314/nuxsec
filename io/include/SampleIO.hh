@@ -2,7 +2,8 @@
 /**
  *  @file  io/include/SampleIO.hh
  *
- *  @brief Sample data structures and ROOT IO helpers.
+ *  @brief Sample data structures and ROOT IO helpers that describe datasets,
+ *         metadata, and serialisation conventions.
  */
 
 #ifndef NUXSEC_IO_SAMPLE_IO_H

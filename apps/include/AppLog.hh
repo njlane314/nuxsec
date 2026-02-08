@@ -1,4 +1,11 @@
 /* -- C++ -- */
+/**
+ *  @file  apps/include/AppLog.hh
+ *
+ *  @brief Logging helpers that format and emit consistent status messages for
+ *         application command-line workflows, covering informational, warning,
+ *         and error reporting paths.
+ */
 #ifndef NUXSEC_APPS_APPLOG_H
 #define NUXSEC_APPS_APPLOG_H
 

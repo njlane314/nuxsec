@@ -2,7 +2,8 @@
 /**
  *  @file  io/include/ArtFileProvenanceIO.hh
  *
- *  @brief Data structures and IO helpers for Art file provenance ROOT IO.
+ *  @brief Data structures and IO helpers for Art file provenance ROOT IO,
+ *         including provenance records, mapping, and persistence support.
  */
 
 #ifndef NUXSEC_IO_ART_FILE_PROVENANCE_IO_H

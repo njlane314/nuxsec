@@ -2,7 +2,8 @@
 /**
  *  @file  io/include/EventIO.hh
  *
- *  @brief Event-level IO for selection/analysis bookkeeping outputs.
+ *  @brief Event-level IO for selection and analysis bookkeeping outputs,
+ *         capturing per-event metadata and processing summaries.
  */
 
 #ifndef NUXSEC_EVENT_EVENTIO_H

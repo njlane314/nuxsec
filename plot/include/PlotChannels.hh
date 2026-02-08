@@ -2,7 +2,8 @@
 /**
  *  @file  plot/include/PlotChannels.hh
  *
- *  @brief Channel display properties for plotting.
+ *  @brief Channel display properties for plotting, including colour choices,
+ *         labels, and ordering for stacked outputs.
  */
 
 #ifndef NUXSEC_PLOT_CHANNELS_H

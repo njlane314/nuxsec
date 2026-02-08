@@ -2,7 +2,8 @@
 /**
  *  @file  ana/include/AnalysisConfigService.hh
  *
- *  @brief Compiled analysis configuration service.
+ *  @brief Compiled analysis configuration service that aggregates selections,
+ *         columns, and configuration metadata for processing.
  */
 
 #ifndef NUXSEC_ANA_ANALYSIS_CONFIG_SERVICE_H

@@ -2,7 +2,8 @@
 /**
  *  @file  plot/include/StackedHist.hh
  *
- *  @brief Stacked histogram plotting helper.
+ *  @brief Stacked histogram plotting helper that manages histogram grouping,
+ *         styling, and render orchestration.
  */
 
 #ifndef NUXSEC_PLOT_STACKED_HIST_H

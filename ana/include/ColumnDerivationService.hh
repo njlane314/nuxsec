@@ -2,7 +2,8 @@
 /**
  *  @file  ana/include/ColumnDerivationService.hh
  *
- *  @brief Variable definitions for analysis RDataFrame processing
+ *  @brief Variable definitions for analysis RDataFrame processing, capturing
+ *         derived columns and related transformation helpers.
  */
 
 #ifndef NUXSEC_ANA_COLUMN_DERIVATION_SERVICE_H
