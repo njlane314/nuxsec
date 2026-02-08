@@ -17,6 +17,9 @@
 #include "SampleIO.hh"
 
 
+namespace nu
+{
+
 std::string env_or(const char *key, const std::string &fallback);
 std::string default_samples_tsv();
 
@@ -31,6 +34,8 @@ TH1DModel make_spec(const std::string &expr,
                     double xmin,
                     double xmax,
                     const std::string &weight);
+
+} // namespace nu
 
 
 #endif // NUXSEC_PLOT_PLOTTING_HELPER_H

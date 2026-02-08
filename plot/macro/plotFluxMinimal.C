@@ -21,6 +21,8 @@
 #include <vector>
 #include <string>
 
+using namespace nu;
+
 // ---------------------------------------------------------------------------
 // Flux unit normalization:
 // Most dk2nu/PPFX flux histograms are stored in  # / (1e9 POT) / m^2 / GeV.

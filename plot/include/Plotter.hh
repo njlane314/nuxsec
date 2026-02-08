@@ -15,6 +15,9 @@
 #include "PlotDescriptors.hh"
 
 
+namespace nu
+{
+
 class StackedHist;
 
 class Plotter
@@ -44,6 +47,8 @@ class Plotter
   private:
     Options opt_;
 };
+
+} // namespace nu
 
 
 #endif // NUXSEC_PLOT_PLOTTER_H

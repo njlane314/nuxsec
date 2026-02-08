@@ -17,6 +17,9 @@
 #include "TColor.h"
 
 
+namespace nu
+{
+
 class Channels
 {
   public:
@@ -77,6 +80,8 @@ class Channels
         return m;
     }
 };
+
+} // namespace nu
 
 
 #endif // NUXSEC_PLOT_CHANNELS_H

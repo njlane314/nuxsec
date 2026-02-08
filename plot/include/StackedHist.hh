@@ -24,6 +24,9 @@
 #include "PlotDescriptors.hh"
 
 
+namespace nu
+{
+
 class StackedHist
 {
   public:
@@ -61,6 +64,8 @@ class StackedHist
     mutable std::unique_ptr<TLegend> legend_;
     mutable std::vector<std::unique_ptr<TH1D>> legend_proxies_;
 };
+
+} // namespace nu
 
 
 #endif // NUXSEC_PLOT_STACKED_HIST_H

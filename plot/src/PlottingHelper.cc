@@ -14,6 +14,9 @@
 #include "ColumnDerivationService.hh"
 
 
+namespace nu
+{
+
 std::string env_or(const char *key, const std::string &fallback)
 {
     const char *v = gSystem->Getenv(key);
@@ -70,3 +73,5 @@ TH1DModel make_spec(const std::string &expr,
     spec.xmax = xmax;
     return spec;
 }
+
+} // namespace nu

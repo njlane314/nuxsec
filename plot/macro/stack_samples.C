@@ -28,6 +28,8 @@
 #include "SampleIO.hh"
 
 
+using namespace nu;
+
 int stack_samples_impl(const std::string &expr,
                        const std::string &samples_tsv,
                        int nbins,
