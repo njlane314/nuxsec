@@ -146,16 +146,6 @@ std::filesystem::path find_repo_root()
     return std::filesystem::current_path();
 }
 
-const char *getenv_cstr(const char *name)
-{
-    const char *value = std::getenv(name);
-    if (!value || !*value)
-    {
-        return nullptr;
-    }
-    return value;
-}
-
 std::string string_from_env_or_default(const char *name,
                                        const std::string &fallback)
 {
@@ -175,11 +165,6 @@ std::filesystem::path path_from_env_or_default(
         return std::filesystem::path(value);
     }
     return fallback;
-}
-
-std::string workspace_set()
-{
-    return string_from_env_or_default("NUXSEC_SET", "template");
 }
 
 std::filesystem::path out_base_dir(const std::filesystem::path &repo_root)
@@ -866,8 +851,6 @@ std::vector<CommandEntry> build_command_table(const std::filesystem::path &repo_
         }
     });
     return table;
-}
-
 }
 
 int main(int argc, char **argv)

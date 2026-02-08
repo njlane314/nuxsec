@@ -20,7 +20,7 @@
 
 
 
-int run(const Args &event_args, const std::string &log_prefix)
+int run(const EventArgs &event_args, const std::string &log_prefix)
 {
     ROOT::EnableImplicitMT();
 
@@ -34,7 +34,7 @@ int run(const Args &event_args, const std::string &log_prefix)
         log_prefix,
         "action=event_build status=running message=processing");
 
-    std::vector<Input> inputs;
+    std::vector<EventInput> inputs;
     inputs.reserve(entries.size());
     
     std::vector<SampleInfo> sample_infos;
@@ -54,7 +54,7 @@ int run(const Args &event_args, const std::string &log_prefix)
         info.db_tor101_pot_sum = sample.db_tor101_pot_sum;
         sample_infos.push_back(std::move(info));
 
-        Input input;
+        EventInput input;
         input.entry = entry;
         input.sample = std::move(sample);
         inputs.push_back(std::move(input));
@@ -208,8 +208,8 @@ int main(int argc, char **argv)
         [argc, argv]()
         {
             const std::vector<std::string> args = collect_args(argc, argv);
-            const Args event_args =
-                parse_args(
+            const EventArgs event_args =
+                parse_event_args(
                     args,
                     "Usage: nuxsecEventIOdriver SAMPLE_LIST.tsv OUTPUT.root [SELECTION] [COLUMNS.tsv]");
             return run(event_args, "nuxsecEventIOdriver");
