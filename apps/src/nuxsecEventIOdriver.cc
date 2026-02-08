@@ -14,6 +14,7 @@
 #include "AppUtils.hh"
 #include "EventCLI.hh"
 #include "EventColumnProvider.hh"
+#include "EventSampleFilterService.hh"
 #include "RDataFrameService.hh"
 
 
@@ -146,24 +147,14 @@ int run(const Args &event_args, const std::string &log_prefix)
 
         ROOT::RDF::RNode node = processor.define(rdf, proc_entry);
 
-        using SampleOrigin = SampleIO::SampleOrigin;
-        const auto origin = sample.origin;
-        
-        if (origin == SampleOrigin::kOverlay)
+        const char *filter_stage = EventSampleFilterService::filter_stage(sample.origin);
+        if (filter_stage != nullptr)
         {
             log_stage(
                 log_prefix,
-                "filter_overlay",
+                filter_stage,
                 "sample=" + sample.sample_name);
-            node = node.Filter([](int strange) { return strange == 0; }, {"count_strange"});
-        }
-        else if (origin == SampleOrigin::kStrangeness)
-        {
-            log_stage(
-                log_prefix,
-                "filter_strangeness",
-                "sample=" + sample.sample_name);
-            node = node.Filter([](int strange) { return strange > 0; }, {"count_strange"});
+            node = EventSampleFilterService::apply(node, sample.origin);
         }
 
         std::string snapshot_message = "sample=" + sample.sample_name;
