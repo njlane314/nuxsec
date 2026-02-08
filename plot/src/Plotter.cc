@@ -22,13 +22,7 @@
 #include "PlotEnv.hh"
 #include "StackedHist.hh"
 
-namespace nuxsec
-{
-namespace plot
-{
 
-namespace
-{
 
 void apply_env_defaults(Options &opt)
 {
@@ -43,7 +37,6 @@ void apply_env_defaults(Options &opt)
     }
 }
 
-} // namespace
 
 Plotter::Plotter()
 {
@@ -197,5 +190,3 @@ void Plotter::set_global_style() const
     gROOT->ForceStyle();
 }
 
-} // namespace plot
-} // namespace nuxsec

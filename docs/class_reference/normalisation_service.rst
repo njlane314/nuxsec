@@ -8,4 +8,4 @@ Location
 --------
 
 * Header: ``io/include/NormalisationService.hh``
-* Namespace: ``nuxsec``
+* Namespace: ``global``

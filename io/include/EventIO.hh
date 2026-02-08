@@ -14,10 +14,6 @@
 
 #include <ROOT/RDataFrame.hxx>
 
-namespace nuxsec
-{
-namespace event
-{
 
 struct Header
 {

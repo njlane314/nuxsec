@@ -22,14 +22,8 @@
 #include "NormalisationService.hh"
 #include "SampleIO.hh"
 
-namespace nuxsec
-{
 
-namespace app
-{
 
-namespace sample
-{
 
 inline std::vector<std::string> split_tabs(const std::string &line)
 {
@@ -139,10 +133,10 @@ inline void write_samples(const std::string &list_path, std::vector<SampleListEn
 
 inline void log_sample_start(const std::string &log_prefix, const size_t file_count)
 {
-    nuxsec::app::log::log_info(
+    log_info(
         log_prefix,
         "action=sample_build status=start files=" +
-            nuxsec::app::log::format_count(static_cast<long long>(file_count)));
+            format_count(static_cast<long long>(file_count)));
 }
 
 inline void log_sample_finish(const std::string &log_prefix,
@@ -151,10 +145,10 @@ inline void log_sample_finish(const std::string &log_prefix,
 {
     std::ostringstream out;
     out << "action=sample_build status=complete inputs="
-        << nuxsec::app::log::format_count(static_cast<long long>(input_count))
+        << format_count(static_cast<long long>(input_count))
         << " elapsed_s=" << std::fixed << std::setprecision(1)
         << elapsed_seconds;
-    nuxsec::app::log::log_success(log_prefix, out.str());
+    log_success(log_prefix, out.str());
 }
 
 struct Args
@@ -174,8 +168,8 @@ inline Args parse_input(const std::string &input)
     }
 
     Args out;
-    out.sample_name = nuxsec::app::trim(input.substr(0, pos));
-    out.filelist_path = nuxsec::app::trim(input.substr(pos + 1));
+    out.sample_name = trim(input.substr(0, pos));
+    out.filelist_path = trim(input.substr(pos + 1));
 
     if (out.sample_name.empty() || out.filelist_path.empty())
     {
@@ -183,7 +177,7 @@ inline Args parse_input(const std::string &input)
     }
 
     const std::filesystem::path sample_dir =
-        nuxsec::app::stage_output_dir("NUXSEC_SAMPLE_DIR", "sample");
+        stage_output_dir("NUXSEC_SAMPLE_DIR", "sample");
     out.output_path = (sample_dir / ("sample_root_" + out.sample_name + ".root")).string();
     out.sample_list_path = (sample_dir / "samples.tsv").string();
 
@@ -201,12 +195,12 @@ inline Args parse_args(const std::vector<std::string> &args, const std::string &
 }
 
 inline void update_sample_list(const std::string &list_path,
-                               const nuxsec::sample::SampleIO::Sample &sample,
+                               const SampleIO::Sample &sample,
                                const std::string &output_path)
 {
     auto entries = read_samples(list_path, true, false);
-    const std::string origin_name = nuxsec::sample::SampleIO::sample_origin_name(sample.origin);
-    const std::string beam_name = nuxsec::sample::SampleIO::beam_mode_name(sample.beam);
+    const std::string origin_name = SampleIO::sample_origin_name(sample.origin);
+    const std::string beam_name = SampleIO::beam_mode_name(sample.beam);
 
     bool updated = false;
     for (auto &entry : entries)

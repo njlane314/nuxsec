@@ -9,13 +9,11 @@
 
 #include <utility>
 
-namespace nuxsec
-{
 
-ROOT::RDataFrame RDataFrameService::load_sample(const sample::SampleIO::Sample &sample,
+ROOT::RDataFrame RDataFrameService::load_sample(const SampleIO::Sample &sample,
                                                 const std::string &tree_name)
 {
-    std::vector<std::string> files = sample::SampleIO::resolve_root_files(sample);
+    std::vector<std::string> files = SampleIO::resolve_root_files(sample);
     return ROOT::RDataFrame(tree_name, files);
 }
 
@@ -31,4 +29,3 @@ ROOT::RDF::RNode RDataFrameService::define_variables(ROOT::RDF::RNode node,
     return updated_node;
 }
 
-} // namespace nuxsec

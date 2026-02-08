@@ -15,17 +15,13 @@
 #include "PlotDescriptors.hh"
 #include "SampleIO.hh"
 
-namespace nuxsec
-{
-namespace plot
-{
 
 std::string env_or(const char *key, const std::string &fallback);
 std::string default_samples_tsv();
 
-bool is_data_origin(sample::SampleIO::SampleOrigin o);
+bool is_data_origin(SampleIO::SampleOrigin o);
 
-double pick_pot_nom(const sample::SampleIO::Sample &s);
+double pick_pot_nom(const SampleIO::Sample &s);
 
 Entry make_entry(ROOT::RDF::RNode node, const ProcessorEntry &proc_entry);
 
@@ -35,7 +31,5 @@ TH1DModel make_spec(const std::string &expr,
                     double xmax,
                     const std::string &weight);
 
-} // namespace plot
-} // namespace nuxsec
 
 #endif // NUXSEC_PLOT_PLOTTING_HELPER_H

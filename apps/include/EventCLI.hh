@@ -28,21 +28,15 @@
 #include "SampleCLI.hh"
 #include "SampleIO.hh"
 
-namespace nuxsec
-{
 
-namespace app
-{
 
-namespace event
-{
 
 inline void log_event_start(const std::string &log_prefix, const size_t sample_count)
 {
-    nuxsec::app::log::log_info(
+    log_info(
         log_prefix,
         "action=event_build status=start samples=" +
-            nuxsec::app::log::format_count(static_cast<long long>(sample_count)));
+            format_count(static_cast<long long>(sample_count)));
 }
 
 inline void log_event_finish(const std::string &log_prefix,
@@ -51,13 +45,13 @@ inline void log_event_finish(const std::string &log_prefix,
 {
     std::ostringstream out;
     out << "action=event_build status=complete samples="
-        << nuxsec::app::log::format_count(static_cast<long long>(sample_count))
+        << format_count(static_cast<long long>(sample_count))
         << " elapsed_s=" << std::fixed << std::setprecision(1)
         << elapsed_seconds;
-    nuxsec::app::log::log_success(log_prefix, out.str());
+    log_success(log_prefix, out.str());
 }
 
-inline void ensure_tree_present(const nuxsec::sample::SampleIO::Sample &sample,
+inline void ensure_tree_present(const SampleIO::Sample &sample,
                                 const std::string &tree_name)
 {
     if (sample.inputs.empty())
@@ -65,7 +59,7 @@ inline void ensure_tree_present(const nuxsec::sample::SampleIO::Sample &sample,
         throw std::runtime_error("Event inputs missing ROOT files for sample: " + sample.sample_name);
     }
 
-    std::vector<std::string> files = nuxsec::sample::SampleIO::resolve_root_files(sample);
+    std::vector<std::string> files = SampleIO::resolve_root_files(sample);
     if (files.empty())
     {
         throw std::runtime_error("Event inputs missing ROOT files for sample: " + sample.sample_name);
@@ -99,8 +93,8 @@ struct Args
 
 struct Input
 {
-    nuxsec::app::sample::SampleListEntry entry;
-    nuxsec::sample::SampleIO::Sample sample;
+    SampleListEntry entry;
+    SampleIO::Sample sample;
 };
 
 inline Args parse_args(const std::vector<std::string> &args, const std::string &usage)
@@ -111,15 +105,15 @@ inline Args parse_args(const std::vector<std::string> &args, const std::string &
     }
 
     Args out;
-    out.list_path = nuxsec::app::trim(args.at(0));
-    out.output_root = nuxsec::app::trim(args.at(1));
+    out.list_path = trim(args.at(0));
+    out.output_root = trim(args.at(1));
     if (args.size() > 2)
     {
-        out.selection = nuxsec::app::trim(args.at(2));
+        out.selection = trim(args.at(2));
     }
     if (args.size() > 3)
     {
-        out.columns_tsv_path = nuxsec::app::trim(args.at(3));
+        out.columns_tsv_path = trim(args.at(3));
     }
 
     if (out.list_path.empty() || out.output_root.empty())
@@ -131,7 +125,7 @@ inline Args parse_args(const std::vector<std::string> &args, const std::string &
     if (output_root.is_relative() && output_root.parent_path().empty())
     {
         const std::filesystem::path event_dir =
-            nuxsec::app::stage_output_dir("NUXSEC_EVENT_DIR", "event");
+            stage_output_dir("NUXSEC_EVENT_DIR", "event");
         out.output_root = (event_dir / output_root).string();
     }
 
@@ -140,10 +134,7 @@ inline Args parse_args(const std::vector<std::string> &args, const std::string &
 
 int run(const Args &event_args, const std::string &log_prefix);
 
-} // namespace event
 
-} // namespace app
 
-} // namespace nuxsec
 
 #endif // NUXSEC_APPS_EVENTCLI_H

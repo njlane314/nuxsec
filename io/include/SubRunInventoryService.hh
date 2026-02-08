@@ -11,18 +11,14 @@
 #include <string>
 #include <vector>
 
-namespace nuxsec
-{
 
-namespace art
-{
 struct Summary;
 }
 
 class SubRunInventoryService
 {
   public:
-    static art::Summary scan_subruns(const std::vector<std::string> &files);
+    static Summary scan_subruns(const std::vector<std::string> &files);
 };
 
 }

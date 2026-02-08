@@ -27,8 +27,6 @@
 #include "../include/Plotter.hh"
 #include "../include/PlotEnv.hh"
 
-namespace
-{
 
 std::string db_root()
 {
@@ -66,7 +64,7 @@ time_t sunday_after_or_on(time_t t)
 
 void configure_style()
 {
-    nuxsec::plot::Plotter{}.set_global_style();
+    Plotter{}.set_global_style();
     // We draw a custom (blue) right axis; avoid black RHS ticks.
     gStyle->SetPadTickY(0);
     TGaxis::SetMaxDigits(3);
@@ -299,8 +297,8 @@ void draw_plot(const histogram_bundle &histograms, const cumulative_data &data, 
 {
     // Aspect and margins closer to the reference figure.
     TCanvas canvas("c", "POT timeline",
-                   nuxsec::plot::kCanvasWidth,
-                   nuxsec::plot::kCanvasHeight);
+                   kCanvasWidth,
+                   kCanvasHeight);
     const double ml = 0.08;
     const double mr = 0.12;
     const double split = 0.82;
@@ -497,12 +495,11 @@ void plotPotSimpleInternal(const char *out = nullptr)
     fill_histogram(fhc_samples, histograms.fhc);
     fill_histogram(rhc_samples, histograms.rhc);
     const cumulative_data data = compute_cumulative_data(histograms, nbins);
-    const auto out_path = nuxsec::plot::resolve_output_file(out ? out : "", "pot_timeline");
+    const auto out_path = resolve_output_file(out ? out : "", "pot_timeline");
     const std::string outfile = out_path.string();
     draw_plot(histograms, data, outfile);
 }
 
-} // namespace
 
 int nuxsec_plot(const char *out = nullptr)
 {

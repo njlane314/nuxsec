@@ -23,7 +23,6 @@
 #include <cmath>
 #include <iostream>
 
-namespace phys { // PDG masses [GeV]
   constexpr double mS0 = 1.192642;     // Σ0
   constexpr double mL  = 1.115683;     // Λ
   constexpr double mp  = 0.9382720813; // p
@@ -31,7 +30,6 @@ namespace phys { // PDG masses [GeV]
 }
 
 // --- configuration (edit here) ---
-namespace cfgS {
   const char* file     = "mc.root";         // optional overlay (if available)
   const char* tree     = "events";
   const char* br_pS    = "sigma0_p_exit";   // Σ0 momentum at nuclear exit [GeV/c]
@@ -52,61 +50,61 @@ static inline double clip(double x, double lo, double hi) {
 }
 
 void plotSigma0LambdaVisibility() {
-  nuxsec::plot::Plotter{}.set_global_style();
+  Plotter{}.set_global_style();
   gStyle->SetOptStat(0);
 
   // --------- Two-body constants ----------
   // Λ→pπ at Λ rest
-  const double Ep_star  = (phys::mL*phys::mL + phys::mp*phys::mp  - phys::mpi*phys::mpi)/(2.0*phys::mL);
-  const double Epi_star = (phys::mL*phys::mL + phys::mpi*phys::mpi - phys::mp*phys::mp )/(2.0*phys::mL);
-  const double p_ppi    = std::sqrt(std::max(0.0, Ep_star*Ep_star - phys::mp*phys::mp));
+  const double Ep_star  = (mL*mL + mp*mp  - mpi*mpi)/(2.0*mL);
+  const double Epi_star = (mL*mL + mpi*mpi - mp*mp )/(2.0*mL);
+  const double p_ppi    = std::sqrt(std::max(0.0, Ep_star*Ep_star - mp*mp));
 
   // Σ0→Λγ at Σ0 rest
-  const double EL_star  = (phys::mS0*phys::mS0 + phys::mL*phys::mL)/(2.0*phys::mS0);
-  const double pL_star  = (phys::mS0*phys::mS0 - phys::mL*phys::mL)/(2.0*phys::mS0); // = E_γ^*
+  const double EL_star  = (mS0*mS0 + mL*mL)/(2.0*mS0);
+  const double pL_star  = (mS0*mS0 - mL*mL)/(2.0*mS0); // = E_γ^*
 
   // Lab thresholds as energies for tracks
-  const double Ep_min  = std::sqrt(phys::mp*phys::mp  + cfgS::pmin_p*cfgS::pmin_p);
-  const double Epi_min = std::sqrt(phys::mpi*phys::mpi + cfgS::pmin_pi*cfgS::pmin_pi);
+  const double Ep_min  = std::sqrt(mp*mp  + pmin_p*pmin_p);
+  const double Epi_min = std::sqrt(mpi*mpi + pmin_pi*pmin_pi);
 
   // Single-decay Λ→pπ "gamma threshold"
-  const double gamma_thr = (Ep_min + Epi_min)/phys::mL;
+  const double gamma_thr = (Ep_min + Epi_min)/mL;
 
   // Analytic Σ0 turn-on for Λ-only: solve quadratic for β_Σ with μ1=+1
   double pS_thr = 0.0;
   {
-    const double A = pL_star*pL_star + (gamma_thr*phys::mL)*(gamma_thr*phys::mL);
+    const double A = pL_star*pL_star + (gamma_thr*mL)*(gamma_thr*mL);
     const double B = 2.0*EL_star*pL_star;
-    const double C = EL_star*EL_star - (gamma_thr*phys::mL)*(gamma_thr*phys::mL);
+    const double C = EL_star*EL_star - (gamma_thr*mL)*(gamma_thr*mL);
     const double disc = B*B - 4.0*A*C;
     if (disc>0.0) {
       const double betaS = (-B + std::sqrt(disc))/(2.0*A); // physical (+) root
       if (betaS>0.0 && betaS<1.0) {
         const double gammaS = 1.0/std::sqrt(1.0 - betaS*betaS);
-        pS_thr = phys::mS0 * betaS * gammaS;
+        pS_thr = mS0 * betaS * gammaS;
       }
     }
   }
 
   // --------- Build analytic-numeric curves vs p_Σ ----------
-  auto gF     = new TGraph(cfgS::Np); // Λ-only
-  auto gBoth  = new TGraph(cfgS::Np); // Λ + γ
+  auto gF     = new TGraph(Np); // Λ-only
+  auto gBoth  = new TGraph(Np); // Λ + γ
   gF   ->SetLineWidth(3);
   gBoth->SetLineWidth(3); gBoth->SetLineStyle(7); // dashed
   gF   ->SetTitle(";p_{#Sigma^{0}} at Nuclear Exit [GeV/c];Kinematic Visibility Efficiency");
 
-  for (int i=0; i<cfgS::Np; ++i) {
-    const double pS = cfgS::xlow + (cfgS::xhigh - cfgS::xlow)*(i + 0.5)/cfgS::Np;
-    const double ES = std::sqrt(pS*pS + phys::mS0*phys::mS0);
-    const double gammaS = ES/phys::mS0;
+  for (int i=0; i<Np; ++i) {
+    const double pS = xlow + (xhigh - xlow)*(i + 0.5)/Np;
+    const double ES = std::sqrt(pS*pS + mS0*mS0);
+    const double gammaS = ES/mS0;
     const double betaS  = (ES>0.0) ? pS/ES : 0.0;
 
     double sumLambda = 0.0;
     double sumBoth   = 0.0;
 
     // Average over μ1 = cosθ*_Σ (isotropic Σ0→Λγ)
-    for (int j=0; j<cfgS::Nmu; ++j) {
-      const double mu1 = -1.0 + 2.0*(j + 0.5)/cfgS::Nmu;
+    for (int j=0; j<Nmu; ++j) {
+      const double mu1 = -1.0 + 2.0*(j + 0.5)/Nmu;
 
       // Λ four-momentum after boost from Σ-rest (boost along z)
       const double EL_lab = gammaS * (EL_star + betaS * pL_star * mu1);
@@ -114,7 +112,7 @@ void plotSigma0LambdaVisibility() {
       const double pLperp = pL_star * std::sqrt(std::max(0.0, 1.0 - mu1*mu1));
       const double pL_lab = std::sqrt(pLz*pLz + pLperp*pLperp);
 
-      const double gammaL = EL_lab / phys::mL;
+      const double gammaL = EL_lab / mL;
       const double betaL  = (EL_lab>0.0) ? pL_lab / EL_lab : 0.0;
 
       // Conditional Λ→pπ visibility at this μ1 (analytic in μ2)
@@ -136,11 +134,11 @@ void plotSigma0LambdaVisibility() {
 
       // Photon lab energy at this μ1 (γ points opposite Λ in Σ rest)
       const double Egamma_lab = gammaS * pL_star * (1.0 - betaS * mu1);
-      if (Egamma_lab >= cfgS::Emin_gamma) sumBoth += frac_mu2;
+      if (Egamma_lab >= Emin_gamma) sumBoth += frac_mu2;
     }
 
-    const double fLambda = sumLambda / cfgS::Nmu;
-    const double fBoth   = sumBoth   / cfgS::Nmu;
+    const double fLambda = sumLambda / Nmu;
+    const double fBoth   = sumBoth   / Nmu;
 
     gF   ->SetPoint(i, pS, fLambda);
     gBoth->SetPoint(i, pS, fBoth);
@@ -148,33 +146,33 @@ void plotSigma0LambdaVisibility() {
 
   // --------- Optional TEfficiency overlay from a file (if available) ----------
   TEfficiency* eff = nullptr;
-  if (gSystem->AccessPathName(cfgS::file)) {
-    std::cout << "Warning: MC file '" << cfgS::file
+  if (gSystem->AccessPathName(file)) {
+    std::cout << "Warning: MC file '" << file
               << "' not found; skipping MC efficiency overlay.\n";
   } else {
-    TFile f(cfgS::file, "READ");
+    TFile f(file, "READ");
     if (f.IsZombie()) {
-      std::cout << "Warning: MC file '" << cfgS::file
+      std::cout << "Warning: MC file '" << file
                 << "' could not be opened; skipping MC efficiency overlay.\n";
     } else {
-      TTree* T = (TTree*) f.Get(cfgS::tree);
+      TTree* T = (TTree*) f.Get(tree);
       if (!T) {
-        std::cout << "Warning: tree '" << cfgS::tree
-                  << "' not found in '" << cfgS::file
+        std::cout << "Warning: tree '" << tree
+                  << "' not found in '" << file
                   << "'; skipping MC efficiency overlay.\n";
-      } else if (!T->GetBranch(cfgS::br_pS)
-                 || !T->GetBranch(cfgS::br_isSig)
-                 || !T->GetBranch(cfgS::br_isSel)) {
-        std::cout << "Warning: required branches not found in '" << cfgS::file
+      } else if (!T->GetBranch(br_pS)
+                 || !T->GetBranch(br_isSig)
+                 || !T->GetBranch(br_isSel)) {
+        std::cout << "Warning: required branches not found in '" << file
                   << "'; skipping MC efficiency overlay.\n";
       } else {
         double pS=0.0; int isSig=0, isSel=0;
-        T->SetBranchAddress(cfgS::br_pS,    &pS);
-        T->SetBranchAddress(cfgS::br_isSig, &isSig);
-        T->SetBranchAddress(cfgS::br_isSel, &isSel);
+        T->SetBranchAddress(br_pS,    &pS);
+        T->SetBranchAddress(br_isSig, &isSig);
+        T->SetBranchAddress(br_isSel, &isSel);
 
         eff = new TEfficiency("effS",";p_{#Sigma^{0}} at Nuclear Exit [GeV/c];#varepsilon_{fid} (MC)",
-                              cfgS::nbins, cfgS::xlow, cfgS::xhigh);
+                              nbins, xlow, xhigh);
         eff->SetStatisticOption(TEfficiency::kFCP);
 
         const Long64_t n = T->GetEntries();
@@ -189,7 +187,7 @@ void plotSigma0LambdaVisibility() {
 
   // --------- Draw ----------
   TCanvas c("c","Σ^{0}→Λγ: Λ-only vs Λ+γ visibility", 900, 650);
-  auto* frame = c.DrawFrame(cfgS::xlow, 0.0, cfgS::xhigh, 1.05,
+  auto* frame = c.DrawFrame(xlow, 0.0, xhigh, 1.05,
     ";p_{#Sigma^{0}} at Nuclear Exit [GeV/c];Kinematic Visibility Efficiency");
   frame->GetYaxis()->SetTitleOffset(1.15);
 
@@ -198,8 +196,8 @@ void plotSigma0LambdaVisibility() {
   if (eff) eff->Draw("pe same");
 
   // Vertical line at analytic Σ0 turn-on (Λ-only)
-  const double vline_pS = (cfgS::vline_pS >= 0.0) ? cfgS::vline_pS : pS_thr;
-  const bool usingAnalyticLine = (cfgS::vline_pS < 0.0);
+  const double vline_pS = (vline_pS >= 0.0) ? vline_pS : pS_thr;
+  const bool usingAnalyticLine = (vline_pS < 0.0);
   TLine L(vline_pS, 0.0, vline_pS, 1.05);
   L.SetLineStyle(2); L.SetLineWidth(2); L.Draw("same");
 
@@ -208,13 +206,13 @@ void plotSigma0LambdaVisibility() {
   if (eff) leg.AddEntry(eff, "#varepsilon_{fid}(p_{#Sigma^{0}}) (MC)", "pe");
   leg.AddEntry(gF,    "F_{kin}^{#Lambda only}(p_{#Sigma^{0}})", "l");
   leg.AddEntry(gBoth, Form("F_{kin}^{#Lambda + #gamma}(p_{#Sigma^{0}}), E_{#gamma}^{min}=%.0f MeV",
-                           1000.0*cfgS::Emin_gamma), "l");
+                           1000.0*Emin_gamma), "l");
   leg.AddEntry(&L,    usingAnalyticLine
                     ? Form("p^{thr}_{#Sigma^{0}} (#Lambda only) = %.3f GeV/c", vline_pS)
                     : Form("Reference p_{#Sigma^{0}} = %.3f GeV/c", vline_pS), "l");
   leg.Draw();
 
   const std::string out =
-      nuxsec::plot::plot_output_file("sigma0_lambda_gamma_visibility_efficiency").string();
+      plot_output_file("sigma0_lambda_gamma_visibility_efficiency").string();
   c.SaveAs(out.c_str());
 }

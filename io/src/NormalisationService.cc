@@ -12,10 +12,8 @@
 
 #include "RunDatabaseService.hh"
 
-namespace nuxsec
-{
 
-sample::SampleIO::Sample NormalisationService::build_sample(const std::string &sample_name,
+SampleIO::Sample NormalisationService::build_sample(const std::string &sample_name,
                                                             const std::vector<std::string> &art_files,
                                                             const std::string &db_path)
 {
@@ -24,14 +22,14 @@ sample::SampleIO::Sample NormalisationService::build_sample(const std::string &s
         throw std::runtime_error("Sample aggregation requires at least one Art file provenance root file.");
     }
 
-    sample::SampleIO::Sample out;
+    SampleIO::Sample out;
     out.sample_name = sample_name;
 
     RunDatabaseService db(db_path);
 
     for (const auto &path : art_files)
     {
-        art::Provenance prov = ArtFileProvenanceIO::read(path);
+        Provenance prov = ArtFileProvenanceIO::read(path);
         if (out.inputs.empty())
         {
             out.origin = prov.kind;
@@ -60,14 +58,14 @@ sample::SampleIO::Sample NormalisationService::build_sample(const std::string &s
         const double db_tortgt_pot = runinfo.tortgt_sum;
         const double db_tor101_pot = runinfo.tor101_sum;
 
-        sample::SampleIO::ProvenanceInput input = make_entry(prov, path, db_tortgt_pot, db_tor101_pot);
+        SampleIO::ProvenanceInput input = make_entry(prov, path, db_tortgt_pot, db_tor101_pot);
         out.subrun_pot_sum += input.subrun_pot_sum;
         out.db_tortgt_pot_sum += input.db_tortgt_pot;
         out.db_tor101_pot_sum += input.db_tor101_pot;
         out.inputs.push_back(std::move(input));
     }
 
-    out.root_files = sample::SampleIO::resolve_root_files(out);
+    out.root_files = SampleIO::resolve_root_files(out);
     out.normalisation = compute_normalisation(out.subrun_pot_sum, out.db_tortgt_pot_sum);
     out.normalised_pot_sum = out.subrun_pot_sum * out.normalisation;
 
@@ -87,12 +85,12 @@ double NormalisationService::compute_normalisation(double subrun_pot_sum, double
     return db_tortgt_pot / subrun_pot_sum;
 }
 
-sample::SampleIO::ProvenanceInput NormalisationService::make_entry(const art::Provenance &prov,
+SampleIO::ProvenanceInput NormalisationService::make_entry(const Provenance &prov,
                                                                    const std::string &art_path,
                                                                    double db_tortgt_pot,
                                                                    double db_tor101_pot)
 {
-    sample::SampleIO::ProvenanceInput entry;
+    SampleIO::ProvenanceInput entry;
     entry.entry_name = prov.input.input_name;
     entry.art_path = art_path;
     entry.subrun_pot_sum = prov.summary.pot_sum;
@@ -103,4 +101,3 @@ sample::SampleIO::ProvenanceInput NormalisationService::make_entry(const art::Pr
     return entry;
 }
 
-} // namespace nuxsec

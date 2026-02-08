@@ -24,11 +24,7 @@
 
 #include "SampleIO.hh"
 
-namespace nuxsec
-{
 
-namespace art
-{
 
 struct Subrun
 {
@@ -52,8 +48,8 @@ struct Input
 struct Provenance
 {
     Input input;
-    sample::SampleIO::SampleOrigin kind = sample::SampleIO::SampleOrigin::kUnknown;
-    sample::SampleIO::BeamMode beam = sample::SampleIO::BeamMode::kUnknown;
+    SampleIO::SampleOrigin kind = SampleIO::SampleOrigin::kUnknown;
+    SampleIO::BeamMode beam = SampleIO::BeamMode::kUnknown;
 
     std::vector<std::string> input_files;
 
@@ -62,20 +58,19 @@ struct Provenance
     double scale = 1.0;
 };
 
-} // namespace art
 
 class ArtFileProvenanceIO
 {
   public:
-    static void write(const art::Provenance &r, const std::string &out_file);
-    static art::Provenance read(const std::string &in_file);
-    static art::Provenance read(const std::string &in_file,
-                                sample::SampleIO::SampleOrigin kind,
-                                sample::SampleIO::BeamMode beam);
+    static void write(const Provenance &r, const std::string &out_file);
+    static Provenance read(const std::string &in_file);
+    static Provenance read(const std::string &in_file,
+                                SampleIO::SampleOrigin kind,
+                                SampleIO::BeamMode beam);
 
   private:
     static std::string read_named_string(TDirectory *d, const char *key);
-    static sample::SampleIO::SampleOrigin read_sample_origin(TDirectory *d);
+    static SampleIO::SampleOrigin read_sample_origin(TDirectory *d);
 
     template <typename T>
     static T read_param(TDirectory *d, const char *key)
@@ -90,12 +85,11 @@ class ArtFileProvenanceIO
     }
 
     static std::vector<std::string> read_input_files(TDirectory *d);
-    static std::vector<art::Subrun> read_run_subrun_pairs(TDirectory *d);
-    static art::Provenance read_directory(TDirectory *d,
-                                          sample::SampleIO::SampleOrigin kind,
-                                          sample::SampleIO::BeamMode beam);
+    static std::vector<Subrun> read_run_subrun_pairs(TDirectory *d);
+    static Provenance read_directory(TDirectory *d,
+                                          SampleIO::SampleOrigin kind,
+                                          SampleIO::BeamMode beam);
 };
 
-} // namespace nuxsec
 
 #endif // NUXSEC_IO_ART_FILE_PROVENANCE_IO_H

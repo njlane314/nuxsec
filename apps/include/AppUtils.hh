@@ -23,11 +23,7 @@
 
 #include "AppLog.hh"
 
-namespace nuxsec
-{
 
-namespace app
-{
 
 inline std::string trim(std::string s)
 {
@@ -109,7 +105,7 @@ inline int run_guarded(const std::string &log_prefix, const std::function<int()>
     }
     catch (const std::exception &e)
     {
-        nuxsec::app::log::log_error(log_prefix, std::string("fatal_error=") + e.what());
+        log_error(log_prefix, std::string("fatal_error=") + e.what());
         return 1;
     }
 }
@@ -196,7 +192,7 @@ private:
                 << " time=" << format_timestamp()
                 << " elapsed=" << format_elapsed_seconds() << "s"
                 << " interval=" << interval_.count() << "s";
-            nuxsec::app::log::log_info(log_prefix_, out.str());
+            log_info(log_prefix_, out.str());
         }
     }
 

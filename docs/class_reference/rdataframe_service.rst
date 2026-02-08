@@ -8,4 +8,4 @@ Location
 --------
 
 * Header: ``ana/include/RDataFrameService.hh``
-* Namespace: ``nuxsec``
+* Namespace: ``global``

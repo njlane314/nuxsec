@@ -8,4 +8,4 @@ Location
 --------
 
 * Header: ``apps/include/AppUtils.hh``
-* Namespace: ``nuxsec::app``
+* Namespace: ``global``

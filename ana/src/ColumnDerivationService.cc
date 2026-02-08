@@ -15,8 +15,6 @@
 
 #include "SelectionService.hh"
 
-namespace nuxsec
-{
 
 //____________________________________________________________________________
 ROOT::RDF::RNode ColumnDerivationService::define(ROOT::RDF::RNode node, const ProcessorEntry &rec) const
@@ -92,7 +90,7 @@ ROOT::RDF::RNode ColumnDerivationService::define(ROOT::RDF::RNode node, const Pr
         node = node.Define(
             "in_fiducial",
             [](float x, float y, float z) {
-                return selection::SelectionService::is_in_truth_volume(x, y, z);
+                return SelectionService::is_in_truth_volume(x, y, z);
             },
             {"nu_vtx_x", "nu_vtx_y", "nu_vtx_z"});
 
@@ -183,13 +181,13 @@ ROOT::RDF::RNode ColumnDerivationService::define(ROOT::RDF::RNode node, const Pr
     node = node.Define(
         "in_reco_fiducial",
         [](float x, float y, float z) {
-            return selection::SelectionService::is_in_reco_volume(x, y, z);
+            return SelectionService::is_in_reco_volume(x, y, z);
         },
         {"reco_neutrino_vertex_sce_x", "reco_neutrino_vertex_sce_y", "reco_neutrino_vertex_sce_z"});
 
     {
-        selection::Entry srec{rec.source, selection::Frame{node}};
-        node = selection::SelectionService::decorate(node, srec);
+        Entry srec{rec.source, Frame{node}};
+        node = SelectionService::decorate(node, srec);
     }
 
     return node;
@@ -204,4 +202,3 @@ const ColumnDerivationService &ColumnDerivationService::instance()
 }
 //____________________________________________________________________________
 
-} // namespace nuxsec

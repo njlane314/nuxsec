@@ -9,4 +9,4 @@ Location
 --------
 
 * Header: ``ana/include/ColumnDerivationService.hh``
-* Namespace: ``nuxsec``
+* Namespace: ``global``

@@ -9,4 +9,4 @@ Location
 --------
 
 * Header: ``io/include/EventIO.hh``
-* Namespace: ``nuxsec::event``
+* Namespace: ``global``

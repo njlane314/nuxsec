@@ -8,4 +8,4 @@ Location
 --------
 
 * Header: ``plot/include/StackedHist.hh``
-* Namespace: ``nuxsec::plot``
+* Namespace: ``global``

@@ -9,4 +9,4 @@ Location
 --------
 
 * Header: ``ana/include/AnalysisConfigService.hh``
-* Namespace: ``nuxsec``
+* Namespace: ``global``

@@ -16,11 +16,7 @@
 
 #include "ColumnDerivationService.hh"
 
-namespace nuxsec
-{
 
-namespace selection
-{
 
 struct Frame
 {
@@ -71,8 +67,6 @@ inline ROOT::RDF::RNode apply(ROOT::RDF::RNode node, Preset p, const Entry &rec)
     return SelectionService::apply(node, p, rec);
 }
 
-} // namespace selection
 
-} // namespace nuxsec
 
 #endif // NUXSEC_ANA_SELECTION_SERVICE_H

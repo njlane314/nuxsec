@@ -8,4 +8,4 @@ Location
 --------
 
 * Header: ``io/include/ArtFileProvenanceIO.hh``
-* Namespace: ``nuxsec`` (provenance structs are under ``nuxsec::art``)
+* Namespace: ``global``

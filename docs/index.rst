@@ -74,7 +74,7 @@ Conventions
 The codebase follows consistent style rules:
 
 * Headers begin with ``/* -- C++ -- */`` and use concise include guards.
-* Library code lives in the ``nuxsec`` namespace.
+* Library code lives in the global namespace.
 * Class names use descriptive PascalCase, while functions prefer
   ``lowercase_with_underscores``.
 * Member variables often use ``m_`` or ``p_`` prefixes, depending on ownership.

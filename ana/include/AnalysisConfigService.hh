@@ -14,8 +14,6 @@
 #include "ColumnDerivationService.hh"
 #include "SampleIO.hh"
 
-namespace nuxsec
-{
 
 class AnalysisConfigService final
 {
@@ -24,7 +22,7 @@ class AnalysisConfigService final
 
     const std::string &name() const noexcept { return m_name; }
     const std::string &tree_name() const noexcept { return m_tree_name; }
-    ProcessorEntry make_processor(const sample::SampleIO::Sample &sample) const noexcept;
+    ProcessorEntry make_processor(const SampleIO::Sample &sample) const noexcept;
 
   private:
     AnalysisConfigService();
@@ -33,6 +31,5 @@ class AnalysisConfigService final
     std::string m_tree_name;
 };
 
-} // namespace nuxsec
 
 #endif // NUXSEC_ANA_ANALYSIS_CONFIG_SERVICE_H

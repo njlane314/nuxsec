@@ -15,10 +15,6 @@
 #include "RtypesCore.h"
 #include "TColor.h"
 
-namespace nuxsec
-{
-namespace plot
-{
 
 class Channels
 {
@@ -81,7 +77,5 @@ class Channels
     }
 };
 
-} // namespace plot
-} // namespace nuxsec
 
 #endif // NUXSEC_PLOT_CHANNELS_H

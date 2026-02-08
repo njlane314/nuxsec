@@ -13,10 +13,6 @@
 
 #include "ColumnDerivationService.hh"
 
-namespace nuxsec
-{
-namespace plot
-{
 
 std::string env_or(const char *key, const std::string &fallback)
 {
@@ -36,12 +32,12 @@ std::string default_samples_tsv()
     return out_base + "/" + set_name + "/sample/samples.tsv";
 }
 
-bool is_data_origin(sample::SampleIO::SampleOrigin o)
+bool is_data_origin(SampleIO::SampleOrigin o)
 {
-    return o == sample::SampleIO::SampleOrigin::kData;
+    return o == SampleIO::SampleOrigin::kData;
 }
 
-double pick_pot_nom(const sample::SampleIO::Sample &s)
+double pick_pot_nom(const SampleIO::Sample &s)
 {
     if (s.normalised_pot_sum > 0.0)
         return s.normalised_pot_sum;
@@ -54,7 +50,7 @@ double pick_pot_nom(const sample::SampleIO::Sample &s)
 
 Entry make_entry(ROOT::RDF::RNode node, const ProcessorEntry &proc_entry)
 {
-    selection::Entry selection{proc_entry.source, selection::Frame{std::move(node)}};
+    Entry selection{proc_entry.source, Frame{std::move(node)}};
     return Entry{std::move(selection), 0.0, 0.0, std::string(), std::string()};
 }
 
@@ -75,5 +71,3 @@ TH1DModel make_spec(const std::string &expr,
     return spec;
 }
 
-} // namespace plot
-} // namespace nuxsec

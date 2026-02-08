@@ -8,4 +8,4 @@ Location
 --------
 
 * Header: ``io/include/SampleIO.hh``
-* Namespace: ``nuxsec::sample``
+* Namespace: ``global``

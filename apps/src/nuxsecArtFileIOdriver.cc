@@ -13,13 +13,9 @@
 #include "AppUtils.hh"
 #include "ArtCLI.hh"
 
-namespace nuxsec
-{
 
-namespace app
-{
 
-int run(const art::Args &art_args, const std::string &log_prefix)
+int run(const Args &art_args, const std::string &log_prefix)
 {
     ROOT::EnableImplicitMT();
 
@@ -29,32 +25,32 @@ int run(const art::Args &art_args, const std::string &log_prefix)
         std::filesystem::create_directories(out_path.parent_path());
     }
 
-    const auto files = nuxsec::app::read_paths(art_args.input.filelist_path);
+    const auto files = read_paths(art_args.input.filelist_path);
 
-    nuxsec::art::Provenance rec;
+    Provenance rec;
     rec.input = art_args.input;
     rec.input_files = files;
     rec.kind = art_args.sample_origin;
     rec.beam = art_args.beam_mode;
 
-    if (rec.kind == nuxsec::sample::SampleIO::SampleOrigin::kUnknown &&
-        nuxsec::app::art::is_selection_data_file(files.front()))
+    if (rec.kind == SampleIO::SampleOrigin::kUnknown &&
+        is_selection_data_file(files.front()))
     {
-        rec.kind = nuxsec::sample::SampleIO::SampleOrigin::kData;
+        rec.kind = SampleIO::SampleOrigin::kData;
     }
 
     const auto start_time = std::chrono::steady_clock::now();
-    nuxsec::app::art::log_scan_start(log_prefix);
+    log_scan_start(log_prefix);
 
-    nuxsec::app::StatusMonitor status_monitor(
+    StatusMonitor status_monitor(
         log_prefix,
         "action=art_scan status=running message=scan_in_progress");
-    rec.summary = nuxsec::SubRunInventoryService::scan_subruns(files);
+    rec.summary = SubRunInventoryService::scan_subruns(files);
     status_monitor.stop();
 
     const auto end_time = std::chrono::steady_clock::now();
     const double elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time).count();
-    nuxsec::app::art::log_scan_finish(log_prefix, rec.summary.n_entries, elapsed_seconds);
+    log_scan_finish(log_prefix, rec.summary.n_entries, elapsed_seconds);
 
     rec.summary.pot_sum *= 1;
     rec.scale = 1;
@@ -64,9 +60,9 @@ int run(const art::Args &art_args, const std::string &log_prefix)
                 << " files=" << rec.input_files.size()
                 << " pairs=" << rec.summary.unique_pairs.size()
                 << " pot_sum=" << rec.summary.pot_sum;
-    nuxsec::app::log::log_success(log_prefix, log_message.str());
+    log_success(log_prefix, log_message.str());
 
-    nuxsec::ArtFileProvenanceIO::write(rec, art_args.art_path);
+    ArtFileProvenanceIO::write(rec, art_args.art_path);
 
     return 0;
 }
@@ -77,15 +73,15 @@ int run(const art::Args &art_args, const std::string &log_prefix)
 
 int main(int argc, char **argv)
 {
-    return nuxsec::app::run_guarded(
+    return run_guarded(
         "nuxsecArtFileIOdriver",
         [argc, argv]()
         {
-            const std::vector<std::string> args = nuxsec::app::collect_args(argc, argv);
-            const nuxsec::app::art::Args art_args =
-                nuxsec::app::art::parse_args(
+            const std::vector<std::string> args = collect_args(argc, argv);
+            const Args art_args =
+                parse_args(
                     args,
                     "Usage: nuxsecArtFileIOdriver INPUT_NAME:FILELIST[:SAMPLE_KIND:BEAM_MODE]");
-            return nuxsec::app::run(art_args, "nuxsecArtFileIOdriver");
+            return run(art_args, "nuxsecArtFileIOdriver");
         });
 }

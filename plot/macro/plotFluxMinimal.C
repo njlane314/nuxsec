@@ -46,7 +46,7 @@ static inline void scale_flux_to_release_units(TH1* h1, TH1* h2, TH1* h3, TH1* h
 // ---------------------------------------------------------------------------
 
 static void set_global_style(){
-  nuxsec::plot::Plotter{}.set_global_style();
+  Plotter{}.set_global_style();
 }
 
 static TLegend* build_flux_legend_like_stacked(TPad* p_leg, TH1* h_numu, TH1* h_anumu, TH1* h_nue, TH1* h_anue, double split, double s_numu, double s_anumu, double s_nue, double s_anue, double s_tot){
@@ -267,8 +267,8 @@ static void draw_one(const char* file,const char* tag,const char* out){
   style_line(a,CR,1); style_line(c,CR,2); style_line(b,CB,1); style_line(d,CB,3);
 
   TCanvas canv(Form("c_%s",tag),Form("%s Mode",tag),
-               nuxsec::plot::kCanvasWidth,
-               nuxsec::plot::kCanvasHeight);
+               kCanvasWidth,
+               kCanvasHeight);
   TPad* p_main=new TPad("pad_main","pad_main",0.,0.00,1.,split);
   TPad* p_leg =new TPad("pad_legend","pad_legend",0.,split,1.,1.00);
   p_main->SetTopMargin(0.01); p_main->SetBottomMargin(0.12); p_main->SetLeftMargin(0.12); p_main->SetRightMargin(0.05); p_main->SetLogy();
@@ -305,8 +305,8 @@ void plotFluxMinimal(
   const char* rhc_file = "/exp/uboone/data/users/bnayak/ppfx/flugg_studies/NuMIFlux_dk2nu_RHC.root"
 ){
   set_global_style();
-  const std::string out_fhc = nuxsec::plot::plot_output_file("uboone_flux_FHC").string();
-  const std::string out_rhc = nuxsec::plot::plot_output_file("uboone_flux_RHC").string();
+  const std::string out_fhc = plot_output_file("uboone_flux_FHC").string();
+  const std::string out_rhc = plot_output_file("uboone_flux_RHC").string();
   draw_one(fhc_file,"FHC",out_fhc.c_str());
   draw_one(rhc_file,"RHC",out_rhc.c_str());
 
@@ -315,7 +315,7 @@ void plotFluxMinimal(
          "(kPOT_TARGET=%.3e, kPOT_IN_FILE=%.3e, m^2->cm^2=%g)\n",
          kUNIT_SCALE, kPOT_TARGET, kPOT_IN_FILE, kM2_TO_CM2);
   // -------- NEW: write machine-readable flux tables for x-sec release --------
-  const std::string outdir = nuxsec::plot::release_dir_path().string();
+  const std::string outdir = release_dir_path().string();
   make_tables_one(fhc_file,"FHC",outdir.c_str());
   make_tables_one(rhc_file,"RHC",outdir.c_str());
   printf("[tables] Wrote CSVs under %s/{bins,flux}/\n", outdir.c_str());

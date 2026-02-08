@@ -19,14 +19,8 @@
 
 #include "AppUtils.hh"
 
-namespace nuxsec
-{
 
-namespace app
-{
 
-namespace event
-{
 
 /** \brief Provide event columns from compiled defaults or a TSV file. */
 class EventColumnProvider
@@ -103,7 +97,7 @@ class EventColumnProvider
         std::string line;
         while (std::getline(input, line))
         {
-            line = nuxsec::app::trim(line);
+            line = trim(line);
             if (line.empty() || line[0] == '#')
             {
                 continue;
@@ -114,8 +108,8 @@ class EventColumnProvider
             {
                 header_checked = true;
                 if (tokens.size() >= 2 &&
-                    lower(nuxsec::app::trim(tokens.at(0))) == "type" &&
-                    lower(nuxsec::app::trim(tokens.at(1))) == "name")
+                    lower(trim(tokens.at(0))) == "type" &&
+                    lower(trim(tokens.at(1))) == "name")
                 {
                     continue;
                 }
@@ -125,13 +119,13 @@ class EventColumnProvider
             std::string name;
             if (tokens.size() == 1)
             {
-                name = nuxsec::app::trim(tokens.at(0));
+                name = trim(tokens.at(0));
                 type = "auto";
             }
             else
             {
-                type = nuxsec::app::trim(tokens.at(0));
-                name = nuxsec::app::trim(tokens.at(1));
+                type = trim(tokens.at(0));
+                name = trim(tokens.at(1));
             }
 
             if (name.empty())
@@ -155,10 +149,7 @@ class EventColumnProvider
     std::string m_schema_tag;
 };
 
-} // namespace event
 
-} // namespace app
 
-} // namespace nuxsec
 
 #endif // NUXSEC_APPS_EVENT_COLUMN_PROVIDER_H

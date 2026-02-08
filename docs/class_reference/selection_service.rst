@@ -9,4 +9,4 @@ Location
 --------
 
 * Header: ``ana/include/SelectionService.hh``
-* Namespace: ``nuxsec::selection``
+* Namespace: ``global``

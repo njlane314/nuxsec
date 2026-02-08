@@ -8,4 +8,4 @@ Location
 --------
 
 * Header: ``plot/include/Plotter.hh``
-* Namespace: ``nuxsec::plot``
+* Namespace: ``global``

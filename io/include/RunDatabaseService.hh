@@ -15,8 +15,6 @@
 
 #include "ArtFileProvenanceIO.hh"
 
-namespace nuxsec
-{
 
 struct RunInfoSums
 {
@@ -43,7 +41,7 @@ class RunDatabaseService
     RunDatabaseService(const RunDatabaseService &) = delete;
     RunDatabaseService &operator=(const RunDatabaseService &) = delete;
 
-    RunInfoSums sum_run_info(const std::vector<art::Subrun> &pairs) const;
+    RunInfoSums sum_run_info(const std::vector<Subrun> &pairs) const;
 
   private:
     void exec(const std::string &sql) const;
@@ -53,6 +51,5 @@ class RunDatabaseService
     sqlite3 *db_ = nullptr;
 };
 
-} // namespace nuxsec
 
 #endif // NUXSEC_IO_RUNDATABASE_SERVICE_H

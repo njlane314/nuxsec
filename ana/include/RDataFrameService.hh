@@ -15,8 +15,6 @@
 
 #include "SampleIO.hh"
 
-namespace nuxsec
-{
 
 struct Column
 {
@@ -28,13 +26,12 @@ struct Column
 class RDataFrameService
 {
   public:
-    static ROOT::RDataFrame load_sample(const sample::SampleIO::Sample &sample,
+    static ROOT::RDataFrame load_sample(const SampleIO::Sample &sample,
                                         const std::string &tree_name);
 
     static ROOT::RDF::RNode define_variables(ROOT::RDF::RNode node,
                                              const std::vector<Column> &definitions);
 };
 
-} // namespace nuxsec
 
 #endif // NUXSEC_ANA_RDATA_FRAME_SERVICE_H
