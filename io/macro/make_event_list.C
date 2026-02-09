@@ -4,10 +4,10 @@
 //
 // Usage examples:
 //   ./nuxsec macro make_event_list.C
-//   ./nuxsec macro make_event_list.C 'make_event_list("scratch/out/event_list.root")'
-//   ./nuxsec macro make_event_list.C 'make_event_list("scratch/out/event_list.root","/path/to/samples.tsv")'
-//   ./nuxsec macro make_event_list.C 'make_event_list("scratch/out/event_list.root","/path/to/samples.tsv","true","reco_neutrino_vertex_sce_z,reco_neutrino_vertex_sce_x,reco_neutrino_vertex_sce_y")'
-//   ./nuxsec macro make_event_list.C 'make_event_list("scratch/out/event_list.root","/path/to/samples.tsv","sel_muon","reco_neutrino_vertex_sce_z")'
+//   ./nuxsec macro make_event_list.C 'make_event_list("scratch/out/event_list_myana.root")'
+//   ./nuxsec macro make_event_list.C 'make_event_list("scratch/out/event_list_myana.root","/path/to/samples.tsv")'
+//   ./nuxsec macro make_event_list.C 'make_event_list("scratch/out/event_list_myana.root","/path/to/samples.tsv","true","reco_neutrino_vertex_sce_z,reco_neutrino_vertex_sce_x,reco_neutrino_vertex_sce_y")'
+//   ./nuxsec macro make_event_list.C 'make_event_list("scratch/out/event_list_myana.root","/path/to/samples.tsv","sel_muon","reco_neutrino_vertex_sce_z")'
 //
 // What it writes:
 //   - TObjString keys: analysis_name, provenance_tree, event_tree, sample_list_source
@@ -21,7 +21,7 @@
 //   - extra_columns_csv lets you add plot variables beyond the defaults.
 //
 // After this, you can plot from the event list using:
-//   ROOT::RDataFrame("events", "scratch/out/event_list.root")
+//   ROOT::RDataFrame("events", "scratch/out/event_list_myana.root")
 //
 // Or modify stack_samples.C to detect ".root" input and use the event list directly.
 
@@ -99,21 +99,28 @@ static void require_columns(const ROOT::RDF::RNode &node,
     }
 }
 
-int make_event_list(const std::string &out_root = "scratch/out/event_list.root",
+int make_event_list(const std::string &out_root = "",
                     const std::string &samples_tsv = "",
                     const std::string &base_sel = "true")
 {
     ROOT::EnableImplicitMT();
 
     const std::string list_path = samples_tsv.empty() ? default_samples_tsv() : samples_tsv;
+    const auto &analysis = AnalysisConfigService::instance();
+    const std::string tree_name = analysis.tree_name();
+    std::string out_path = out_root;
+    if (out_path.empty())
+    {
+        std::ostringstream name;
+        name << "scratch/out/event_list_" << analysis.name() << ".root";
+        out_path = name.str();
+    }
+
     std::cout << "[make_event_list] samples_tsv=" << list_path << "\n";
-    std::cout << "[make_event_list] out_root=" << out_root << "\n";
+    std::cout << "[make_event_list] out_root=" << out_path << "\n";
     std::cout << "[make_event_list] base_sel=" << base_sel << "\n";
 
     const auto sample_list = read_samples(list_path);
-
-    const auto &analysis = AnalysisConfigService::instance();
-    const std::string tree_name = analysis.tree_name();
 
     std::vector<std::string> cols = default_event_columns();
 
@@ -147,9 +154,9 @@ int make_event_list(const std::string &out_root = "scratch/out/event_list.root",
     for (const auto &c : cols)
         schema << c << "\n";
 
-    EventIO::init(out_root, header, refs, schema.str(), "plot");
+    EventIO::init(out_path, header, refs, schema.str(), "plot");
 
-    EventIO out(out_root, EventIO::OpenMode::kUpdate);
+    EventIO out(out_path, EventIO::OpenMode::kUpdate);
 
     for (size_t i = 0; i < sample_list.size(); ++i)
     {
@@ -177,6 +184,6 @@ int make_event_list(const std::string &out_root = "scratch/out/event_list.root",
                                        header.event_tree);
     }
 
-    std::cout << "[make_event_list] done: " << out_root << "\n";
+    std::cout << "[make_event_list] done: " << out_path << "\n";
     return 0;
 }
