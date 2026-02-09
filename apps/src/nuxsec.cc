@@ -21,6 +21,7 @@
 
 #include <sys/wait.h>
 
+#include <TInterpreter.h>
 #include <TROOT.h>
 #include <TSystem.h>
 
@@ -342,7 +343,12 @@ void add_plot_include_paths(const std::filesystem::path &repo_root)
 {
     auto add = [&](const std::filesystem::path &p)
     {
-        gSystem->AddIncludePath(("-I" + p.string()).c_str());
+        const std::string include_flag = "-I" + p.string();
+        gSystem->AddIncludePath(include_flag.c_str());
+        if (gInterpreter)
+        {
+            gInterpreter->AddIncludePath(p.string().c_str());
+        }
     };
     add(repo_root / "plot" / "include");
     add(repo_root / "ana" / "include");
