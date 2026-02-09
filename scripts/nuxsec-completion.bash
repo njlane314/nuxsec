@@ -17,12 +17,12 @@ _nuxsec()
     local exe
     local exe_dir
 
-    if [[ -n "${NUXSEC_REPO_ROOT:-}" && ( -d "${NUXSEC_REPO_ROOT}/plot/macro" || -d "${NUXSEC_REPO_ROOT}/evd/macro" || -d "${NUXSEC_REPO_ROOT}/macro" ) ]]; then
+    if [[ -n "${NUXSEC_REPO_ROOT:-}" && ( -d "${NUXSEC_REPO_ROOT}/plot/macro" || -d "${NUXSEC_REPO_ROOT}/evd/macro" || -d "${NUXSEC_REPO_ROOT}/standalone/macro" ) ]]; then
       printf "%s" "${NUXSEC_REPO_ROOT}"
       return 0
     fi
 
-    if [[ -n "${NUXSEC_ROOT:-}" && ( -d "${NUXSEC_ROOT}/plot/macro" || -d "${NUXSEC_ROOT}/evd/macro" || -d "${NUXSEC_ROOT}/macro" ) ]]; then
+    if [[ -n "${NUXSEC_ROOT:-}" && ( -d "${NUXSEC_ROOT}/plot/macro" || -d "${NUXSEC_ROOT}/evd/macro" || -d "${NUXSEC_ROOT}/standalone/macro" ) ]]; then
       printf "%s" "${NUXSEC_ROOT}"
       return 0
     fi
@@ -32,7 +32,7 @@ _nuxsec()
       exe_dir="$(dirname "$(readlink -f "${exe}" 2>/dev/null || printf "%s" "${exe}")")"
       dir="${exe_dir}"
       while [[ -n "${dir}" && "${dir}" != "/" ]]; do
-        if [[ -d "${dir}/plot/macro" || -d "${dir}/evd/macro" || -d "${dir}/macro" ]]; then
+        if [[ -d "${dir}/plot/macro" || -d "${dir}/evd/macro" || -d "${dir}/standalone/macro" ]]; then
           printf "%s" "${dir}"
           return 0
         fi
@@ -42,7 +42,7 @@ _nuxsec()
 
     dir="${PWD}"
     while [[ "${dir}" != "/" ]]; do
-      if [[ -d "${dir}/plot/macro" || -d "${dir}/evd/macro" || -d "${dir}/macro" ]]; then
+      if [[ -d "${dir}/plot/macro" || -d "${dir}/evd/macro" || -d "${dir}/standalone/macro" ]]; then
         printf "%s" "${dir}"
         return 0
       fi
@@ -58,6 +58,10 @@ _nuxsec()
       if [[ "${base}" == "macro" ]]; then
         parent="$(dirname "${dir}")"
         if [[ "$(basename "${parent}")" == "plot" || "$(basename "${parent}")" == "evd" ]]; then
+          printf "%s" "$(dirname "${parent}")"
+          return 0
+        fi
+        if [[ "$(basename "${parent}")" == "standalone" ]]; then
           printf "%s" "$(dirname "${parent}")"
           return 0
         fi
@@ -84,7 +88,7 @@ _nuxsec()
           fi
         done
       fi
-      macro_dir="${repo_root}/macro"
+      macro_dir="${repo_root}/standalone/macro"
       if [[ -d "${macro_dir}" ]]; then
         for macro in "${macro_dir}"/*.C; do
           if [[ -f "${macro}" ]]; then

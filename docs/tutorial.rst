@@ -50,7 +50,8 @@ configuration to be present. Adjust ``NUXSEC_PLOT_DIR`` or ``NUXSEC_PLOT_BASE``
 if you want to separate outputs per production set.
 
 Standalone ROOT macros that do not depend on the Nuxsec plotting, analysis, or
-input/output libraries live under ``macro`` and can be run the same way:
+input/output libraries live under ``standalone/macro`` and can be run the same
+way:
 
 .. code-block:: console
 
