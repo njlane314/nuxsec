@@ -319,10 +319,12 @@ int EfficiencyPlot::draw_and_save(const std::string &file_stem,
     // (Large values create an obvious white band between legend and frame.)
     p_plot.SetTopMargin(0.01);
     p_plot.SetBottomMargin(0.12);
-    p_plot.SetLeftMargin(0.15);
+    // Reduce side padding so the x-axis frame uses more horizontal space,
+    // while still keeping axis labels/titles readable.
+    p_plot.SetLeftMargin(0.11);
     // Leave enough space for the right-hand (efficiency) axis title/labels.
     // (Too small and ROOT will clip them.)
-    p_plot.SetRightMargin(0.14);
+    p_plot.SetRightMargin(0.10);
 
     p_leg.Draw();
     p_plot.Draw();
