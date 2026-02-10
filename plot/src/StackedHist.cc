@@ -64,7 +64,10 @@ void fold_overflow_into_edges(TH1D &h)
     }
 }
 
-std::vector<double> make_minstat_edges(const TH1D &h, double wmin, double relerrMax)
+std::vector<double> make_minstat_edges(const TH1D &h,
+                                       double wmin,
+                                       double relerrMax,
+                                       bool keep_edge_bins)
 {
     std::vector<double> edges;
     const int nb = h.GetNbinsX();
@@ -80,13 +83,23 @@ std::vector<double> make_minstat_edges(const TH1D &h, double wmin, double relerr
     edges.reserve(nb + 1);
     edges.push_back(ax->GetBinLowEdge(1));
 
+    int first_merge_bin = 1;
+    int last_merge_bin = nb;
+
+    if (keep_edge_bins && nb >= 3)
+    {
+        edges.push_back(ax->GetBinUpEdge(1));
+        first_merge_bin = 2;
+        last_merge_bin = nb - 1;
+    }
+
     double sumw = 0.0;
     double sumw2 = 0.0;
 
     const bool use_wmin = (wmin > 0.0);
     const bool use_relerr = (relerrMax > 0.0);
 
-    for (int i = 1; i <= nb; ++i)
+    for (int i = first_merge_bin; i <= last_merge_bin; ++i)
     {
         const double w = h.GetBinContent(i);
         const double e = h.GetBinError(i);
@@ -108,6 +121,15 @@ std::vector<double> make_minstat_edges(const TH1D &h, double wmin, double relerr
             }
             sumw = 0.0;
             sumw2 = 0.0;
+        }
+    }
+
+    if (keep_edge_bins && nb >= 3)
+    {
+        const double last_low = ax->GetBinLowEdge(nb);
+        if (edges.empty() || last_low > edges.back() + kEdgeEps)
+        {
+            edges.push_back(last_low);
         }
     }
 
@@ -471,7 +493,10 @@ void StackedHist::build_histograms()
                 fold_overflow_into_edges(*mc_tot);
             }
 
-            adaptive_edges = make_minstat_edges(*mc_tot, opt_.adaptive_min_sumw, opt_.adaptive_max_relerr);
+            adaptive_edges = make_minstat_edges(*mc_tot,
+                                                opt_.adaptive_min_sumw,
+                                                opt_.adaptive_max_relerr,
+                                                opt_.adaptive_keep_edge_bins);
 
             if (adaptive_edges.size() >= 2)
             {

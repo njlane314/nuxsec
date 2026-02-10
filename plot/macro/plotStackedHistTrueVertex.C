@@ -12,8 +12,11 @@
 //   - Output dir/format follow PlotEnv defaults (NUXSEC_PLOT_DIR / NUXSEC_PLOT_FORMAT).
 //   - Default input uses the generated event list (event_list_<analysis>.root).
 
+#include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
@@ -176,6 +179,7 @@ int plot_stacked_hist_impl(const std::string &samples_tsv,
     opt.adaptive_min_sumw = 25.0;
     opt.adaptive_max_relerr = 0.30;
     opt.adaptive_fold_overflow = true;
+    opt.adaptive_keep_edge_bins = true;
     opt.signal_channels = Channels::signal_keys();
     opt.y_title = "Events/bin";
     opt.run_numbers = {"1"};
@@ -188,16 +192,81 @@ int plot_stacked_hist_impl(const std::string &samples_tsv,
     debug_log("plot options configured: include_data=" + std::string(include_data ? "true" : "false") +
               ", use_logy=" + std::string(use_logy ? "true" : "false"));
 
+    struct DynamicAxis
+    {
+        int nbins = 50;
+        double xmin = 0.0;
+        double xmax = 1.0;
+    };
+
+    const auto build_dynamic_axis = [&](const std::string &expr,
+                                        int fallback_nbins,
+                                        double fallback_xmin,
+                                        double fallback_xmax) {
+        DynamicAxis out;
+        out.nbins = fallback_nbins;
+        out.xmin = fallback_xmin;
+        out.xmax = fallback_xmax;
+
+        double global_min = std::numeric_limits<double>::infinity();
+        double global_max = -std::numeric_limits<double>::infinity();
+
+        const auto update_minmax = [&](ROOT::RDF::RNode node) {
+            const auto n_evt = node.Count().GetValue();
+            if (n_evt == 0)
+            {
+                return;
+            }
+
+            const double local_min = node.Min<double>(expr).GetValue();
+            const double local_max = node.Max<double>(expr).GetValue();
+            global_min = std::min(global_min, local_min);
+            global_max = std::max(global_max, local_max);
+        };
+
+        update_minmax(e_mc.selection.nominal.node);
+        update_minmax(e_ext.selection.nominal.node);
+        if (p_data != nullptr)
+        {
+            update_minmax(p_data->selection.nominal.node);
+        }
+
+        if (!std::isfinite(global_min) || !std::isfinite(global_max) || global_max <= global_min)
+        {
+            return out;
+        }
+
+        const double fallback_span = std::max(1.0, fallback_xmax - fallback_xmin);
+        const double nominal_fine_width = fallback_span / static_cast<double>(fallback_nbins);
+        const double span = std::max(nominal_fine_width, global_max - global_min);
+
+        int dynamic_nbins = static_cast<int>(std::ceil(span / nominal_fine_width)) + 2;
+        dynamic_nbins = std::max(12, dynamic_nbins);
+        out.nbins = dynamic_nbins;
+
+        const double padded_width = span / static_cast<double>(std::max(1, dynamic_nbins - 2));
+        out.xmin = global_min - padded_width;
+        out.xmax = global_max + padded_width;
+
+        return out;
+    };
+
     const auto draw_one = [&](const std::string &expr,
                               int nbins,
                               double xmin,
                               double xmax,
                               const std::string &x_title) {
+        const DynamicAxis axis = build_dynamic_axis(expr, nbins, xmin, xmax);
+
         opt.x_title = x_title.empty() ? expr : x_title;
-        debug_log("drawing start: expr=" + expr + ", x_title=" + opt.x_title);
+        debug_log("drawing start: expr=" + expr +
+                  ", x_title=" + opt.x_title +
+                  ", nbins=" + std::to_string(axis.nbins) +
+                  ", xmin=" + std::to_string(axis.xmin) +
+                  ", xmax=" + std::to_string(axis.xmax));
 
         const std::string weight = mc_weight.empty() ? "w_nominal" : mc_weight;
-        TH1DModel spec = make_spec(expr, nbins, xmin, xmax, weight);
+        TH1DModel spec = make_spec(expr, axis.nbins, axis.xmin, axis.xmax, weight);
         spec.sel = Preset::Empty;
 
         if (include_data)
