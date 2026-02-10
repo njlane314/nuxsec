@@ -29,6 +29,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include <ROOT/RDataFrame.hxx>
@@ -128,6 +129,9 @@ int plotPREffVsLambdaKinematics(const std::string &samples_tsv = "",
             {"sample_id"});
     }
 
+    const auto col_names = node_mc.GetColumnNames();
+    const std::unordered_set<std::string> columns(col_names.begin(), col_names.end());
+
     const std::vector<VarSpec> vars = {
         {"lam_p_mag",          30, 0.0, 3.0,  "#Lambda |p| [GeV/c]"},
         {"lam_E",              30, 0.0, 5.0,  "#Lambda E [GeV]"},
@@ -141,8 +145,17 @@ int plotPREffVsLambdaKinematics(const std::string &samples_tsv = "",
     };
 
     int rc = 0;
+    int plotted = 0;
     for (const auto &v : vars)
     {
+        if (columns.find(v.expr) == columns.end())
+        {
+            std::cerr << "[plotPREffVsLambdaKinematics] skipping variable '" << v.expr
+                      << "' (column not present in input tree)\n";
+            rc = std::max(rc, 2);
+            continue;
+        }
+
         TH1DModel spec = make_spec(v.expr, v.nbins, v.xmin, v.xmax, "");
 
         EfficiencyPlot::Config cfg;
@@ -167,11 +180,18 @@ int plotPREffVsLambdaKinematics(const std::string &samples_tsv = "",
         {
             const std::string tag = Plotter::sanitise(v.expr);
             rc = std::max(rc, eff.draw_and_save("pr_eff_vs_" + tag));
+            ++plotted;
         }
         else
         {
             rc = std::max(rc, one);
         }
+    }
+
+    if (plotted == 0)
+    {
+        std::cerr << "[plotPREffVsLambdaKinematics] no plots were produced; check input column availability\n";
+        rc = std::max(rc, 1);
     }
 
     return rc;
