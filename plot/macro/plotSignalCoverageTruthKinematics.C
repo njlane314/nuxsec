@@ -112,7 +112,11 @@ struct Var1D
     int nbins = 30;
     double xmin = 0.0;
     double xmax = 1.0;
+    double physical_xmin = 0.0;
+    double quantile_low = 0.005;
+    double quantile_high = 0.995;
     std::string x_title;
+    std::string y_title;
 };
 
 struct Var2D
@@ -288,7 +292,7 @@ int plotSignalCoverageTruthKinematics(const std::string &samples_tsv = "",
     opt.adaptive_max_relerr = 0.07;
     opt.adaptive_fold_overflow = true;
     opt.signal_channels = Channels::signal_keys();
-    opt.y_title = "Events / unit-x";
+    opt.y_title = "Events / bin";
     opt.run_numbers = {"1"};
     opt.image_format = getenv_or("NUXSEC_PLOT_FORMAT", "pdf");
 
@@ -302,19 +306,18 @@ int plotSignalCoverageTruthKinematics(const std::string &samples_tsv = "",
     // --- Panel A/B: 1D truth distributions (stacked by analysis channel) ---
     const std::vector<Var1D> vars_1d = {
         // Panel A
-        {"truth_nu_E", "nu_E",   30, 0.0, 10.0, "True #nu energy E_{#nu} [GeV]"},
+        {"truth_nu_E", "nu_E",   30, 0.0, 10.0, 0.0, 0.005, 0.995,
+         "True #nu energy E_{#nu} [GeV]", "Events / #DeltaE_{#nu} [GeV]"},
         // Panel B
-        {"truth_W",    "kin_W",  30, 0.0, 5.0,  "True W [GeV]"},
+        {"truth_W",    "kin_W",  30, 0.0, 5.0, 0.0, 0.005, 0.995,
+         "True W [GeV]", "Events / #DeltaW [GeV]"},
     };
 
-    const auto build_dynamic_axis = [&](const std::string &expr,
-                                        int fallback_nbins,
-                                        double fallback_xmin,
-                                        double fallback_xmax) {
+    const auto build_dynamic_axis = [&](const Var1D &v) {
         DynamicAxis out;
-        out.nbins = fallback_nbins;
-        out.xmin = fallback_xmin;
-        out.xmax = fallback_xmax;
+        out.nbins = v.nbins;
+        out.xmin = v.xmin;
+        out.xmax = v.xmax;
 
         const auto n_evt = e_mc.selection.nominal.node.Count().GetValue();
         if (n_evt == 0)
@@ -322,32 +325,58 @@ int plotSignalCoverageTruthKinematics(const std::string &samples_tsv = "",
             return out;
         }
 
-        const double global_min = static_cast<double>(e_mc.selection.nominal.node.Min(expr).GetValue());
-        const double global_max = static_cast<double>(e_mc.selection.nominal.node.Max(expr).GetValue());
-        if (!std::isfinite(global_min) || !std::isfinite(global_max) || global_max <= global_min)
+        auto values = e_mc.selection.nominal.node.Take<double>(v.expr).GetValue();
+        values.erase(
+            std::remove_if(
+                values.begin(),
+                values.end(),
+                [](const double x) {
+                    return !std::isfinite(x);
+                }),
+            values.end());
+
+        if (values.empty())
         {
             return out;
         }
 
-        const double fallback_span = std::max(1.0, fallback_xmax - fallback_xmin);
-        const double nominal_fine_width = fallback_span / static_cast<double>(fallback_nbins);
-        const double span = std::max(nominal_fine_width, global_max - global_min);
+        std::sort(values.begin(), values.end());
 
-        int dynamic_nbins = static_cast<int>(std::ceil(span / nominal_fine_width)) + 2;
+        const auto quantile_at = [&](double q) {
+            q = std::max(0.0, std::min(1.0, q));
+            const size_t idx = static_cast<size_t>(q * static_cast<double>(values.size() - 1));
+            return values[idx];
+        };
+
+        const double qmin = quantile_at(v.quantile_low);
+        const double qmax = quantile_at(v.quantile_high);
+        if (!std::isfinite(qmin) || !std::isfinite(qmax) || qmax <= qmin)
+            return out;
+
+        const double fallback_span = std::max(1.0, v.xmax - v.xmin);
+        const double nominal_fine_width = fallback_span / static_cast<double>(v.nbins);
+        const double core_span = std::max(nominal_fine_width, qmax - qmin);
+        const double margin = std::max(nominal_fine_width, 0.08 * core_span);
+
+        out.xmin = std::max(v.physical_xmin, qmin - margin);
+        out.xmax = qmax + margin;
+
+        const double span = std::max(nominal_fine_width, out.xmax - out.xmin);
+        int dynamic_nbins = static_cast<int>(std::ceil(span / nominal_fine_width));
         dynamic_nbins = std::max(12, dynamic_nbins);
         out.nbins = dynamic_nbins;
 
-        const double padded_width = span / static_cast<double>(std::max(1, dynamic_nbins - 2));
-        out.xmin = global_min - padded_width;
-        out.xmax = global_max + padded_width;
+        if (out.xmax <= out.xmin)
+            return DynamicAxis{v.nbins, v.xmin, v.xmax};
 
         return out;
     };
 
     for (const auto &v : vars_1d)
     {
-        const DynamicAxis axis = build_dynamic_axis(v.expr, v.nbins, v.xmin, v.xmax);
+        const DynamicAxis axis = build_dynamic_axis(v);
         opt.x_title = v.x_title.empty() ? v.expr : v.x_title;
+        opt.y_title = v.y_title.empty() ? "Events / bin" : v.y_title;
 
         // `make_spec(name, ...)` controls plot/hist naming; `spec.expr` controls what is drawn.
         TH1DModel spec = make_spec(v.name, axis.nbins, axis.xmin, axis.xmax, weight);
