@@ -360,6 +360,7 @@ void StackedHist::draw_stack_and_unc(TPad *p_main, double &max_y)
     {
         frame->GetXaxis()->SetNdivisions(510);
         frame->GetXaxis()->SetTickLength(0.02);
+        frame->GetXaxis()->CenterTitle(true);
         if (!opt_.x_title.empty())
         {
             frame->GetXaxis()->SetTitle(opt_.x_title.c_str());
@@ -425,6 +426,7 @@ void StackedHist::draw_ratio(TPad *p_ratio)
     ratio->GetYaxis()->SetTitleSize(0.10);
     ratio->GetYaxis()->SetTitleOffset(0.4);
     ratio->GetYaxis()->SetTitle("Data / MC");
+    ratio->GetXaxis()->CenterTitle(true);
     ratio->GetXaxis()->SetTitle(opt_.x_title.empty() ? data_hist_->GetXaxis()->GetTitle() : opt_.x_title.c_str());
 
     ratio->Draw("E1");
