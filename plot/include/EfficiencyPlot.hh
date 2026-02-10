@@ -54,6 +54,18 @@ class EfficiencyPlot
         TEfficiency::EStatOption stat = TEfficiency::kFCP;
         bool use_weighted_events = false;
 
+        // --- Presentation / logging ---
+        // Do NOT draw denom/numer/overall eff text on the plot (cleaner, publication-like).
+        // Instead print to stdout (see print_stats).
+        bool draw_stats_text = false;
+
+        // Print denom/numer/overall eff for each saved plot.
+        bool print_stats = true;
+
+        // Avoid scientific-notation "×10^{n}" on the left (counts) axis.
+        // This also prevents the exponent from being clipped by small top margins.
+        bool no_exponent_y = true;
+
         std::vector<std::string> extra_text_lines;
     };
 

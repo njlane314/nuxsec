@@ -168,8 +168,6 @@ int EfficiencyPlot::compute(ROOT::RDF::RNode denom_node, ROOT::RDF::RNode pass_n
     n_pass_ = 0;
 
     const std::string nan_guard = spec_.expr + " == " + spec_.expr;
-    std::cout << "[EfficiencyPlot] compute expr='" << spec_.expr
-              << "' weight='" << spec_.weight << "'\n";
     ROOT::RDF::RNode denom_finite = denom_node.Filter(nan_guard);
     ROOT::RDF::RNode pass_finite = pass_node.Filter(nan_guard);
 
@@ -301,15 +299,20 @@ int EfficiencyPlot::draw_and_save(const std::string &file_stem,
 
     const std::string out_path = out_dir + "/" + stem + "." + out_fmt;
 
+    const double eff_all =
+        (n_denom_ > 0 ? static_cast<double>(n_pass_) / static_cast<double>(n_denom_) : 0.0);
+
     TCanvas c(("c_" + stem).c_str(), "", 900, 700);
 
     TPad p_plot("p_plot", "p_plot", 0.0, 0.0, 1.0, 0.85);
     TPad p_leg("p_leg", "p_leg", 0.0, 0.85, 1.0, 1.0);
 
     p_leg.SetBottomMargin(0.0);
-    p_leg.SetTopMargin(0.15);
+    // Too much top margin makes the legend pad look "floaty".
+    p_leg.SetTopMargin(0.05);
 
-    p_plot.SetTopMargin(0.02);
+    // Give some room so axis offsets / exponents never clip at the top.
+    p_plot.SetTopMargin(0.06);
     p_plot.SetBottomMargin(0.12);
     p_plot.SetLeftMargin(0.15);
     // Leave enough space for the right-hand (efficiency) axis title/labels.
@@ -323,6 +326,8 @@ int EfficiencyPlot::draw_and_save(const std::string &file_stem,
     TLegend leg(0.10, 0.00, 0.90, 1.00);
     leg.SetBorderSize(0);
     leg.SetNColumns(2);
+    leg.SetFillStyle(0);
+    leg.SetTextFont(42);
 
     p_plot.cd();
     if (cfg_.logy)
@@ -334,9 +339,11 @@ int EfficiencyPlot::draw_and_save(const std::string &file_stem,
     std::unique_ptr<TH1D> h_tot_draw(static_cast<TH1D *>(h_total_->Clone("h_tot_draw")));
     std::unique_ptr<TH1D> h_pas_draw(h_passed_ ? static_cast<TH1D *>(h_passed_->Clone("h_pas_draw")) : nullptr);
     h_tot_draw->SetDirectory(nullptr);
+    h_tot_draw->SetStats(0);
     if (h_pas_draw)
     {
         h_pas_draw->SetDirectory(nullptr);
+        h_pas_draw->SetStats(0);
     }
 
     const std::string x_title = cfg_.x_title.empty() ? spec_.expr : cfg_.x_title;
@@ -350,26 +357,36 @@ int EfficiencyPlot::draw_and_save(const std::string &file_stem,
             h_tot_draw->SetLineColor(1);
             h_tot_draw->SetLineWidth(2);
             h_tot_draw->SetFillStyle(0);
-            hs.Add(h_tot_draw.get(), "E0");
+            // "HIST" looks much cleaner than "E0" (which produces tick-mark errorbar styling).
+            hs.Add(h_tot_draw.get(), "HIST");
             leg.AddEntry(h_tot_draw.get(), cfg_.legend_total.c_str(), "L");
         }
 
         if (cfg_.draw_passed_hist && h_pas_draw)
         {
-            h_pas_draw->SetLineColor(3);
+            // Slightly darker green than kGreen for readability.
+            h_pas_draw->SetLineColor(kGreen + 2);
             h_pas_draw->SetLineWidth(2);
             h_pas_draw->SetFillStyle(0);
-            hs.Add(h_pas_draw.get(), "E0");
+            hs.Add(h_pas_draw.get(), "HIST");
             leg.AddEntry(h_pas_draw.get(), cfg_.legend_passed.c_str(), "L");
         }
 
-        hs.Draw("nostack E0");
+        hs.Draw("nostack HIST");
+        if (cfg_.no_exponent_y)
+            hs.GetYaxis()->SetNoExponent(true);
 
         if (!cfg_.logy)
         {
             const double ymax = std::max(1.0, hs.GetMaximum("nostack"));
             hs.SetMaximum(1.25 * ymax);
             hs.SetMinimum(0.0);
+        }
+        else
+        {
+            // log-y requires strictly positive minimum. Use a small floor to avoid empty pads.
+            // (We avoid scanning bins here; this is a simple, robust default.)
+            hs.SetMinimum(0.5);
         }
 
         p_plot.Update();
@@ -378,6 +395,7 @@ int EfficiencyPlot::draw_and_save(const std::string &file_stem,
     {
         g_eff_->SetTitle((";" + x_title + ";" + cfg_.y_eff_title).c_str());
         g_eff_->Draw("AP");
+        g_eff_->GetYaxis()->SetRangeUser(cfg_.eff_ymin, cfg_.eff_ymax);
         p_plot.Update();
     }
 
@@ -417,7 +435,7 @@ int EfficiencyPlot::draw_and_save(const std::string &file_stem,
         g_scaled.SetLineColor(kRed);
         g_scaled.SetMarkerColor(kRed);
         g_scaled.SetMarkerStyle(5);
-        g_scaled.SetMarkerSize(1.6);
+        g_scaled.SetMarkerSize(1.2);
         g_scaled.SetLineWidth(2);
 
         // IMPORTANT:
@@ -431,6 +449,8 @@ int EfficiencyPlot::draw_and_save(const std::string &file_stem,
         axis_tmp.SetTitle(cfg_.y_eff_title.c_str());
         axis_tmp.SetTitleColor(kRed);
         axis_tmp.SetLabelColor(kRed);
+        axis_tmp.SetLineColor(kRed);
+        axis_tmp.SetAxisColor(kRed);
         axis_tmp.SetTitleSize(0.04);
         axis_tmp.SetLabelSize(0.045);
         axis_tmp.SetTitleOffset(1.10);
@@ -452,26 +472,42 @@ int EfficiencyPlot::draw_and_save(const std::string &file_stem,
         g_eff_->SetLineColor(kRed);
         g_eff_->SetMarkerColor(kRed);
         g_eff_->SetMarkerStyle(5);
-        g_eff_->SetMarkerSize(1.6);
+        g_eff_->SetMarkerSize(1.2);
         g_eff_->SetLineWidth(2);
         leg.AddEntry(g_eff_.get(), cfg_.legend_eff.c_str(), "P");
     }
 
+    // Remove "stats text" from the plot (cleaner) and print to stdout instead.
+    if (cfg_.print_stats)
+    {
+        std::cout << "[EfficiencyPlot] " << stem
+                  << "  denom=" << n_denom_
+                  << "  numer=" << n_pass_
+                  << "  overall_eff=" << eff_all
+                  << "  -> " << out_path << "\n";
+    }
+
+    // Optional user-provided annotations (kept separate from stats).
+    if (!cfg_.extra_text_lines.empty() || cfg_.draw_stats_text)
     {
         TLatex lat;
         lat.SetNDC(true);
         lat.SetTextSize(0.035);
 
-        std::ostringstream os1;
-        os1 << "Denom: " << n_denom_ << "   Numer: " << n_pass_;
-        lat.DrawLatex(0.16, 0.92, os1.str().c_str());
+        double y = 0.92;
+        if (cfg_.draw_stats_text)
+        {
+            std::ostringstream os1;
+            os1 << "Denom: " << n_denom_ << "   Numer: " << n_pass_;
+            lat.DrawLatex(0.16, y, os1.str().c_str());
+            y -= 0.04;
 
-        std::ostringstream os2;
-        const double eff_all = n_denom_ > 0 ? static_cast<double>(n_pass_) / static_cast<double>(n_denom_) : 0.0;
-        os2 << "Overall eff: " << eff_all;
-        lat.DrawLatex(0.16, 0.88, os2.str().c_str());
+            std::ostringstream os2;
+            os2 << "Overall eff: " << eff_all;
+            lat.DrawLatex(0.16, y, os2.str().c_str());
+            y -= 0.04;
+        }
 
-        double y = 0.84;
         for (const auto &line : cfg_.extra_text_lines)
         {
             lat.DrawLatex(0.16, y, line.c_str());
@@ -485,7 +521,6 @@ int EfficiencyPlot::draw_and_save(const std::string &file_stem,
     leg.Draw();
 
     c.SaveAs(out_path.c_str());
-    std::cout << "[EfficiencyPlot] wrote " << out_path << "\n";
     return 0;
 }
 
