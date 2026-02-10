@@ -5,7 +5,7 @@
  * @brief Draw only the stacked-category legend (no statistics box).
  *
  * Usage:
- *   root -l -q 'plot/macro/plotLegendOnlyNoStats.C("legend_only.png")'
+ *   root -l -q 'plot/macro/plotLegendOnlyNoStats.C("legend_only_no_stats.pdf")'
  */
 
 #include <string>
@@ -47,7 +47,7 @@ std::vector<LegendEntry> default_entries()
 }
 } // namespace
 
-void plotLegendOnlyNoStats(const char *output_name = "legend_only_no_stats.png")
+void plotLegendOnlyNoStats(const char *output_name = "legend_only_no_stats.pdf")
 {
     gStyle->SetOptStat(0);
 
