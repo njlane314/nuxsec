@@ -54,6 +54,10 @@ void scan_directory(TDirectory* directory, const TString& directory_path, int& t
   TIter next_key(directory->GetListOfKeys());
   TKey* key = NULL;
   while ((key = dynamic_cast<TKey*>(next_key())) != NULL) {
+    TClass* key_class = TClass::GetClass(key->GetClassName());
+    const bool is_tree_key = key_class != NULL && key_class->InheritsFrom(TTree::Class());
+    const bool is_directory_key = key_class != NULL && key_class->InheritsFrom(TDirectory::Class());
+
     TObject* object = key->ReadObj();
     if (object == NULL) {
       continue;
@@ -65,14 +69,14 @@ void scan_directory(TDirectory* directory, const TString& directory_path, int& t
     }
     object_path += key->GetName();
 
-    if (object->InheritsFrom(TTree::Class())) {
+    if (is_tree_key || object->InheritsFrom(TTree::Class())) {
       TTree* tree = dynamic_cast<TTree*>(object);
       print_tree(object_path, tree);
       ++tree_count;
       continue;
     }
 
-    if (object->InheritsFrom(TDirectory::Class())) {
+    if (is_directory_key || object->InheritsFrom(TDirectory::Class())) {
       TDirectory* sub_directory = dynamic_cast<TDirectory*>(object);
       scan_directory(sub_directory, object_path, tree_count);
     }
