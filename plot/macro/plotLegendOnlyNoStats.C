@@ -11,9 +11,9 @@
 #include <string>
 #include <vector>
 
-#include "TH1D.h"
 #include "TCanvas.h"
 #include "TColor.h"
+#include "TH1D.h"
 #include "TLegend.h"
 #include "TStyle.h"
 
@@ -54,16 +54,6 @@ void plotLegendOnlyNoStats(const char *output_name = "legend_only_no_stats.png")
     TCanvas canvas("c_legend_only", "Legend only", 1250, 220);
     canvas.SetFillColor(kWhite);
     canvas.SetFrameFillColor(kWhite);
-
-    TH1D frame("frame", "", 1, 0.0, 1.0);
-    frame.SetStats(0);
-    frame.SetDirectory(nullptr);
-    frame.GetXaxis()->SetLabelSize(0.0);
-    frame.GetYaxis()->SetLabelSize(0.0);
-    frame.GetXaxis()->SetTickLength(0.0);
-    frame.GetYaxis()->SetTickLength(0.0);
-    frame.SetLineColor(kWhite);
-    frame.Draw();
 
     TLegend legend(0.01, 0.05, 0.99, 0.95);
     legend.SetBorderSize(0);
