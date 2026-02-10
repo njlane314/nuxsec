@@ -265,6 +265,8 @@ void StackedHist::build_histograms()
     mc_total_.reset();
     data_hist_.reset();
     sig_hist_.reset();
+    ratio_hist_.reset();
+    ratio_band_.reset();
     signal_events_ = 0.0;
     signal_scale_ = 1.0;
     std::map<int, std::vector<ROOT::RDF::RResultPtr<TH1D>>> booked;
@@ -604,45 +606,48 @@ void StackedHist::draw_ratio(TPad *p_ratio)
     }
     p_ratio->cd();
 
-    auto ratio = std::unique_ptr<TH1D>(static_cast<TH1D *>(
+    ratio_hist_.reset(static_cast<TH1D *>(
         data_hist_->Clone((spec_.id + "_ratio").c_str())));
-    ratio->SetDirectory(nullptr);
-    ratio->Divide(mc_total_.get());
-    ratio->SetTitle("; ;Data / MC");
-    ratio->SetMaximum(1.99);
-    ratio->SetMinimum(0.01);
-    ratio->GetYaxis()->SetNdivisions(505);
-    ratio->GetXaxis()->SetLabelSize(0.10);
-    ratio->GetYaxis()->SetLabelSize(0.10);
-    ratio->GetYaxis()->SetTitleSize(0.10);
-    ratio->GetYaxis()->SetTitleOffset(0.4);
-    ratio->GetYaxis()->SetTitle("Data / MC");
-    ratio->GetXaxis()->CenterTitle(false);
-    ratio->GetXaxis()->SetTitle(opt_.x_title.empty() ? data_hist_->GetXaxis()->GetTitle() : opt_.x_title.c_str());
+    ratio_hist_->SetDirectory(nullptr);
+    ratio_hist_->Divide(mc_total_.get());
+    ratio_hist_->SetTitle("; ;Data / MC");
+    ratio_hist_->SetMaximum(1.99);
+    ratio_hist_->SetMinimum(0.01);
+    ratio_hist_->GetYaxis()->SetNdivisions(505);
+    ratio_hist_->GetXaxis()->SetLabelSize(0.10);
+    ratio_hist_->GetYaxis()->SetLabelSize(0.10);
+    ratio_hist_->GetYaxis()->SetTitleSize(0.10);
+    ratio_hist_->GetYaxis()->SetTitleOffset(0.4);
+    ratio_hist_->GetYaxis()->SetTitle("Data / MC");
+    ratio_hist_->GetXaxis()->CenterTitle(false);
+    ratio_hist_->GetXaxis()->SetTitle(opt_.x_title.empty() ? data_hist_->GetXaxis()->GetTitle() : opt_.x_title.c_str());
 
-    ratio->Draw("E1");
+    ratio_hist_->Draw("E1");
 
-    std::unique_ptr<TH1D> band;
     if (opt_.show_ratio_band)
     {
-        band.reset(static_cast<TH1D *>(mc_total_->Clone((spec_.id + "_ratio_band").c_str())));
-        band->SetDirectory(nullptr);
-        const int nb = band->GetNbinsX();
+        ratio_band_.reset(static_cast<TH1D *>(mc_total_->Clone((spec_.id + "_ratio_band").c_str())));
+        ratio_band_->SetDirectory(nullptr);
+        const int nb = ratio_band_->GetNbinsX();
         for (int i = 1; i <= nb; ++i)
         {
             const double m = mc_total_->GetBinContent(i);
             const double em = mc_total_->GetBinError(i);
-            band->SetBinContent(i, 1.0);
-            band->SetBinError(i, (m > 0 ? em / m : 0.0));
+            ratio_band_->SetBinContent(i, 1.0);
+            ratio_band_->SetBinError(i, (m > 0 ? em / m : 0.0));
         }
-        band->SetFillColor(kBlack);
-        band->SetFillStyle(3004);
-        band->SetLineColor(kBlack);
-        band->SetMarkerSize(0);
-        band->Draw("E2 SAME");
+        ratio_band_->SetFillColor(kBlack);
+        ratio_band_->SetFillStyle(3004);
+        ratio_band_->SetLineColor(kBlack);
+        ratio_band_->SetMarkerSize(0);
+        ratio_band_->Draw("E2 SAME");
+    }
+    else
+    {
+        ratio_band_.reset();
     }
 
-    ratio->Draw("E1 SAME");
+    ratio_hist_->Draw("E1 SAME");
 }
 
 void StackedHist::draw_legend(TPad *p)
