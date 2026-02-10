@@ -7,7 +7,7 @@
 //
 // Notes:
 //   - Input is an event_list_<analysis>.root (same event-list mode as plotStackedHistTrueVertex.C).
-//   - ColumnDerivationService is run so "analysis_channels" exists.
+//   - Expects input event list to already contain "analysis_channels".
 //   - Prints per-channel counts and weighted yields (MC/EXT weighted by mc_weight).
 //   - Data (if requested) is printed as counts (no weight).
 //   - Channel names/labels follow PlotChannels.hh (nu::Channels).
@@ -29,7 +29,6 @@
 #include <TFile.h>
 #include <TH1D.h>
 
-#include "ColumnDerivationService.hh"
 #include "EventListIO.hh"
 #include "PlotChannels.hh"
 #include "PlottingHelper.hh"
@@ -71,6 +70,13 @@ Totals totals_from_hists(const TH1D &h_counts, const TH1D &h_w)
     t.sumw = h_w.IntegralAndError(1, h_w.GetNbinsX(), err);
     t.err = err;
     return t;
+}
+
+
+bool has_column(ROOT::RDF::RNode node, const std::string &name)
+{
+    const auto columns = node.GetColumnNames();
+    return std::find(columns.begin(), columns.end(), name) != columns.end();
 }
 
 bool is_unmapped_channel_code(int code)
@@ -131,26 +137,14 @@ int printAnalysisChannelStats(const std::string &samples_tsv = "",
 
     ROOT::RDF::RNode node_data = filter_by_mask(base, mask_data);
 
-    // Run analysis column derivations so "analysis_channels" exists.
-    const auto &cds = ColumnDerivationService::instance();
-
-    ProcessorEntry rec_mc;
-    rec_mc.source = Type::kMC;
-
-    ProcessorEntry rec_ext;
-    rec_ext.source = Type::kExt;
-
-    node_mc = cds.define(node_mc, rec_mc);
-    node_ext = cds.define(node_ext, rec_ext);
-
-    if (include_data)
+    if (!has_column(base, "analysis_channels"))
     {
-        ProcessorEntry rec_data;
-        rec_data.source = Type::kData;
-        node_data = cds.define(node_data, rec_data);
+        std::cerr << "[printAnalysisChannelStats] missing required column 'analysis_channels' in input event list.\n"
+                  << "[printAnalysisChannelStats] this macro expects an event list that already includes derived channels.\n";
+        return 1;
     }
 
-    // Apply extra selection after derivations.
+    // Apply extra selection.
     if (!extra_sel.empty())
     {
         node_mc = node_mc.Filter(extra_sel);
