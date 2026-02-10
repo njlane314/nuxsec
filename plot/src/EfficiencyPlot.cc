@@ -16,6 +16,7 @@
 #include <string>
 
 #include <TCanvas.h>
+#include <TColor.h>
 #include <TGaxis.h>
 #include <THStack.h>
 #include <TLatex.h>
@@ -302,6 +303,9 @@ int EfficiencyPlot::draw_and_save(const std::string &file_stem,
     const double eff_all =
         (n_denom_ > 0 ? static_cast<double>(n_pass_) / static_cast<double>(n_denom_) : 0.0);
 
+    const int bright_green = TColor::GetColor("#00cc00");
+    const int bright_red = TColor::GetColor("#ff0000");
+
     TCanvas c(("c_" + stem).c_str(), "", 900, 700);
 
     TPad p_plot("p_plot", "p_plot", 0.0, 0.0, 1.0, 0.85);
@@ -364,8 +368,7 @@ int EfficiencyPlot::draw_and_save(const std::string &file_stem,
 
         if (cfg_.draw_passed_hist && h_pas_draw)
         {
-            // Slightly darker green than kGreen for readability.
-            h_pas_draw->SetLineColor(kGreen + 2);
+            h_pas_draw->SetLineColor(bright_green);
             h_pas_draw->SetLineWidth(2);
             h_pas_draw->SetFillStyle(0);
             hs.Add(h_pas_draw.get(), "HIST");
@@ -432,8 +435,8 @@ int EfficiencyPlot::draw_and_save(const std::string &file_stem,
                                    eyh);
         }
 
-        g_scaled.SetLineColor(kRed);
-        g_scaled.SetMarkerColor(kRed);
+        g_scaled.SetLineColor(bright_red);
+        g_scaled.SetMarkerColor(bright_red);
         g_scaled.SetMarkerStyle(5);
         g_scaled.SetMarkerSize(1.2);
         g_scaled.SetLineWidth(2);
@@ -447,9 +450,9 @@ int EfficiencyPlot::draw_and_save(const std::string &file_stem,
                         p_plot.GetUxmax(), left_max,
                         eff_min, eff_max, 510, "+L");
         axis_tmp.SetTitle(cfg_.y_eff_title.c_str());
-        axis_tmp.SetTitleColor(kRed);
-        axis_tmp.SetLabelColor(kRed);
-        axis_tmp.SetLineColor(kRed);
+        axis_tmp.SetTitleColor(bright_red);
+        axis_tmp.SetLabelColor(bright_red);
+        axis_tmp.SetLineColor(bright_red);
         axis_tmp.SetTitleSize(0.04);
         axis_tmp.SetLabelSize(0.045);
         axis_tmp.SetTitleOffset(1.10);
@@ -468,8 +471,8 @@ int EfficiencyPlot::draw_and_save(const std::string &file_stem,
     }
     else
     {
-        g_eff_->SetLineColor(kRed);
-        g_eff_->SetMarkerColor(kRed);
+        g_eff_->SetLineColor(bright_red);
+        g_eff_->SetMarkerColor(bright_red);
         g_eff_->SetMarkerStyle(5);
         g_eff_->SetMarkerSize(1.2);
         g_eff_->SetLineWidth(2);
