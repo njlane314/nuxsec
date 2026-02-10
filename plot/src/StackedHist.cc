@@ -429,6 +429,13 @@ void StackedHist::build_histograms()
         sum->SetLineColor(kBlack);
         sum->SetLineWidth(1);
         stack_->Add(sum.get(), "HIST");
+        if (auto *hists = stack_->GetHists())
+        {
+            // THStack owns its histogram list by default. We also own these
+            // histograms via std::unique_ptr in mc_ch_hists_, so disable list
+            // ownership to avoid double-deletes when StackedHist tears down.
+            hists->SetOwner(kFALSE);
+        }
         mc_ch_hists_.push_back(std::move(sum));
         chan_order_.push_back(ch);
         chan_event_yields_.push_back(cy.second); // pre-density event yield
