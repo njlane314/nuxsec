@@ -184,20 +184,24 @@ struct histogram_bundle
         const Int_t col_fhc = TColor::GetColor("#ffb300");
         const Int_t col_rhc = TColor::GetColor("#ff1744");
 
+        // Solid fills, but avoid distracting black outlines on the stacked bars.
         bnb.SetFillColor(col_bnb);
-        bnb.SetLineColor(kBlack);
+        bnb.SetFillStyle(1001);
+        bnb.SetLineColor(col_bnb);
         bnb.SetLineWidth(1);
         bnb.SetBarWidth(1.0);
         bnb.SetBarOffset(0.0);
 
         fhc.SetFillColor(col_fhc);
-        fhc.SetLineColor(kBlack);
+        fhc.SetFillStyle(1001);
+        fhc.SetLineColor(col_fhc);
         fhc.SetLineWidth(1);
         fhc.SetBarWidth(1.0);
         fhc.SetBarOffset(0.0);
 
         rhc.SetFillColor(col_rhc);
-        rhc.SetLineColor(kBlack);
+        rhc.SetFillStyle(1001);
+        rhc.SetLineColor(col_rhc);
         rhc.SetLineWidth(1);
         rhc.SetBarWidth(1.0);
         rhc.SetBarOffset(0.0);
@@ -276,7 +280,7 @@ cumulative_data compute_cumulative_data(const histogram_bundle &histograms, int 
     if (max_stack > 0)
     {
         const double nice = std::ceil(max_stack / 5.0) * 5.0;
-        data.y_max = nice * 1.08;
+        data.y_max = nice * 1.05;
     }
     else data.y_max = 1.0;
     data.y_scale = (max_stack > 0) ? (data.y_max / max_stack) : 1.0;
@@ -297,20 +301,34 @@ cumulative_data compute_cumulative_data(const histogram_bundle &histograms, int 
 
 void draw_plot(const histogram_bundle &histograms, const cumulative_data &data, const std::string &outfile)
 {
-    // Aspect and margins closer to the reference figure.
-    TCanvas canvas("c", "POT timeline",
-                   kCanvasWidth,
-                   kCanvasHeight);
-    const double ml = 0.08;
-    const double mr = 0.12;
-    const double split = 0.82;
+    // Tighten layout: reduce dead space while keeping labels un-clipped.
+    TCanvas canvas("c", "POT timeline", kCanvasWidth, kCanvasHeight);
+    canvas.SetFillColor(0);
+    canvas.SetBorderMode(0);
+    canvas.SetFrameBorderMode(0);
+    canvas.SetTopMargin(0);
+    canvas.SetBottomMargin(0);
+    canvas.SetLeftMargin(0);
+    canvas.SetRightMargin(0);
+
+    const double ml = 0.075;
+    const double mr = 0.105;
+    const double split = 0.86;
     TPad *main_pad = new TPad("pad_main", "pad_main", 0.0, 0.0, 1.0, split);
     TPad *legend_pad = new TPad("pad_legend", "pad_legend", 0.0, split, 1.0, 1.0);
+
+    main_pad->SetFillStyle(0);
+    main_pad->SetBorderMode(0);
+    main_pad->SetFrameBorderMode(0);
+    legend_pad->SetFillStyle(0);
+    legend_pad->SetBorderMode(0);
+    legend_pad->SetFrameBorderMode(0);
+
     main_pad->SetTopMargin(0.02);
-    main_pad->SetBottomMargin(0.20);
+    main_pad->SetBottomMargin(0.15);
     main_pad->SetLeftMargin(ml);
     main_pad->SetRightMargin(mr);
-    legend_pad->SetTopMargin(0.08);
+    legend_pad->SetTopMargin(0.04);
     legend_pad->SetBottomMargin(0.02);
     // Match main-pad margins so the legend aligns with the plot frame (between y-axes).
     legend_pad->SetLeftMargin(ml);
@@ -322,6 +340,9 @@ void draw_plot(const histogram_bundle &histograms, const cumulative_data &data, 
     main_pad->SetTickx(1);
     main_pad->SetTicky(0);
 
+    const double s_main = 0.040;
+    const double s_title = 0.038;
+
     THStack stack("hs", "");
     stack.Add(const_cast<TH1D *>(&histograms.bnb));
     stack.Add(const_cast<TH1D *>(&histograms.fhc));
@@ -331,14 +352,14 @@ void draw_plot(const histogram_bundle &histograms, const cumulative_data &data, 
     stack.GetXaxis()->SetTimeOffset(0, "gmt");
     stack.GetXaxis()->SetTimeFormat("%d/%b/%Y");
     stack.GetXaxis()->SetNdivisions(509);
-    stack.GetXaxis()->SetLabelSize(0.045);
-    stack.GetXaxis()->SetLabelOffset(0.018);
+    stack.GetXaxis()->SetLabelSize(s_main);
+    stack.GetXaxis()->SetLabelOffset(0.012);
 
     stack.GetYaxis()->SetTitle("POT per week (x 10^{18})");
     stack.GetYaxis()->SetNdivisions(507);
-    stack.GetYaxis()->SetTitleSize(0.040);
-    stack.GetYaxis()->SetLabelSize(0.045);
-    stack.GetYaxis()->SetTitleOffset(0.70);
+    stack.GetYaxis()->SetTitleSize(s_title);
+    stack.GetYaxis()->SetLabelSize(s_main);
+    stack.GetYaxis()->SetTitleOffset(0.78);
 
     stack.SetMaximum(data.y_max);
     stack.SetMinimum(0);
@@ -403,19 +424,19 @@ void draw_plot(const histogram_bundle &histograms, const cumulative_data &data, 
     right_axis.SetLineWidth(2);
     right_axis.SetLabelFont(42);
     right_axis.SetTitleFont(42);
-    right_axis.SetLabelSize(0.045);
-    right_axis.SetTitleSize(0.040);
-    right_axis.SetTitleOffset(0.80);
-    right_axis.SetTickSize(0.02);
+    right_axis.SetLabelSize(s_main);
+    right_axis.SetTitleSize(s_title);
+    right_axis.SetTitleOffset(0.95);
+    right_axis.SetTickSize(0.018);
     right_axis.SetTitle("Cumulative POT (x 10^{20})");
     right_axis.Draw();
 
     legend_pad->cd();
     // Keep legend strictly within the plot-frame x-extent (between LHS and RHS axes).
-    const double lx1 = legend_pad->GetLeftMargin() + 0.02;
-    const double lx2 = 1.0 - legend_pad->GetRightMargin() - 0.02;
-    const double ly1 = legend_pad->GetBottomMargin() + 0.02;
-    const double ly2 = 1.0 - legend_pad->GetTopMargin() - 0.02;
+    const double lx1 = legend_pad->GetLeftMargin() + 0.01;
+    const double lx2 = 1.0 - legend_pad->GetRightMargin() - 0.01;
+    const double ly1 = legend_pad->GetBottomMargin() + 0.01;
+    const double ly2 = 1.0 - legend_pad->GetTopMargin() - 0.01;
     TLegend legend(lx1, ly1, lx2, ly2);
     legend.SetBorderSize(0);
     legend.SetFillStyle(0);
@@ -423,10 +444,9 @@ void draw_plot(const histogram_bundle &histograms, const cumulative_data &data, 
     legend.SetNColumns(2);
     legend.SetColumnSeparation(0.08);
     legend.SetEntrySeparation(0.00);
-    legend.SetMargin(0.25);
-    const double s_main = 0.045;
-    const double s_leg = s_main * (split / (1.0 - split));
-    legend.SetTextSize(s_leg);
+    legend.SetMargin(0.22);
+    // Slightly smaller than axis labels to fit a shorter legend pad cleanly.
+    legend.SetTextSize(s_main * (split / (1.0 - split)) * 0.70);
     legend.AddEntry(&histograms.bnb, "BNB (\\nu)", "f");
     legend.AddEntry(&histograms.fhc, "NuMI-FHC (\\nu)", "f");
     legend.AddEntry(&histograms.rhc, "NuMI-RHC (\\bar{\\nu})", "f");
