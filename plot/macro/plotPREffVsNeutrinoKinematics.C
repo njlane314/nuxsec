@@ -140,7 +140,7 @@ int plotPREffVsNeutrinoKinematics(const std::string &samples_tsv = "",
         EfficiencyPlot::Config cfg;
         cfg.x_title = v.x_title;
         cfg.y_counts_title = "Events";
-        cfg.y_eff_title = "Pattern recognition efficiency";
+        cfg.y_eff_title = "Efficiency";
         cfg.legend_total = "Eligible truth (denom)";
         cfg.legend_passed = "Assigned (numer)";
         cfg.legend_eff = "Efficiency";
