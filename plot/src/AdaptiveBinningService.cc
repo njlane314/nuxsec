@@ -240,10 +240,33 @@ std::vector<double> AdaptiveBinningService::edges_min_stat(const TH1D &fine,
     std::vector<Stat> stats;
     stats.reserve(static_cast<std::size_t>(nb));
 
+    const bool keep_first_empty =
+        (nb >= 1 && std::abs(h.GetBinContent(1)) <= kEdgeEps && std::abs(h.GetBinError(1)) <= kEdgeEps);
+    const bool keep_last_empty =
+        (nb >= 2 && std::abs(h.GetBinContent(nb)) <= kEdgeEps && std::abs(h.GetBinError(nb)) <= kEdgeEps);
+
+    int first_bin = 1;
+    int last_bin = nb;
+
+    if (keep_first_empty)
+    {
+        const double up = ax->GetBinUpEdge(1);
+        if (up > edges.back() + kEdgeEps)
+        {
+            edges.push_back(up);
+        }
+        first_bin = 2;
+    }
+
+    if (keep_last_empty)
+    {
+        last_bin = nb - 1;
+    }
+
     double acc_w = 0.0;
     double acc_w2 = 0.0;
 
-    for (int i = 1; i <= nb; ++i)
+    for (int i = first_bin; i <= last_bin; ++i)
     {
         const double w = h.GetBinContent(i);
         const double e = h.GetBinError(i);
@@ -263,11 +286,23 @@ std::vector<double> AdaptiveBinningService::edges_min_stat(const TH1D &fine,
         }
     }
 
-    const double xmax = ax->GetBinUpEdge(nb);
-    if (edges.back() < xmax - kEdgeEps)
+    if (last_bin >= first_bin)
     {
-        edges.push_back(xmax);
-        stats.push_back(Stat{acc_w, acc_w2});
+        const double interior_xmax = ax->GetBinUpEdge(last_bin);
+        if (edges.back() < interior_xmax - kEdgeEps)
+        {
+            edges.push_back(interior_xmax);
+            stats.push_back(Stat{acc_w, acc_w2});
+        }
+    }
+
+    if (keep_last_empty)
+    {
+        const double xmax = ax->GetBinUpEdge(nb);
+        if (xmax > edges.back() + kEdgeEps)
+        {
+            edges.push_back(xmax);
+        }
     }
 
     while (stats.size() >= 2)
@@ -282,9 +317,11 @@ std::vector<double> AdaptiveBinningService::edges_min_stat(const TH1D &fine,
         stats[stats.size() - 2].sumw2 += last.sumw2;
         stats.pop_back();
 
-        if (edges.size() >= 3)
+        const std::size_t min_edges = keep_last_empty ? 4 : 3;
+        if (edges.size() >= min_edges)
         {
-            edges.erase(edges.end() - 2);
+            auto erase_it = keep_last_empty ? (edges.end() - 3) : (edges.end() - 2);
+            edges.erase(erase_it);
         }
         else
         {
