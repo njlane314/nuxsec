@@ -21,7 +21,9 @@
 #include <ROOT/RDataFrame.hxx>
 #include <ROOT/RDFHelpers.hxx>
 #include <TFile.h>
+#include <TH1D.h>
 
+#include "AdaptiveBinningService.hh"
 #include "AnalysisConfigService.hh"
 #include "ColumnDerivationService.hh"
 #include "EventListIO.hh"
@@ -158,7 +160,56 @@ int plot_stacked_hist_impl(const std::string &expr,
     opt.beamline = el.beamline_label();
 
     const std::string weight = mc_weight.empty() ? "w_nominal" : mc_weight;
-    TH1DModel spec = make_spec(expr, nbins, xmin, xmax, weight);
+
+    std::vector<std::unique_ptr<TH1D>> owned_fine_hists;
+    std::vector<const TH1D *> fine_hists;
+    owned_fine_hists.reserve(3);
+    fine_hists.reserve(3);
+
+    const auto add_fine_hist = [&](ROOT::RDF::RNode node, const std::string &name) {
+        auto h = node.Histo1D({name.c_str(), "", nbins, xmin, xmax}, expr, weight);
+        std::unique_ptr<TH1D> h_clone(static_cast<TH1D *>(h->Clone((name + "_clone").c_str())));
+        h_clone->SetDirectory(nullptr);
+        fine_hists.push_back(h_clone.get());
+        owned_fine_hists.push_back(std::move(h_clone));
+    };
+
+    add_fine_hist(e_mc.selection.nominal.node, "h_reco_vtx_axis_mc");
+    add_fine_hist(e_ext.selection.nominal.node, "h_reco_vtx_axis_ext");
+    add_fine_hist(e_data.selection.nominal.node, "h_reco_vtx_axis_data");
+
+    int axis_nbins = nbins;
+    double axis_xmin = xmin;
+    double axis_xmax = xmax;
+
+    const auto cfg = AdaptiveBinningService::config_from(opt);
+    auto h_sum = AdaptiveBinningService::instance().sum_hists(
+        fine_hists,
+        "h_reco_vtx_axis_sum",
+        cfg.fold_overflow);
+
+    if (h_sum)
+    {
+        const auto edges = AdaptiveBinningService::instance().edges_min_stat(*h_sum, cfg);
+        if (edges.size() >= 2)
+        {
+            axis_nbins = static_cast<int>(edges.size()) - 1;
+            axis_xmin = edges.front();
+            axis_xmax = edges.back();
+        }
+    }
+
+    std::string draw_expr = expr;
+    if (axis_nbins > 0)
+    {
+        const double bin_width = (axis_xmax - axis_xmin) / static_cast<double>(axis_nbins);
+        axis_xmax += 2.0 * bin_width;
+        axis_nbins += 2;
+        draw_expr = "(" + expr + ") + " + std::to_string(bin_width);
+    }
+
+    TH1DModel spec = make_spec(expr, axis_nbins, axis_xmin, axis_xmax, weight);
+    spec.expr = draw_expr;
     spec.sel = Preset::Empty;
 
     plotter.draw_stack(spec, mc, data);
