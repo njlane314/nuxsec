@@ -255,8 +255,16 @@ int plot_stacked_hist_impl(const std::string &samples_tsv,
                               int nbins,
                               double xmin,
                               double xmax,
-                              const std::string &x_title) {
-        const DynamicAxis axis = build_dynamic_axis(expr, nbins, xmin, xmax);
+                              const std::string &x_title,
+                              bool add_leading_empty_bin = false) {
+        DynamicAxis axis = build_dynamic_axis(expr, nbins, xmin, xmax);
+
+        if (add_leading_empty_bin && axis.nbins > 0)
+        {
+            const double bin_width = (axis.xmax - axis.xmin) / static_cast<double>(axis.nbins);
+            axis.xmin -= bin_width;
+            axis.nbins += 1;
+        }
 
         opt.x_title = x_title.empty() ? expr : x_title;
         debug_log("drawing start: expr=" + expr +
@@ -283,7 +291,7 @@ int plot_stacked_hist_impl(const std::string &samples_tsv,
 
     const int nbins = 50;
     draw_one("nu_vtx_z", nbins, -50.0, 1100.0, "True neutrino vertex z [cm]");
-    draw_one("nu_vtx_x", nbins, -50.0, 300.0, "True neutrino vertex x [cm]");
+    draw_one("nu_vtx_x", nbins, -50.0, 300.0, "True neutrino vertex x [cm]", true);
     draw_one("nu_vtx_y", nbins, -180.0, 180.0, "True neutrino vertex y [cm]");
 
     debug_log("completed all draw calls");
