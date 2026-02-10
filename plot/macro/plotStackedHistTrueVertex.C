@@ -218,8 +218,8 @@ int plot_stacked_hist_impl(const std::string &samples_tsv,
                 return;
             }
 
-            const double local_min = node.Min<double>(expr).GetValue();
-            const double local_max = node.Max<double>(expr).GetValue();
+            const double local_min = static_cast<double>(node.Min(expr).GetValue());
+            const double local_max = static_cast<double>(node.Max(expr).GetValue());
             global_min = std::min(global_min, local_min);
             global_max = std::max(global_max, local_max);
         };
