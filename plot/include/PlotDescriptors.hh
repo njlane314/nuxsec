@@ -77,9 +77,24 @@ struct Options
     // Implementation: fill a fine uniform histogram, then merge bins into variable-width bins
     // derived from TOTAL MC, and rebin all MC/data hists to the same edges.
     bool adaptive_binning = false;
-    double adaptive_min_sumw = 0.0;     // Wmin (<=0 disables this requirement)
-    double adaptive_max_relerr = 0.0;   // relErrMax (<=0 disables this requirement)
-    bool adaptive_fold_overflow = true; // fold under/overflow before edge-making + rebin
+    double adaptive_min_sumw = 0.0;       // Wmin
+    double adaptive_max_relerr = 0.0;     // relErrMax
+    bool adaptive_fold_overflow = true;   // fold under/overflow before edge-making + rebin
+
+    // IMPORTANT: the min-stat algorithm can only MERGE bins. If you fill with the same
+    // coarse binning you intend to plot, the output will look almost uniform because
+    // each coarse bin already passes. This factor controls how much finer we fill
+    // before merging.
+    //
+    // Filled bins = nbins * adaptive_fine_bin_factor (clamped internally).
+    int adaptive_fine_bin_factor = 5;
+
+    // Keep N *fine* bins fixed (unmerged) on each edge. This is useful to leave
+    // constant-width padding bins at the low/high ends (often empty).
+    //
+    // When adaptive_fold_overflow=true, under/overflow are folded into the first/last
+    // NON-edge bin so these edge padding bins can remain empty.
+    int adaptive_edge_bins = 0;
 };
 
 struct TH1DModel
