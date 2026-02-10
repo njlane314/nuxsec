@@ -2,15 +2,13 @@
 #include "TClass.h"
 #include "TDirectory.h"
 #include "TFile.h"
-#include "TH1.h"
 #include "TKey.h"
-#include "TList.h"
-#include "TObject.h"
 #include "TObjArray.h"
 #include "TString.h"
 #include "TTree.h"
 
 #include <cstdio>
+#include <map>
 
 namespace {
 
@@ -48,44 +46,14 @@ void print_tree(const TString& object_path, TTree* tree) {
   print_branch_list(tree->GetListOfBranches(), 2);
 }
 
-void print_key_summary(TKey* key, const TString& object_path, const int indent_level) {
-  if (key == NULL) {
-    return;
-  }
-
-  print_indent(indent_level);
-  std::printf("- %s [%s]\n", object_path.Data(), key->GetClassName());
-}
-
-void print_histogram_preview(TObject* object, const int indent_level) {
-  if (object == NULL) {
-    return;
-  }
-
-  TH1* histogram = dynamic_cast<TH1*>(object);
-  if (histogram == NULL) {
-    return;
-  }
-
-  print_indent(indent_level);
-  std::printf("  bins=%d range=[%.6g, %.6g] entries=%.0f\n",
-              histogram->GetNbinsX(),
-              histogram->GetXaxis()->GetXmin(),
-              histogram->GetXaxis()->GetXmax(),
-              histogram->GetEntries());
-}
-
 void scan_directory(TDirectory* directory,
                     const TString& directory_path,
                     int& tree_count,
                     int& object_count,
-                    const int indent_level) {
+                    std::map<TString, int>& class_counts) {
   if (directory == NULL) {
     return;
   }
-
-  print_indent(indent_level);
-  std::printf("Directory: %s\n", directory_path.Data());
 
   TIter next_key(directory->GetListOfKeys());
   TKey* key = NULL;
@@ -106,7 +74,7 @@ void scan_directory(TDirectory* directory,
     object_path += key->GetName();
 
     ++object_count;
-    print_key_summary(key, object_path, indent_level + 1);
+    class_counts[key->GetClassName()] += 1;
 
     if (is_tree_key || object->InheritsFrom(TTree::Class())) {
       TTree* tree = dynamic_cast<TTree*>(object);
@@ -115,12 +83,17 @@ void scan_directory(TDirectory* directory,
       continue;
     }
 
-    print_histogram_preview(object, indent_level + 1);
-
     if (is_directory_key || object->InheritsFrom(TDirectory::Class())) {
       TDirectory* sub_directory = dynamic_cast<TDirectory*>(object);
-      scan_directory(sub_directory, object_path, tree_count, object_count, indent_level + 2);
+      scan_directory(sub_directory, object_path, tree_count, object_count, class_counts);
     }
+  }
+}
+
+void print_class_summary(const std::map<TString, int>& class_counts) {
+  std::printf("Object types:\n");
+  for (std::map<TString, int>::const_iterator it = class_counts.begin(); it != class_counts.end(); ++it) {
+    std::printf("  - %s: %d\n", it->first.Data(), it->second);
   }
 }
 
@@ -142,8 +115,11 @@ void print_file_tree_summary(const char* file_path) {
 
   int tree_count = 0;
   int object_count = 0;
-  scan_directory(&input_file, input_file.GetName(), tree_count, object_count, 0);
+  std::map<TString, int> class_counts;
+  scan_directory(&input_file, input_file.GetName(), tree_count, object_count, class_counts);
 
+  std::printf("\n");
+  print_class_summary(class_counts);
   std::printf("\nSummary: objects=%d trees=%d\n", object_count, tree_count);
 
   if (tree_count == 0) {
