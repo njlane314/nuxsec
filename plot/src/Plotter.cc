@@ -150,7 +150,11 @@ std::string Plotter::fmt_commas(double value, int precision)
 void Plotter::set_global_style() const
 {
     const int font_style = 42;
-    TStyle *style = new TStyle("PlotterStyle", "Plotter Style");
+    TStyle *style = gROOT->GetStyle("PlotterStyle");
+    if (style == nullptr)
+    {
+        style = new TStyle("PlotterStyle", "Plotter Style");
+    }
     style->SetTitleFont(font_style, "X");
     style->SetTitleFont(font_style, "Y");
     style->SetTitleFont(font_style, "Z");
