@@ -159,14 +159,15 @@ int plot_stacked_hist_impl(const std::string &samples_tsv,
         data.push_back(p_data);
     }
 
-    if (!extra_sel.empty())
-    {
-        debug_log("applying extra selection: " + extra_sel);
-        e_mc.selection.nominal.node = e_mc.selection.nominal.node.Filter(extra_sel);
-        e_ext.selection.nominal.node = e_ext.selection.nominal.node.Filter(extra_sel);
-        if (p_data != nullptr)
-            p_data->selection.nominal.node = p_data->selection.nominal.node.Filter(extra_sel);
-    }
+    const std::string reco_neutrino_slice_sel = "sel_slice";
+    const std::string combined_sel = extra_sel.empty()
+                                         ? reco_neutrino_slice_sel
+                                         : "(" + reco_neutrino_slice_sel + ") && (" + extra_sel + ")";
+    debug_log("applying selection: " + combined_sel);
+    e_mc.selection.nominal.node = e_mc.selection.nominal.node.Filter(combined_sel);
+    e_ext.selection.nominal.node = e_ext.selection.nominal.node.Filter(combined_sel);
+    if (p_data != nullptr)
+        p_data->selection.nominal.node = p_data->selection.nominal.node.Filter(combined_sel);
 
     Plotter plotter;
     auto &opt = plotter.options();
