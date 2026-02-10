@@ -269,6 +269,23 @@ void StackedHist::build_histograms()
     signal_scale_ = 1.0;
     std::map<int, std::vector<ROOT::RDF::RResultPtr<TH1D>>> booked;
     const auto &channels = Channels::mc_keys();
+    const auto cfg = AdaptiveBinningService::config_from(opt_);
+
+    // Adaptive binning can only *merge* bins. If we fill with the same coarse binning
+    // we intend to plot, the output will look nearly uniform because each coarse bin
+    // already satisfies the thresholds. Fill a finer histogram first, then merge.
+    TH1DModel book_spec = spec_;
+    if (cfg.enabled)
+    {
+        const int factor = std::max(1, opt_.adaptive_fine_bin_factor);
+        long long desired = 1LL * book_spec.nbins * factor;
+        // Safety clamp: prevent pathological bin counts.
+        desired = std::min<long long>(desired, 5000);
+        if (desired > book_spec.nbins)
+        {
+            book_spec.nbins = static_cast<int>(desired);
+        }
+    }
 
     for (size_t ie = 0; ie < mc_.size(); ++ie)
     {
@@ -283,7 +300,7 @@ void StackedHist::build_histograms()
         for (int ch : channels)
         {
             auto nf = n.Filter([ch](int c) { return c == ch; }, {"analysis_channels"});
-            auto h = nf.Histo1D(spec_.model("_mc_ch" + std::to_string(ch) + "_src" + std::to_string(ie)), var, spec_.weight);
+            auto h = nf.Histo1D(book_spec.model("_mc_ch" + std::to_string(ch) + "_src" + std::to_string(ie)), var, spec_.weight);
             booked[ch].push_back(h);
         }
     }
@@ -319,7 +336,6 @@ void StackedHist::build_histograms()
 
     // ---- Adaptive min-stat-per-bin rebin (derived from TOTAL MC) ----
     std::vector<double> adaptive_edges;
-    const auto cfg = AdaptiveBinningService::config_from(opt_);
     if (cfg.enabled && !sum_by_channel.empty())
     {
         std::vector<const TH1D *> parts;
@@ -333,7 +349,7 @@ void StackedHist::build_histograms()
         }
 
         auto mc_tot_fine = AdaptiveBinningService::instance().sum_hists(
-            parts, spec_.id + "_mc_total_fine_for_binning", cfg.fold_overflow);
+            parts, spec_.id + "_mc_total_fine_for_binning", cfg);
 
         if (mc_tot_fine)
         {
@@ -353,7 +369,7 @@ void StackedHist::build_histograms()
                         *kv.second,
                         adaptive_edges,
                         spec_.id + "_mc_sum_ch" + std::to_string(kv.first) + "_rebin",
-                        cfg.fold_overflow);
+                        cfg);
                 }
             }
         }
@@ -424,7 +440,7 @@ void StackedHist::build_histograms()
             auto n0 = apply(e->rnode(), spec_.sel, e->selection);
             auto n = (spec_.expr.empty() ? n0 : n0.Define("_nx_expr_", spec_.expr));
             const std::string var = spec_.expr.empty() ? spec_.id : "_nx_expr_";
-            parts.push_back(n.Histo1D(spec_.model("_data_src" + std::to_string(ie)), var));
+            parts.push_back(n.Histo1D(book_spec.model("_data_src" + std::to_string(ie)), var));
         }
         for (auto &rr : parts)
         {
@@ -441,9 +457,8 @@ void StackedHist::build_histograms()
         }
         if (data_hist_ && !adaptive_edges.empty())
         {
-            const auto cfg2 = AdaptiveBinningService::config_from(opt_);
             data_hist_ = AdaptiveBinningService::instance().rebin_to_edges(
-                *data_hist_, adaptive_edges, spec_.id + "_data_rebin", cfg2.fold_overflow);
+                *data_hist_, adaptive_edges, spec_.id + "_data_rebin", cfg);
         }
         if (data_hist_)
         {

@@ -25,6 +25,71 @@ namespace
 {
 constexpr double kEdgeEps = 1e-12;
 
+inline void ensure_sumw2(TH1D &h)
+{
+    // Avoid ROOT warnings: "Sum of squares of weights structure already created"
+    if (h.GetSumw2N() == 0)
+    {
+        h.Sumw2(kTRUE);
+    }
+}
+
+inline std::pair<int, int> fold_target_bins(const TH1D &h, int edge_bins)
+{
+    const int nb = h.GetNbinsX();
+    if (nb <= 0)
+    {
+        return {1, 1};
+    }
+    const int n = std::max(0, edge_bins);
+    int first = 1 + n;
+    int last = nb - n;
+    first = std::max(1, std::min(first, nb));
+    last = std::max(1, std::min(last, nb));
+    if (first > last)
+    {
+        // Degenerate: no interior bins; fall back to outermost bins.
+        first = 1;
+        last = nb;
+    }
+    return {first, last};
+}
+
+inline void fold_overflow_into(TH1D &h, int first_bin, int last_bin)
+{
+    const int nb = h.GetNbinsX();
+    if (nb <= 0)
+    {
+        return;
+    }
+    first_bin = std::max(1, std::min(first_bin, nb));
+    last_bin = std::max(1, std::min(last_bin, nb));
+
+    // Underflow -> first_bin
+    {
+        const double c0 = h.GetBinContent(0);
+        const double e0 = h.GetBinError(0);
+        const double c1 = h.GetBinContent(first_bin);
+        const double e1 = h.GetBinError(first_bin);
+        h.SetBinContent(first_bin, c1 + c0);
+        h.SetBinError(first_bin, std::hypot(e1, e0));
+        h.SetBinContent(0, 0.0);
+        h.SetBinError(0, 0.0);
+    }
+
+    // Overflow -> last_bin
+    {
+        const double co = h.GetBinContent(nb + 1);
+        const double eo = h.GetBinError(nb + 1);
+        const double cn = h.GetBinContent(last_bin);
+        const double en = h.GetBinError(last_bin);
+        h.SetBinContent(last_bin, cn + co);
+        h.SetBinError(last_bin, std::hypot(en, eo));
+        h.SetBinContent(nb + 1, 0.0);
+        h.SetBinError(nb + 1, 0.0);
+    }
+}
+
 inline double denom_sumw(double sumw, bool use_abs)
 {
     return use_abs ? std::abs(sumw) : sumw;
@@ -122,6 +187,7 @@ AdaptiveBinningService::MinStatConfig AdaptiveBinningService::config_from(const 
     cfg.min_sumw = opt.adaptive_min_sumw;
     cfg.max_rel_err = opt.adaptive_max_relerr;
     cfg.fold_overflow = opt.adaptive_fold_overflow;
+    cfg.edge_bins = std::max(0, opt.adaptive_edge_bins);
     cfg.use_abs_sumw = true;
     return cfg;
 }
@@ -133,33 +199,12 @@ void AdaptiveBinningService::fold_overflow(TH1D &h) const
     {
         return;
     }
-
-    {
-        const double c0 = h.GetBinContent(0);
-        const double e0 = h.GetBinError(0);
-        const double c1 = h.GetBinContent(1);
-        const double e1 = h.GetBinError(1);
-        h.SetBinContent(1, c1 + c0);
-        h.SetBinError(1, std::hypot(e1, e0));
-        h.SetBinContent(0, 0.0);
-        h.SetBinError(0, 0.0);
-    }
-
-    {
-        const double co = h.GetBinContent(nb + 1);
-        const double eo = h.GetBinError(nb + 1);
-        const double cn = h.GetBinContent(nb);
-        const double en = h.GetBinError(nb);
-        h.SetBinContent(nb, cn + co);
-        h.SetBinError(nb, std::hypot(en, eo));
-        h.SetBinContent(nb + 1, 0.0);
-        h.SetBinError(nb + 1, 0.0);
-    }
+    fold_overflow_into(h, 1, nb);
 }
 
 std::unique_ptr<TH1D> AdaptiveBinningService::sum_hists(const std::vector<const TH1D *> &parts,
                                                         std::string_view new_name,
-                                                        bool do_fold_overflow) const
+                                                        const MinStatConfig &cfg) const
 {
     const TH1D *first = nullptr;
     for (auto *p : parts)
@@ -178,7 +223,7 @@ std::unique_ptr<TH1D> AdaptiveBinningService::sum_hists(const std::vector<const 
     const std::string name(new_name);
     auto out = std::unique_ptr<TH1D>(static_cast<TH1D *>(first->Clone(name.c_str())));
     out->SetDirectory(nullptr);
-    out->Sumw2(kTRUE);
+    ensure_sumw2(*out);
     out->Reset("ICES");
 
     for (auto *p : parts)
@@ -189,9 +234,10 @@ std::unique_ptr<TH1D> AdaptiveBinningService::sum_hists(const std::vector<const 
         }
     }
 
-    if (do_fold_overflow)
+    if (cfg.fold_overflow)
     {
-        fold_overflow(*out);
+        const auto [first_dst, last_dst] = fold_target_bins(*out, cfg.edge_bins);
+        fold_overflow_into(*out, first_dst, last_dst);
     }
     return out;
 }
@@ -218,8 +264,9 @@ std::vector<double> AdaptiveBinningService::edges_min_stat(const TH1D &fine,
         const std::string tname = std::string(fine.GetName()) + "_minstat_tmp";
         tmp.reset(static_cast<TH1D *>(fine.Clone(tname.c_str())));
         tmp->SetDirectory(nullptr);
-        tmp->Sumw2(kTRUE);
-        fold_overflow(*tmp);
+        ensure_sumw2(*tmp);
+        const auto [first_dst, last_dst] = fold_target_bins(*tmp, cfg.edge_bins);
+        fold_overflow_into(*tmp, first_dst, last_dst);
         hptr = tmp.get();
     }
     const TH1D &h = *hptr;
@@ -240,28 +287,22 @@ std::vector<double> AdaptiveBinningService::edges_min_stat(const TH1D &fine,
     std::vector<Stat> stats;
     stats.reserve(static_cast<std::size_t>(nb));
 
-    const bool keep_first_empty =
-        (nb >= 1 && std::abs(h.GetBinContent(1)) <= kEdgeEps && std::abs(h.GetBinError(1)) <= kEdgeEps);
-    const bool keep_last_empty =
-        (nb >= 2 && std::abs(h.GetBinContent(nb)) <= kEdgeEps && std::abs(h.GetBinError(nb)) <= kEdgeEps);
+    const int edge_bins = std::max(0, cfg.edge_bins);
+    const int left_keep = std::min(edge_bins, nb);
+    const int right_keep = std::min(edge_bins, nb - left_keep);
 
-    int first_bin = 1;
-    int last_bin = nb;
-
-    if (keep_first_empty)
+    // Keep fixed-width edge bins (often empty padding bins).
+    for (int i = 1; i <= left_keep; ++i)
     {
-        const double up = ax->GetBinUpEdge(1);
+        const double up = ax->GetBinUpEdge(i);
         if (up > edges.back() + kEdgeEps)
         {
             edges.push_back(up);
         }
-        first_bin = 2;
     }
 
-    if (keep_last_empty)
-    {
-        last_bin = nb - 1;
-    }
+    const int first_bin = left_keep + 1;
+    const int last_bin = nb - right_keep;
 
     double acc_w = 0.0;
     double acc_w2 = 0.0;
@@ -286,7 +327,7 @@ std::vector<double> AdaptiveBinningService::edges_min_stat(const TH1D &fine,
         }
     }
 
-    if (last_bin >= first_bin)
+    if (first_bin <= last_bin)
     {
         const double interior_xmax = ax->GetBinUpEdge(last_bin);
         if (edges.back() < interior_xmax - kEdgeEps)
@@ -296,15 +337,17 @@ std::vector<double> AdaptiveBinningService::edges_min_stat(const TH1D &fine,
         }
     }
 
-    if (keep_last_empty)
+    // Append fixed-width bins at the high edge.
+    for (int i = last_bin + 1; i <= nb; ++i)
     {
-        const double xmax = ax->GetBinUpEdge(nb);
-        if (xmax > edges.back() + kEdgeEps)
+        const double up = ax->GetBinUpEdge(i);
+        if (up > edges.back() + kEdgeEps)
         {
-            edges.push_back(xmax);
+            edges.push_back(up);
         }
     }
 
+    // Backward-merge only the interior bins until the *last interior* bin passes.
     while (stats.size() >= 2)
     {
         const auto &last = stats.back();
@@ -315,18 +358,15 @@ std::vector<double> AdaptiveBinningService::edges_min_stat(const TH1D &fine,
 
         stats[stats.size() - 2].sumw += last.sumw;
         stats[stats.size() - 2].sumw2 += last.sumw2;
-        stats.pop_back();
 
-        const std::size_t min_edges = keep_last_empty ? 4 : 3;
-        if (edges.size() >= min_edges)
+        // Remove the boundary edge between the last two interior bins.
+        // Edge layout: [xmin] + left_keep edges + stats.size() interior edges + right_keep edges.
+        const std::size_t boundary_idx = 1u + static_cast<std::size_t>(left_keep) + (stats.size() - 2u);
+        if (boundary_idx < edges.size())
         {
-            auto erase_it = keep_last_empty ? (edges.end() - 3) : (edges.end() - 2);
-            edges.erase(erase_it);
+            edges.erase(edges.begin() + static_cast<std::ptrdiff_t>(boundary_idx));
         }
-        else
-        {
-            break;
-        }
+        stats.pop_back();
     }
 
     edges.erase(std::unique(edges.begin(), edges.end(),
@@ -347,7 +387,7 @@ std::vector<double> AdaptiveBinningService::edges_min_stat(const TH1D &fine,
 std::unique_ptr<TH1D> AdaptiveBinningService::rebin_to_edges(const TH1D &h,
                                                              const std::vector<double> &edges,
                                                              std::string_view new_name,
-                                                             bool do_fold_overflow) const
+                                                             const MinStatConfig &cfg) const
 {
     const std::string out_name(new_name);
 
@@ -355,18 +395,19 @@ std::unique_ptr<TH1D> AdaptiveBinningService::rebin_to_edges(const TH1D &h,
     {
         auto out = std::unique_ptr<TH1D>(static_cast<TH1D *>(h.Clone(out_name.c_str())));
         out->SetDirectory(nullptr);
-        out->Sumw2(kTRUE);
+        ensure_sumw2(*out);
         return out;
     }
 
     const std::string tmp_name = out_name + "_tmp";
     auto tmp = std::unique_ptr<TH1D>(static_cast<TH1D *>(h.Clone(tmp_name.c_str())));
     tmp->SetDirectory(nullptr);
-    tmp->Sumw2(kTRUE);
+    ensure_sumw2(*tmp);
 
-    if (do_fold_overflow)
+    if (cfg.fold_overflow)
     {
-        fold_overflow(*tmp);
+        const auto [first_dst, last_dst] = fold_target_bins(*tmp, cfg.edge_bins);
+        fold_overflow_into(*tmp, first_dst, last_dst);
     }
 
     const int nnew = static_cast<int>(edges.size()) - 1;
@@ -374,8 +415,29 @@ std::unique_ptr<TH1D> AdaptiveBinningService::rebin_to_edges(const TH1D &h,
 
     auto out = std::unique_ptr<TH1D>(static_cast<TH1D *>(reb));
     out->SetDirectory(nullptr);
-    out->Sumw2(kTRUE);
+    ensure_sumw2(*out);
     return out;
+}
+
+std::unique_ptr<TH1D> AdaptiveBinningService::sum_hists(const std::vector<const TH1D *> &parts,
+                                                        std::string_view new_name,
+                                                        bool fold_overflow) const
+{
+    MinStatConfig cfg;
+    cfg.fold_overflow = fold_overflow;
+    cfg.edge_bins = 0;
+    return sum_hists(parts, new_name, cfg);
+}
+
+std::unique_ptr<TH1D> AdaptiveBinningService::rebin_to_edges(const TH1D &h,
+                                                             const std::vector<double> &edges,
+                                                             std::string_view new_name,
+                                                             bool fold_overflow) const
+{
+    MinStatConfig cfg;
+    cfg.fold_overflow = fold_overflow;
+    cfg.edge_bins = 0;
+    return rebin_to_edges(h, edges, new_name, cfg);
 }
 
 } // namespace nu
