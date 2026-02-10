@@ -183,6 +183,7 @@ int plot_stacked_hist_impl(const std::string &samples_tsv,
     opt.signal_channels = Channels::signal_keys();
     opt.y_title = "Events/bin";
     opt.run_numbers = {"1"};
+    opt.image_format = "pdf";
 
     const double pot_data = el.total_pot_data();
     const double pot_mc = el.total_pot_mc();
