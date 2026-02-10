@@ -178,8 +178,10 @@ int plot_stacked_hist_impl(const std::string &samples_tsv,
     opt.show_ratio = include_data;
     opt.show_ratio_band = include_data;
     opt.adaptive_binning = true;
-    opt.adaptive_min_sumw = 250.0;
-    opt.adaptive_max_relerr = 0.20;
+    // Target ~7% relative statistical uncertainty per adaptive bin:
+    // N_eff ≈ 1/(0.07^2) ≈ 204, so enforce a matching sumw floor.
+    opt.adaptive_min_sumw = 200.0;
+    opt.adaptive_max_relerr = 0.07;
     opt.adaptive_fold_overflow = true;
     opt.signal_channels = Channels::signal_keys();
     opt.y_title = "Events/bin";
