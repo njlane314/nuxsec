@@ -1,5 +1,6 @@
 // osc_evolution_demo.C
 // Historical evolution of neutrino oscillation parameters using hard-coded snapshots.
+// (Updated aesthetics: cleaner style, colorblind-safe palette, improved label/title placement.)
 
 #include <algorithm>
 #include <string>
@@ -34,7 +35,7 @@ TGraphAsymmErrors* BandFromBounds(const std::vector<double>& x,
   const int n = static_cast<int>(x.size());
   TGraphAsymmErrors* g = new TGraphAsymmErrors(n);
   for (int i = 0; i < n; ++i) {
-    const double y = 0.5 * (ylo[i] + yhi[i]);
+    const double y  = 0.5 * (ylo[i] + yhi[i]);
     const double em = y - ylo[i];
     const double ep = yhi[i] - y;
     g->SetPoint(i, x[i], y);
@@ -42,6 +43,7 @@ TGraphAsymmErrors* BandFromBounds(const std::vector<double>& x,
   }
   g->SetLineWidth(0);
   g->SetMarkerSize(0);
+  g->SetFillStyle(1001);
   return g;
 }
 
@@ -51,16 +53,17 @@ void DrawBandStack(const std::vector<double>& x,
                    const std::vector<double>& lo1, const std::vector<double>& hi1,
                    int baseColor)
 {
+  // Lighter alpha stack (reads better, especially when a band spans the full y-range).
   TGraphAsymmErrors* g3 = BandFromBounds(x, lo3, hi3);
-  g3->SetFillColorAlpha(baseColor, 0.20);
+  g3->SetFillColorAlpha(baseColor, 0.14);
   g3->Draw("3 same");
 
   TGraphAsymmErrors* g2 = BandFromBounds(x, lo2, hi2);
-  g2->SetFillColorAlpha(baseColor, 0.35);
+  g2->SetFillColorAlpha(baseColor, 0.25);
   g2->Draw("3 same");
 
   TGraphAsymmErrors* g1 = BandFromBounds(x, lo1, hi1);
-  g1->SetFillColorAlpha(baseColor, 0.55);
+  g1->SetFillColorAlpha(baseColor, 0.40);
   g1->Draw("3 same");
 }
 
@@ -83,12 +86,20 @@ void DrawPanel(TPad* p,
   fr->GetXaxis()->SetNdivisions(505);
   fr->GetYaxis()->SetNdivisions(505);
 
-  fr->GetYaxis()->SetLabelSize(0.16);
+  // Axes cosmetics: consistent fonts + slightly smaller tick labels (more whitespace).
+  fr->GetXaxis()->SetLabelFont(42);
+  fr->GetYaxis()->SetLabelFont(42);
+  fr->GetXaxis()->SetLabelOffset(0.012);
+  fr->GetYaxis()->SetLabelOffset(0.010);
+  fr->GetXaxis()->SetTickLength(0.030);
+  fr->GetYaxis()->SetTickLength(0.020);
+
+  fr->GetYaxis()->SetLabelSize(0.13);
   fr->GetYaxis()->SetTitleSize(0.0);
 
   if (showXLabels) {
-    fr->GetXaxis()->SetLabelSize(0.16);
-    fr->GetXaxis()->SetTitleSize(0.0);
+    fr->GetXaxis()->SetLabelSize(0.13);
+    fr->GetXaxis()->SetTitleSize(0.0); // draw x-title manually for better placement control
   } else {
     fr->GetXaxis()->SetLabelSize(0.0);
     fr->GetXaxis()->SetTitleSize(0.0);
@@ -96,18 +107,45 @@ void DrawPanel(TPad* p,
 
   DrawBandStack(x, lo3, hi3, lo2, hi2, lo1, hi1, color);
 
+  // Best-fit line + markers (makes the discrete snapshot years obvious).
   TGraph* gBF = new TGraph(static_cast<int>(x.size()));
   for (int i = 0; i < static_cast<int>(x.size()); ++i) {
     gBF->SetPoint(i, x[i], bf[i]);
   }
   gBF->SetLineColor(color);
-  gBF->SetLineWidth(2);
-  gBF->Draw("L same");
+  gBF->SetLineWidth(3);
+  gBF->SetMarkerStyle(20);
+  gBF->SetMarkerSize(0.75);
+  gBF->SetMarkerColor(color);
+  gBF->Draw("LP same");
+
+  // ----- Panel y-label placement -----
+  // Place the parameter label centered in the *left margin* and centered vertically
+  // in the *inner plotting area* (so it doesn't jump around when pad margins differ).
+  const double xLab = 0.50 * p->GetLeftMargin();
+  const double yInnerLo = p->GetBottomMargin();
+  const double yInnerHi = 1.0 - p->GetTopMargin();
+  const double yLab = 0.50 * (yInnerLo + yInnerHi);
 
   TLatex t;
   t.SetNDC(true);
-  t.SetTextSize(0.22);
-  t.DrawLatex(0.06, 0.20, latexLabel);
+  t.SetTextFont(42);
+  t.SetTextSize(0.20);
+  t.SetTextAlign(22); // centered
+  t.DrawLatex(xLab, yLab, latexLabel);
+
+  // ----- Global x-label ("Year") placement -----
+  // Draw in bottom margin, centered under the axis.
+  if (showXLabels) {
+    const double xC = p->GetLeftMargin() + 0.50 * (1.0 - p->GetLeftMargin() - p->GetRightMargin());
+    const double yT = 0.30 * p->GetBottomMargin();
+    TLatex tx;
+    tx.SetNDC(true);
+    tx.SetTextFont(42);
+    tx.SetTextSize(0.18);
+    tx.SetTextAlign(22);
+    tx.DrawLatex(xC, yT, "Year");
+  }
 }
 
 void FillVectors(const std::vector<Bounds>& src,
@@ -134,12 +172,32 @@ void FillVectors(const std::vector<Bounds>& src,
 
 void osc_evolution_demo()
 {
+  // Global style cleanup (keeps plots looking modern and consistent).
   gStyle->SetOptStat(0);
+  gStyle->SetCanvasColor(0);
+  gStyle->SetPadColor(0);
+  gStyle->SetFrameFillColor(0);
+  gStyle->SetFrameBorderMode(0);
+  gStyle->SetCanvasBorderMode(0);
+  gStyle->SetPadBorderMode(0);
+
   gStyle->SetPadTickX(1);
   gStyle->SetPadTickY(1);
 
+  gStyle->SetTextFont(42);
+  gStyle->SetLabelFont(42, "XYZ");
+  gStyle->SetTitleFont(42, "XYZ");
+
   const double xmin = 1998.0;
   const double xmax = 2019.0;
+
+  // Colorblind-safe (Okabe–Ito) palette.
+  const int cS23   = TColor::GetColor("#CC79A7"); // purple
+  const int cDm31  = TColor::GetColor("#E69F00"); // orange
+  const int cS12   = TColor::GetColor("#D55E00"); // vermillion
+  const int cDm21  = TColor::GetColor("#009E73"); // bluish green
+  const int cS13   = TColor::GetColor("#56B4E9"); // sky blue
+  const int cDelta = TColor::GetColor("#0072B2"); // blue
 
   // Snapshot years hard-coded from literature points in the prompt.
   std::vector<double> yr = {1998, 2001, 2003, 2005, 2006, 2008, 2010, 2011, 2012, 2014, 2018};
@@ -241,11 +299,11 @@ void osc_evolution_demo()
   std::vector<double> bf5, lo1_5, hi1_5, lo2_5, hi2_5, lo3_5, hi3_5;
   std::vector<double> bf6, lo1_6, hi1_6, lo2_6, hi2_6, lo3_6, hi3_6;
 
-  FillVectors(s23, bf1, lo1_1, hi1_1, lo2_1, hi2_1, lo3_1, hi3_1);
-  FillVectors(dm31, bf2, lo1_2, hi1_2, lo2_2, hi2_2, lo3_2, hi3_2);
-  FillVectors(s12, bf3, lo1_3, hi1_3, lo2_3, hi2_3, lo3_3, hi3_3);
-  FillVectors(dm21, bf4, lo1_4, hi1_4, lo2_4, hi2_4, lo3_4, hi3_4);
-  FillVectors(s13, bf5, lo1_5, hi1_5, lo2_5, hi2_5, lo3_5, hi3_5);
+  FillVectors(s23,   bf1, lo1_1, hi1_1, lo2_1, hi2_1, lo3_1, hi3_1);
+  FillVectors(dm31,  bf2, lo1_2, hi1_2, lo2_2, hi2_2, lo3_2, hi3_2);
+  FillVectors(s12,   bf3, lo1_3, hi1_3, lo2_3, hi2_3, lo3_3, hi3_3);
+  FillVectors(dm21,  bf4, lo1_4, hi1_4, lo2_4, hi2_4, lo3_4, hi3_4);
+  FillVectors(s13,   bf5, lo1_5, hi1_5, lo2_5, hi2_5, lo3_5, hi3_5);
   FillVectors(delta, bf6, lo1_6, hi1_6, lo2_6, hi2_6, lo3_6, hi3_6);
 
   TCanvas* c = new TCanvas("c", "", 800, 600);
@@ -254,38 +312,42 @@ void osc_evolution_demo()
   const int nPads = 6;
   const double y0 = 0.08;
   const double y1 = 0.98;
-  const double h = (y1 - y0) / nPads;
+  const double h  = (y1 - y0) / nPads;
 
-  std::vector<TPad*> pads(nPads, 0);
+  std::vector<TPad*> pads(nPads, nullptr);
   for (int i = 0; i < nPads; ++i) {
-    const double ylow = y0 + (nPads - 1 - i) * h;
+    const double ylow  = y0 + (nPads - 1 - i) * h;
     const double yhigh = ylow + h;
     pads[i] = new TPad(Form("p%d", i), "", 0.0, ylow, 1.0, yhigh);
-    pads[i]->SetLeftMargin(0.13);
-    pads[i]->SetRightMargin(0.02);
-    pads[i]->SetTopMargin(i == 0 ? 0.08 : 0.02);
-    pads[i]->SetBottomMargin(i == nPads - 1 ? 0.28 : 0.02);
+
+    // More breathing room on the left (parameter labels + y tick labels).
+    pads[i]->SetLeftMargin(0.18);
+    pads[i]->SetRightMargin(0.03);
+
+    pads[i]->SetTopMargin(i == 0 ? 0.06 : 0.02);
+    pads[i]->SetBottomMargin(i == nPads - 1 ? 0.30 : 0.02);
+
     pads[i]->SetBorderMode(0);
     pads[i]->SetFrameBorderMode(0);
     pads[i]->Draw();
   }
 
-  DrawPanel(pads[0], xmin, xmax, 0.20, 0.85, "s^{2}_{23}", kViolet + 1,
+  DrawPanel(pads[0], xmin, xmax, 0.20, 0.85, "s^{2}_{23}",                 cS23,
             yr, lo1_1, hi1_1, lo2_1, hi2_1, lo3_1, hi3_1, bf1, false);
 
-  DrawPanel(pads[1], xmin, xmax, 1.0, 6.2, "|#Delta m^{2}_{31}|/10^{-3}", kOrange + 7,
+  DrawPanel(pads[1], xmin, xmax, 1.0, 6.2,  "|#Delta m^{2}_{31}|/10^{-3}",  cDm31,
             yr, lo1_2, hi1_2, lo2_2, hi2_2, lo3_2, hi3_2, bf2, false);
 
-  DrawPanel(pads[2], xmin, xmax, 0.15, 0.50, "s^{2}_{12}", kRed + 1,
+  DrawPanel(pads[2], xmin, xmax, 0.15, 0.50, "s^{2}_{12}",                 cS12,
             yr, lo1_3, hi1_3, lo2_3, hi2_3, lo3_3, hi3_3, bf3, false);
 
-  DrawPanel(pads[3], xmin, xmax, 2.0, 10.0, "#Delta m^{2}_{21}/10^{-5}", kGreen + 2,
+  DrawPanel(pads[3], xmin, xmax, 2.0, 10.0,  "#Delta m^{2}_{21}/10^{-5}",   cDm21,
             yr, lo1_4, hi1_4, lo2_4, hi2_4, lo3_4, hi3_4, bf4, false);
 
-  DrawPanel(pads[4], xmin, xmax, 0.0, 0.15, "s^{2}_{13}", kOrange + 3,
+  DrawPanel(pads[4], xmin, xmax, 0.0, 0.15,  "s^{2}_{13}",                 cS13,
             yr, lo1_5, hi1_5, lo2_5, hi2_5, lo3_5, hi3_5, bf5, false);
 
-  DrawPanel(pads[5], xmin, xmax, 0.0, 2.0, "#delta_{CP}/#pi", kAzure + 2,
+  DrawPanel(pads[5], xmin, xmax, 0.0, 2.0,   "#delta_{CP}/#pi",            cDelta,
             yr, lo1_6, hi1_6, lo2_6, hi2_6, lo3_6, hi3_6, bf6, true);
 
   c->SaveAs("osc_evolution_demo.pdf");
