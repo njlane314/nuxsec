@@ -180,6 +180,7 @@ int printAnalysisChannelStats(const std::string &samples_tsv = "",
 
     const Totals t_mc = totals_from_hists(*h_mc_n, *h_mc_w);
     const Totals t_ext = totals_from_hists(*h_ext_n, *h_ext_w);
+    const bool show_ext = (t_ext.n != 0) || (std::fabs(t_ext.sumw) > 0.0) || (std::fabs(t_ext.err) > 0.0);
 
     const double stack_sumw = t_mc.sumw + t_ext.sumw;
     const double stack_err = std::sqrt(t_mc.err * t_mc.err + t_ext.err * t_ext.err);
@@ -191,7 +192,8 @@ int printAnalysisChannelStats(const std::string &samples_tsv = "",
 
     std::cout << "\n[printAnalysisChannelStats] totals after selection:\n";
     std::cout << "  MC   : N=" << t_mc.n << "  sumw=" << t_mc.sumw << " +/- " << t_mc.err << "\n";
-    std::cout << "  EXT  : N=" << t_ext.n << "  sumw=" << t_ext.sumw << " +/- " << t_ext.err << "\n";
+    if (show_ext)
+        std::cout << "  EXT  : N=" << t_ext.n << "  sumw=" << t_ext.sumw << " +/- " << t_ext.err << "\n";
     std::cout << "  STACK: N=" << stack_n << "  sumw=" << stack_sumw << " +/- " << stack_err << "\n";
     if (include_data)
         std::cout << "  DATA : N=" << data_n << "\n";
@@ -220,10 +222,11 @@ int printAnalysisChannelStats(const std::string &samples_tsv = "",
               << std::right
               << std::setw(12) << "MC N"
               << std::setw(14) << "MC sumw"
-              << std::setw(14) << "MC err"
-              << std::setw(12) << "EXT N"
-              << std::setw(14) << "EXT sumw"
-              << std::setw(14) << "EXT err";
+              << std::setw(14) << "MC err";
+    if (show_ext)
+        std::cout << std::setw(12) << "EXT N"
+                  << std::setw(14) << "EXT sumw"
+                  << std::setw(14) << "EXT err";
     if (include_data)
         std::cout << std::setw(12) << "DATA N";
     std::cout << std::setw(14) << "STACK sumw"
@@ -267,10 +270,11 @@ int printAnalysisChannelStats(const std::string &samples_tsv = "",
                   << std::right
                   << std::setw(12) << n_mc
                   << std::setw(14) << y_mc
-                  << std::setw(14) << e_mc
-                  << std::setw(12) << n_ext
-                  << std::setw(14) << y_ext
-                  << std::setw(14) << e_ext;
+                  << std::setw(14) << e_mc;
+        if (show_ext)
+            std::cout << std::setw(12) << n_ext
+                      << std::setw(14) << y_ext
+                      << std::setw(14) << e_ext;
         if (include_data)
             std::cout << std::setw(12) << n_data;
         std::cout << std::setw(14) << y_stack
