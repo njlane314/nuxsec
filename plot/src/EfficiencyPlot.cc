@@ -391,7 +391,7 @@ int EfficiencyPlot::draw_and_save(const std::string &file_stem,
         if (!cfg_.logy)
         {
             const double ymax = std::max(1.0, hs.GetMaximum("nostack"));
-            hs.SetMaximum(1.20 * ymax);
+            hs.SetMaximum(1.30 * ymax);
             hs.SetMinimum(0.0);
         }
         else
