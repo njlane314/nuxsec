@@ -60,6 +60,8 @@ class StackedHist
     std::unique_ptr<TH1D> mc_total_;
     std::unique_ptr<TH1D> data_hist_;
     std::unique_ptr<TH1D> sig_hist_;
+    std::unique_ptr<TH1D> ratio_hist_;
+    std::unique_ptr<TH1D> ratio_band_;
     std::vector<int> chan_order_;
     double signal_events_ = 0.0;
     double signal_scale_ = 1.0;
