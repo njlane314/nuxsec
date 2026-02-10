@@ -125,6 +125,18 @@ StackedHist::StackedHist(TH1DModel spec, Options opt, std::vector<const Entry *>
 
 void StackedHist::setup_pads(TCanvas &c, TPad *&p_main, TPad *&p_ratio, TPad *&p_legend) const
 {
+    auto disable_primitive_ownership = [](TPad *pad) {
+        if (!pad)
+        {
+            return;
+        }
+        auto *primitives = pad->GetListOfPrimitives();
+        if (primitives)
+        {
+            primitives->SetOwner(kFALSE);
+        }
+    };
+
     c.cd();
     p_main = nullptr;
     p_ratio = nullptr;
@@ -136,9 +148,12 @@ void StackedHist::setup_pads(TCanvas &c, TPad *&p_main, TPad *&p_ratio, TPad *&p
     {
         if (want_ratio())
         {
-            p_ratio = new TPad("pad_ratio", "pad_ratio", 0., 0.00, 1., 0.30);
-            p_main = new TPad("pad_main", "pad_main", 0., 0.30, 1., split);
-            p_legend = new TPad("pad_legend", "pad_legend", 0., split, 1., 1.00);
+            const std::string ratio_name = plot_name_ + "_pad_ratio";
+            const std::string main_name = plot_name_ + "_pad_main";
+            const std::string legend_name = plot_name_ + "_pad_legend";
+            p_ratio = new TPad(ratio_name.c_str(), ratio_name.c_str(), 0., 0.00, 1., 0.30);
+            p_main = new TPad(main_name.c_str(), main_name.c_str(), 0., 0.30, 1., split);
+            p_legend = new TPad(legend_name.c_str(), legend_name.c_str(), 0., split, 1., 1.00);
 
             p_main->SetTopMargin(0.02);
             p_main->SetBottomMargin(0.02);
@@ -157,8 +172,10 @@ void StackedHist::setup_pads(TCanvas &c, TPad *&p_main, TPad *&p_ratio, TPad *&p
         }
         else
         {
-            p_main = new TPad("pad_main", "pad_main", 0., 0.00, 1., split);
-            p_legend = new TPad("pad_legend", "pad_legend", 0., split, 1., 1.00);
+            const std::string main_name = plot_name_ + "_pad_main";
+            const std::string legend_name = plot_name_ + "_pad_legend";
+            p_main = new TPad(main_name.c_str(), main_name.c_str(), 0., 0.00, 1., split);
+            p_legend = new TPad(legend_name.c_str(), legend_name.c_str(), 0., split, 1., 1.00);
 
             p_main->SetTopMargin(0.01);
             p_main->SetBottomMargin(0.12);
@@ -179,18 +196,24 @@ void StackedHist::setup_pads(TCanvas &c, TPad *&p_main, TPad *&p_ratio, TPad *&p
         if (p_main)
         {
             p_main->Draw();
+            disable_primitive_ownership(p_main);
         }
         if (p_legend)
         {
             p_legend->Draw();
         }
+        disable_primitive_ownership(p_ratio);
+        disable_primitive_ownership(p_main);
+        disable_primitive_ownership(p_legend);
     }
     else
     {
         if (want_ratio())
         {
-            p_main = new TPad("pad_main", "pad_main", 0., 0.30, 1., 1.);
-            p_ratio = new TPad("pad_ratio", "pad_ratio", 0., 0., 1., 0.30);
+            const std::string main_name = plot_name_ + "_pad_main";
+            const std::string ratio_name = plot_name_ + "_pad_ratio";
+            p_main = new TPad(main_name.c_str(), main_name.c_str(), 0., 0.30, 1., 1.);
+            p_ratio = new TPad(ratio_name.c_str(), ratio_name.c_str(), 0., 0., 1., 0.30);
             p_main->SetTopMargin(0.06);
             p_main->SetBottomMargin(0.02);
             p_main->SetLeftMargin(0.12);
@@ -205,10 +228,13 @@ void StackedHist::setup_pads(TCanvas &c, TPad *&p_main, TPad *&p_ratio, TPad *&p
             }
             p_ratio->Draw();
             p_main->Draw();
+            disable_primitive_ownership(p_ratio);
+            disable_primitive_ownership(p_main);
         }
         else
         {
-            p_main = new TPad("pad_main", "pad_main", 0., 0., 1., 1.);
+            const std::string main_name = plot_name_ + "_pad_main";
+            p_main = new TPad(main_name.c_str(), main_name.c_str(), 0., 0., 1., 1.);
             p_main->SetTopMargin(0.06);
             p_main->SetBottomMargin(0.12);
             p_main->SetLeftMargin(0.12);
@@ -218,6 +244,7 @@ void StackedHist::setup_pads(TCanvas &c, TPad *&p_main, TPad *&p_ratio, TPad *&p
                 p_main->SetLogy();
             }
             p_main->Draw();
+            disable_primitive_ownership(p_main);
         }
     }
 }
@@ -226,6 +253,10 @@ void StackedHist::build_histograms()
 {
     const auto axes = spec_.axis_title();
     stack_ = std::make_unique<THStack>((spec_.id + "_stack").c_str(), axes.c_str());
+    if (stack_->GetHists())
+    {
+        stack_->GetHists()->SetOwner(kFALSE);
+    }
     mc_ch_hists_.clear();
     mc_total_.reset();
     data_hist_.reset();
