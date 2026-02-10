@@ -250,9 +250,9 @@ void draw_truth_2d(ROOT::RDF::RNode node,
     gROOT->SetBatch(true);
     gStyle->SetOptStat(0);
     gStyle->SetNumberContours(255);
-    gStyle->SetPalette(kViridis);
+    gStyle->SetPalette(kBlueGreenYellow);
 
-    TCanvas c(("c2_" + sanitize_for_filename(v.name)).c_str(), "", 860, 760);
+    TCanvas c(("c2_" + sanitize_for_filename(v.name)).c_str(), "", 920, 800);
     c.cd(); // ensure gPad is set
 
     // Axis labels only (no title text block); z-title set explicitly
@@ -262,27 +262,28 @@ void draw_truth_2d(ROOT::RDF::RNode node,
     h2->GetZaxis()->SetTitle("Events");
     h2->GetXaxis()->SetRangeUser(v.xmin, v.xmax);
     h2->GetYaxis()->SetRangeUser(v.ymin, v.ymax);
-    h2->GetXaxis()->SetTitleOffset(1.0);
-    h2->GetYaxis()->SetTitleOffset(1.2);
-    h2->GetZaxis()->SetTitleOffset(1.0);
-    h2->GetXaxis()->SetNdivisions(510);
-    h2->GetYaxis()->SetNdivisions(510);
+    h2->GetXaxis()->SetTitleOffset(1.15);
+    h2->GetYaxis()->SetTitleOffset(1.35);
+    h2->GetZaxis()->SetTitleOffset(1.2);
+    h2->GetXaxis()->SetNdivisions(505);
+    h2->GetYaxis()->SetNdivisions(505);
 
     // Make the color bar fit; apply logz at the pad level (like plotPRCompPurity2D)
     const bool has_neg = any_negative_bin(*h2);
     const bool do_logz = use_logz && !has_neg;
     if (gPad)
     {
-        gPad->SetLeftMargin(0.12);
+        gPad->SetLeftMargin(0.13);
         gPad->SetBottomMargin(0.12);
-        gPad->SetRightMargin(0.16);
+        gPad->SetRightMargin(0.18);
+        gPad->SetTopMargin(0.08);
         gPad->SetLogz(do_logz ? 1 : 0);
     }
     if (do_logz)
     {
         const double min_pos = min_positive_bin_content(*h2);
-        const double zmin = (std::isfinite(min_pos) ? std::min(logz_min_floor, 0.5 * min_pos) : logz_min_floor);
-        h2->SetMinimum(std::max(logz_min_floor, zmin));
+        const double zmin = (std::isfinite(min_pos) ? std::max(logz_min_floor, 0.5 * min_pos) : logz_min_floor);
+        h2->SetMinimum(zmin);
     }
 
     h2->Draw("COLZ");
