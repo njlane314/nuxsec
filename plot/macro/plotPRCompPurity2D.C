@@ -196,13 +196,13 @@ void draw_comp_pur_hist(TH2D &h,
     {
         TLine *lx = new TLine(cfg.cut_comp, cfg.ymin, cfg.cut_comp, cfg.ymax);
         lx->SetLineStyle(2);
-        lx->SetLineWidth(2);
+        lx->SetLineWidth(3);
         lx->SetLineColor(kRed);
         lx->Draw("same");
 
         TLine *ly = new TLine(cfg.xmin, cfg.cut_pur, cfg.xmax, cfg.cut_pur);
         ly->SetLineStyle(2);
-        ly->SetLineWidth(2);
+        ly->SetLineWidth(3);
         ly->SetLineColor(kRed);
         ly->Draw("same");
     }
