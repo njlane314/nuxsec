@@ -13,6 +13,11 @@
 //   ./nuxsec macro plotSignalCoverageTruthKinematics.C
 //   ./nuxsec macro plotSignalCoverageTruthKinematics.C \
 //        'plotSignalCoverageTruthKinematics("./scratch/out/event_list_myana.root","sel_cc0pi")'
+//   ./nuxsec macro plotSignalCoverageTruthKinematics.C \
+//        'plotSignalCoverageTruthKinematics("./scratch/out/event_list_myana.root",
+//                                          "sel_cc0pi",
+//                                          true,  /*make_2d*/
+//                                          true)' /*signal_only_2d*/
 //
 // Notes:
 //   - This macro expects an event-list ROOT file (event_list_<analysis>.root).
@@ -31,6 +36,7 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -140,6 +146,48 @@ struct DynamicAxis
     double xmax = 1.0;
 };
 
+std::string finite_pair_sel(const std::string &x, const std::string &y)
+{
+    // NaN check: x==x is false iff x is NaN
+    return "(" + x + " == " + x + ") && (" + y + " == " + y + ")";
+}
+
+std::string in_range_sel(const Var2D &v)
+{
+    // Explicitly keep only values that will land in visible bins (avoid silent under/overflow-only fills).
+    std::ostringstream os;
+    os << "(" << v.x_expr << " >= " << v.xmin << " && " << v.x_expr << " <= " << v.xmax << ")"
+       << " && "
+       << "(" << v.y_expr << " >= " << v.ymin << " && " << v.y_expr << " <= " << v.ymax << ")";
+    return os.str();
+}
+
+double min_positive_bin_content(const TH2D &h)
+{
+    const int nx = h.GetNbinsX();
+    const int ny = h.GetNbinsY();
+    double min_pos = std::numeric_limits<double>::infinity();
+    for (int ix = 1; ix <= nx; ++ix)
+        for (int iy = 1; iy <= ny; ++iy)
+        {
+            const double z = h.GetBinContent(ix, iy);
+            if (std::isfinite(z) && z > 0.0 && z < min_pos)
+                min_pos = z;
+        }
+    return min_pos;
+}
+
+bool any_negative_bin(const TH2D &h)
+{
+    const int nx = h.GetNbinsX();
+    const int ny = h.GetNbinsY();
+    for (int ix = 1; ix <= nx; ++ix)
+        for (int iy = 1; iy <= ny; ++iy)
+            if (h.GetBinContent(ix, iy) < 0.0)
+                return true;
+    return false;
+}
+
 void draw_truth_2d(ROOT::RDF::RNode node,
                    const Var2D &v,
                    const std::string &weight,
@@ -147,15 +195,33 @@ void draw_truth_2d(ROOT::RDF::RNode node,
                    const std::string &out_fmt)
 {
     const bool use_logz = true;
-    const double logz_min = 0.5;
+    const double logz_min_floor = 1e-12;
 
-    // Drop NaNs explicitly for both axes.
-    ROOT::RDF::RNode n2 = node.Filter(v.x_expr + " == " + v.x_expr)
-                             .Filter(v.y_expr + " == " + v.y_expr);
+    // Drop NaNs and enforce plotted range (avoid filling only under/overflow).
+    ROOT::RDF::RNode n2 = node.Filter(finite_pair_sel(v.x_expr, v.y_expr))
+                             .Filter(in_range_sel(v));
+
+    // If weighting, require finite weights; if logz, require positive weights.
+    // (Negative weights + logz will produce misleading/blank plots.)
+    if (!weight.empty() && weight != "1" && weight != "1.0")
+    {
+        n2 = n2.Filter(weight + " == " + weight);
+        if (use_logz)
+            n2 = n2.Filter(weight + " > 0");
+    }
 
     const std::string hname = "h2_" + sanitize_for_filename(v.name);
-    auto h2 = n2.Histo2D({hname.c_str(), "", v.nx, v.xmin, v.xmax, v.ny, v.ymin, v.ymax},
-                         v.x_expr, v.y_expr, weight);
+    ROOT::RDF::RResultPtr<TH2D> h2;
+    if (weight.empty() || weight == "1" || weight == "1.0")
+    {
+        h2 = n2.Histo2D({hname.c_str(), "", v.nx, v.xmin, v.xmax, v.ny, v.ymin, v.ymax},
+                        v.x_expr, v.y_expr);
+    }
+    else
+    {
+        h2 = n2.Histo2D({hname.c_str(), "", v.nx, v.xmin, v.xmax, v.ny, v.ymin, v.ymax},
+                        v.x_expr, v.y_expr, weight);
+    }
 
     const auto n_entries = static_cast<long long>(h2->GetEntries());
     if (n_entries == 0)
@@ -172,6 +238,12 @@ void draw_truth_2d(ROOT::RDF::RNode node,
         const double sumw = h2->Integral(1, nx, 1, ny);
         std::cout << "[plotSignalCoverageTruthKinematics] " << v.name << " 2D stats\n"
                   << "  entries(fills): " << n_entries << ", sumw(in-range): " << sumw << "\n";
+        if (sumw <= 0.0)
+        {
+            std::cout << "[plotSignalCoverageTruthKinematics] skip 2D " << v.name
+                      << " (no in-range content)\n";
+            return;
+        }
     }
 
     gROOT->SetBatch(true);
@@ -189,13 +261,19 @@ void draw_truth_2d(ROOT::RDF::RNode node,
     h2->GetYaxis()->SetRangeUser(v.ymin, v.ymax);
 
     // Make the color bar fit; apply logz at the pad level (like plotPRCompPurity2D)
+    const bool has_neg = any_negative_bin(*h2);
+    const bool do_logz = use_logz && !has_neg;
     if (gPad)
     {
         gPad->SetRightMargin(0.14);
-        gPad->SetLogz(use_logz ? 1 : 0);
+        gPad->SetLogz(do_logz ? 1 : 0);
     }
-    if (use_logz)
-        h2->SetMinimum(logz_min);
+    if (do_logz)
+    {
+        const double min_pos = min_positive_bin_content(*h2);
+        const double zmin = (std::isfinite(min_pos) ? (0.5 * min_pos) : logz_min_floor);
+        h2->SetMinimum(std::max(logz_min_floor, zmin));
+    }
 
     h2->Draw("COLZ");
 
@@ -211,7 +289,8 @@ void draw_truth_2d(ROOT::RDF::RNode node,
 int plotSignalCoverageTruthKinematics(const std::string &samples_tsv = "",
                                       // Optional additional selection expression (e.g. "sel_cc0pi").
                                       const std::string &extra_sel = "true",
-                                      bool make_2d = true)
+                                      bool make_2d = true,
+                                      bool signal_only_2d = false)
 {
     if (implicit_mt_enabled())
     {
@@ -397,7 +476,18 @@ int plotSignalCoverageTruthKinematics(const std::string &samples_tsv = "",
             " && (p_p>0.0)"
             " && (pi_p>0.0)";
 
-        ROOT::RDF::RNode node_sig = e_mc.selection.nominal.node.Filter(truth_signal_sel);
+        // By default, plot *all selected events* (like plotPRCompPurity2D does after its base selections).
+        // If you want signal-only 2D, pass signal_only_2d=true.
+        ROOT::RDF::RNode node_2d = e_mc.selection.nominal.node;
+        if (signal_only_2d)
+        {
+            node_2d = node_2d.Filter(truth_signal_sel);
+            std::cout << "[plotSignalCoverageTruthKinematics] 2D: truth-signal-only selection enabled\n";
+        }
+        else
+        {
+            std::cout << "[plotSignalCoverageTruthKinematics] 2D: plotting all selected events (no truth-signal filter)\n";
+        }
 
         const std::string out_dir = getenv_or("NUXSEC_PLOT_DIR", "./scratch/plots");
         const std::string out_fmt = getenv_or("NUXSEC_PLOT_FORMAT", "pdf");
@@ -416,7 +506,7 @@ int plotSignalCoverageTruthKinematics(const std::string &samples_tsv = "",
 
         for (const auto &v : vars_2d)
         {
-            draw_truth_2d(node_sig, v, weight, out_dir, out_fmt);
+            draw_truth_2d(node_2d, v, weight, out_dir, out_fmt);
         }
     }
 
