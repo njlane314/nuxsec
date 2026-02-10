@@ -319,13 +319,11 @@ int plotSignalCoverageTruthKinematics(const std::string &samples_tsv = "",
         out.xmin = v.xmin;
         out.xmax = v.xmax;
 
-        const auto n_evt = e_mc.selection.nominal.node.Count().GetValue();
-        if (n_evt == 0)
-        {
-            return out;
-        }
-
-        auto values = e_mc.selection.nominal.node.Take<double>(v.expr).GetValue();
+        const std::string cast_col = "__dynaxis_" + sanitize_for_filename(v.name);
+        auto values = e_mc.selection.nominal.node
+                          .Define(cast_col, "static_cast<double>(" + v.expr + ")")
+                          .Take<double>(cast_col)
+                          .GetValue();
         values.erase(
             std::remove_if(
                 values.begin(),
