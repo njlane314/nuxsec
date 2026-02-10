@@ -386,12 +386,17 @@ int EfficiencyPlot::draw_and_save(const std::string &file_stem,
         }
 
         hs.Draw("nostack HIST");
+
+        const double x_min = hs.GetXaxis()->GetXmin();
+        const double x_max = hs.GetXaxis()->GetXmax();
+        hs.GetXaxis()->SetLimits(x_min, x_min + 1.10 * (x_max - x_min));
+
         hs.GetYaxis()->SetNoExponent(cfg_.no_exponent_y);
 
         if (!cfg_.logy)
         {
             const double ymax = std::max(1.0, hs.GetMaximum("nostack"));
-            hs.SetMaximum(1.30 * ymax);
+            hs.SetMaximum(1.20 * ymax);
             hs.SetMinimum(0.0);
         }
         else
@@ -407,6 +412,11 @@ int EfficiencyPlot::draw_and_save(const std::string &file_stem,
     {
         g_eff_->SetTitle((";" + x_title + ";" + cfg_.y_eff_title).c_str());
         g_eff_->Draw("AP");
+
+        const double x_min = g_eff_->GetXaxis()->GetXmin();
+        const double x_max = g_eff_->GetXaxis()->GetXmax();
+        g_eff_->GetXaxis()->SetLimits(x_min, x_min + 1.10 * (x_max - x_min));
+
         g_eff_->GetYaxis()->SetRangeUser(cfg_.eff_ymin, cfg_.eff_ymax);
         p_plot.Update();
     }
