@@ -263,8 +263,8 @@ int plot_stacked_hist_impl(const std::string &samples_tsv,
         if (add_leading_empty_bin && axis.nbins > 0)
         {
             const double bin_width = (axis.xmax - axis.xmin) / static_cast<double>(axis.nbins);
-            axis.xmax += bin_width;
-            axis.nbins += 1;
+            axis.xmax += 2.0 * bin_width;
+            axis.nbins += 2;
             draw_expr = "(" + expr + ") + " + std::to_string(bin_width);
         }
 
