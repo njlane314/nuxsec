@@ -312,8 +312,6 @@ void save_2d(const ROOT::RDF::RNode &node,
     line_y.SetLineWidth(2);
     line_y.Draw("SAME");
 
-    TLatex latex;
-    latex.SetNDC(true);
 
     const std::string summary =
         "In-range #Sigmaw: " + format_decimal(sum_w, 1) +
@@ -322,8 +320,6 @@ void save_2d(const ROOT::RDF::RNode &node,
         "; both: " + format_decimal(frac_xy, 1) + "%";
 
     std::cout << "[plotMuonCandidateMipnessVsLengthByChannel] " << tag << ": " << summary << "\n";
-    latex.SetTextSize(0.023);
-    latex.DrawLatex(0.13, 0.965, summary.c_str());
 
     const std::string out_path = out_dir + "/" + sanitize_for_filename(tag) + "." + out_fmt;
     c.SaveAs(out_path.c_str());
