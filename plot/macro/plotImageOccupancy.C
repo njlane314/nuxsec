@@ -313,15 +313,18 @@ int plotImageOccupancy(const std::string &samples_tsv = "",
     std::vector<Entry> entries;
     entries.reserve(2);
 
+    constexpr int kCosmicChannel = static_cast<int>(Channel::MuCC0pi_ge1p);
+    constexpr int kNeutrinoChannel = static_cast<int>(Channel::MuCC1pi);
+
     auto cosmic_node = n
                            .Define("plot_occ_value",
                                    [](double v) { return v; },
                                    {cos_col})
                            .Define("plot_occ_weight", [evt_weight]() { return evt_weight; })
-                           .Define("plot_occ_channel", []() { return 97; });
+                           .Define("analysis_channels", []() { return kCosmicChannel; });
     entries.emplace_back(make_entry(std::move(cosmic_node), rec_mc));
     std::cout << "[plotImageOccupancy][debug] built cosmic entry tag=" << tag
-              << " channel=97\n";
+              << " channel=" << kCosmicChannel << "\n";
     std::cout.flush();
 
     auto neutrino_node = n
@@ -329,10 +332,10 @@ int plotImageOccupancy(const std::string &samples_tsv = "",
                                      [](double v) { return v; },
                                      {nu_col})
                              .Define("plot_occ_weight", [evt_weight]() { return evt_weight; })
-                             .Define("plot_occ_channel", []() { return 98; });
+                             .Define("analysis_channels", []() { return kNeutrinoChannel; });
     entries.emplace_back(make_entry(std::move(neutrino_node), rec_mc));
     std::cout << "[plotImageOccupancy][debug] built neutrino entry tag=" << tag
-              << " channel=98\n";
+              << " channel=" << kNeutrinoChannel << "\n";
     std::cout.flush();
 
     std::vector<const Entry *> mc;
@@ -375,43 +378,14 @@ int plotImageOccupancy(const std::string &samples_tsv = "",
     opt.use_log_y = false;
     std::cout << "[plotImageOccupancy][debug] set basic bool options for tag=" << tag << "\n";
     std::cout.flush();
-    opt.channel_column = "plot_occ_channel";
-    std::cout << "[plotImageOccupancy][debug] set opt.channel_column=" << opt.channel_column << "\n";
-    std::cout.flush();
-    opt.unstack_channel_keys = {97, 98};
-    std::cout << "[plotImageOccupancy][debug] set opt.unstack_channel_keys size="
-              << opt.unstack_channel_keys.size() << "\n";
-    std::cout.flush();
-    opt.unstack_channel_labels = {
-        {97, "Cosmic Pixels"},
-        {98, "Neutrino Pixels"}
-    };
-    std::cout << "[plotImageOccupancy][debug] set opt.unstack_channel_labels size="
-              << opt.unstack_channel_labels.size() << "\n";
-    std::cout.flush();
-    opt.unstack_channel_colours = {
-        {97, kAzure + 1},
-        {98, kOrange + 1}
-    };
-    std::cout << "[plotImageOccupancy][debug] set opt.unstack_channel_colours size="
-              << opt.unstack_channel_colours.size() << "\n";
-    std::cout.flush();
 
     std::cout << "[plotImageOccupancy][debug] configured options for tag=" << tag
               << " out_dir=" << opt.out_dir
-              << " format=" << opt.image_format
-              << " channel_column=" << opt.channel_column << "\n";
+              << " format=" << opt.image_format << "\n";
     std::cout.flush();
 
     std::cout << "[plotImageOccupancy][debug] invoking draw_unstack for tag=" << tag
-              << " channels={";
-    for (size_t i = 0; i < opt.unstack_channel_keys.size(); ++i)
-    {
-      if (i > 0)
-        std::cout << ",";
-      std::cout << opt.unstack_channel_keys[i];
-    }
-    std::cout << "} entries=" << mc.size() << " nbins=" << spec.nbins
+              << " entries=" << mc.size() << " nbins=" << spec.nbins
               << " xmin=" << spec.xmin << " xmax=" << spec.xmax << "\n";
     std::cout.flush();
 
