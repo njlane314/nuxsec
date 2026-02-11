@@ -55,11 +55,13 @@ struct Options
     std::string image_format = "png";
     bool show_ratio = false;
     bool show_ratio_band = false;
+    bool use_log_x = false;
     bool use_log_y = false;
     bool annotate_numbers = false;
     bool overlay_signal = false;
     bool legend_on_top = false;
     bool show_legend = true;
+    bool show_watermark = true;
     bool show_cuts = false;
     double legend_split = 0.75;
     double y_min = 0.0;

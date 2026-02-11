@@ -155,6 +155,10 @@ void UnstackedHist::setup_pads(TCanvas &c, TPad *&p_main, TPad *&p_ratio, TPad *
         {
             p_main->SetLogy();
         }
+        if (opt_.use_log_x && p_main)
+        {
+            p_main->SetLogx();
+        }
         if (p_ratio)
         {
             p_ratio->Draw();
@@ -192,6 +196,10 @@ void UnstackedHist::setup_pads(TCanvas &c, TPad *&p_main, TPad *&p_ratio, TPad *
             {
                 p_main->SetLogy();
             }
+            if (opt_.use_log_x)
+            {
+                p_main->SetLogx();
+            }
             p_ratio->Draw();
             p_main->Draw();
             disable_primitive_ownership(p_ratio);
@@ -208,6 +216,10 @@ void UnstackedHist::setup_pads(TCanvas &c, TPad *&p_main, TPad *&p_ratio, TPad *
             if (opt_.use_log_y)
             {
                 p_main->SetLogy();
+            }
+            if (opt_.use_log_x)
+            {
+                p_main->SetLogx();
             }
             p_main->Draw();
             disable_primitive_ownership(p_main);
@@ -1121,7 +1133,10 @@ void UnstackedHist::draw(TCanvas &canvas)
     draw_overlay_and_unc(p_main, max_y);
     unstack_debug_log("draw: draw_overlay_and_unc complete");
     draw_cuts(p_main, max_y);
-    draw_watermark(p_main, total_mc_events_);
+    if (opt_.show_watermark)
+    {
+        draw_watermark(p_main, total_mc_events_);
+    }
 
     if (opt_.show_legend)
     {
