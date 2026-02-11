@@ -142,13 +142,13 @@ int plotNeutrinoSliceAfterSoftwareTriggerPassFail(const std::string &input = "",
         p_data->selection.nominal.node = p_data->selection.nominal.node.Filter(selection);
 
     e_mc.selection.nominal.node = e_mc.selection.nominal.node.Define(
-        "neutrino_slice_pass", [](int sel) { return sel > 0 ? 1.0 : 0.0; }, {"sel_slice"});
+        "neutrino_slice_pass", [](bool sel) { return sel ? 1.0 : 0.0; }, {"sel_slice"});
     e_ext.selection.nominal.node = e_ext.selection.nominal.node.Define(
-        "neutrino_slice_pass", [](int sel) { return sel > 0 ? 1.0 : 0.0; }, {"sel_slice"});
+        "neutrino_slice_pass", [](bool sel) { return sel ? 1.0 : 0.0; }, {"sel_slice"});
     if (p_data)
     {
         p_data->selection.nominal.node = p_data->selection.nominal.node.Define(
-            "neutrino_slice_pass", [](int sel) { return sel > 0 ? 1.0 : 0.0; }, {"sel_slice"});
+            "neutrino_slice_pass", [](bool sel) { return sel ? 1.0 : 0.0; }, {"sel_slice"});
     }
 
     Plotter plotter;
