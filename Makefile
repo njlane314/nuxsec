@@ -36,6 +36,7 @@ ANA_OBJ = $(ANA_SRC:%.cc=$(OBJ_DIR)/%.o)
 PLOT_LIB_NAME = build/lib/libNuxsecPlot.so
 PLOT_SRC = plot/src/Plotter.cc \
            plot/src/StackedHist.cc \
+           plot/src/UnstackedHist.cc \
            plot/src/PlottingHelper.cc \
            plot/src/AdaptiveBinningService.cc \
            plot/src/EfficiencyPlot.cc

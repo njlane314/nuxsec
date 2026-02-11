@@ -23,6 +23,7 @@
 
 #include "PlotEnv.hh"
 #include "StackedHist.hh"
+#include "UnstackedHist.hh"
 
 namespace nu
 {
@@ -112,6 +113,33 @@ void Plotter::draw_stack_cov(const TH1DModel &spec,
     auto opt2 = opt_;
     opt2.total_cov = std::make_shared<TMatrixDSym>(total_cov);
     StackedHist plot(spec, std::move(opt2), mc, data);
+    plot.draw_and_save(opt2.image_format);
+}
+
+void Plotter::draw_unstack(const TH1DModel &spec, const std::vector<const Entry *> &mc) const
+{
+    static const std::vector<const Entry *> empty_data{};
+    draw_unstack(spec, mc, empty_data);
+}
+
+void Plotter::draw_unstack(const TH1DModel &spec,
+                           const std::vector<const Entry *> &mc,
+                           const std::vector<const Entry *> &data) const
+{
+    set_global_style();
+    UnstackedHist plot(spec, opt_, mc, data);
+    plot.draw_and_save(opt_.image_format);
+}
+
+void Plotter::draw_unstack_cov(const TH1DModel &spec,
+                               const std::vector<const Entry *> &mc,
+                               const std::vector<const Entry *> &data,
+                               const TMatrixDSym &total_cov) const
+{
+    set_global_style();
+    auto opt2 = opt_;
+    opt2.total_cov = std::make_shared<TMatrixDSym>(total_cov);
+    UnstackedHist plot(spec, std::move(opt2), mc, data);
     plot.draw_and_save(opt2.image_format);
 }
 
