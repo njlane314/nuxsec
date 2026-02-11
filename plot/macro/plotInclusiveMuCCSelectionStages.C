@@ -241,6 +241,25 @@ ROOT::RDF::RNode define_track_pick_columns(ROOT::RDF::RNode node,
         },
         {"mu_cand_idx", "track_distance_to_vertex"});
 
+    // Index -> scalar pickers (int) for generation diagnostics
+    node = node.Define(
+        "trk_longest_generation",
+        [](int idx, const RVec<unsigned> &v) -> int {
+            if (idx < 0 || static_cast<std::size_t>(idx) >= v.size())
+                return -1;
+            return static_cast<int>(v[static_cast<std::size_t>(idx)]);
+        },
+        {"trk_longest_idx", "pfp_generations"});
+
+    node = node.Define(
+        "mu_cand_generation",
+        [](int idx, const RVec<unsigned> &v) -> int {
+            if (idx < 0 || static_cast<std::size_t>(idx) >= v.size())
+                return -1;
+            return static_cast<int>(v[static_cast<std::size_t>(idx)]);
+        },
+        {"mu_cand_idx", "pfp_generations"});
+
     return node;
 }
 
@@ -346,63 +365,6 @@ ROOT::RDF::RNode define_mipness_columns(ROOT::RDF::RNode node,
         {"mu_cand_idx", "track_dedx_T70_y", "track_dedx_Q50_y", "track_dedx_Q90_y"});
 
     return node;
-}
-
-struct DynamicAxis
-{
-    int nbins = 50;
-    double xmin = 0.0;
-    double xmax = 1.0;
-};
-
-DynamicAxis build_dynamic_axis(const std::string &expr,
-                              int fallback_nbins,
-                              double fallback_xmin,
-                              double fallback_xmax,
-                              ROOT::RDF::RNode &n1,
-                              ROOT::RDF::RNode &n2,
-                              ROOT::RDF::RNode *n3 = nullptr)
-{
-    DynamicAxis out;
-    out.nbins = fallback_nbins;
-    out.xmin = fallback_xmin;
-    out.xmax = fallback_xmax;
-
-    double global_min = std::numeric_limits<double>::infinity();
-    double global_max = -std::numeric_limits<double>::infinity();
-
-    const auto update_minmax = [&](ROOT::RDF::RNode &node) {
-        const auto n_evt = node.Count().GetValue();
-        if (n_evt == 0)
-            return;
-
-        const double local_min = static_cast<double>(node.Min(expr).GetValue());
-        const double local_max = static_cast<double>(node.Max(expr).GetValue());
-        global_min = std::min(global_min, local_min);
-        global_max = std::max(global_max, local_max);
-    };
-
-    update_minmax(n1);
-    update_minmax(n2);
-    if (n3)
-        update_minmax(*n3);
-
-    if (!std::isfinite(global_min) || !std::isfinite(global_max) || global_max <= global_min)
-        return out;
-
-    const double fallback_span = std::max(1.0, fallback_xmax - fallback_xmin);
-    const double nominal_fine_width = fallback_span / static_cast<double>(fallback_nbins);
-    const double span = std::max(nominal_fine_width, global_max - global_min);
-
-    int dynamic_nbins = static_cast<int>(std::ceil(span / nominal_fine_width)) + 2;
-    dynamic_nbins = std::max(12, dynamic_nbins);
-    out.nbins = dynamic_nbins;
-
-    const double padded_width = span / static_cast<double>(std::max(1, dynamic_nbins - 2));
-    out.xmin = global_min - padded_width;
-    out.xmax = global_max + padded_width;
-
-    return out;
 }
 
 void save_2d(const ROOT::RDF::RNode &node,
@@ -575,6 +537,7 @@ int plotInclusiveMuCCSelectionStages(const std::string &samples_tsv = "",
     opt.use_log_y = use_logy;
     opt.legend_on_top = true;
     opt.annotate_numbers = true;
+    opt.adaptive_binning = false; // force uniform binning everywhere in this macro
     opt.overlay_signal = true;
     opt.show_ratio = include_data;
     opt.show_ratio_band = include_data;
@@ -598,9 +561,7 @@ int plotInclusiveMuCCSelectionStages(const std::string &samples_tsv = "",
                               double xmin,
                               double xmax,
                               const std::string &x_title,
-                              bool dynamic_axis = true,
-                              bool allow_adaptive = true,
-                              bool add_leading_empty_bin = false) {
+                              bool force_logy = false) {
         ROOT::RDF::RNode mc_sel = node_mc;
         ROOT::RDF::RNode ext_sel = node_ext;
         ROOT::RDF::RNode data_sel = node_data;
@@ -613,21 +574,9 @@ int plotInclusiveMuCCSelectionStages(const std::string &samples_tsv = "",
                 data_sel = data_sel.Filter(sel);
         }
 
-        DynamicAxis ax;
-        ax.nbins = nbins;
-        ax.xmin = xmin;
-        ax.xmax = xmax;
-        if (dynamic_axis)
-            ax = build_dynamic_axis(expr, nbins, xmin, xmax, mc_sel, ext_sel, include_data ? &data_sel : nullptr);
-
-        std::string draw_expr = expr;
-        if (add_leading_empty_bin && ax.nbins > 0)
-        {
-            const double bin_width = (ax.xmax - ax.xmin) / static_cast<double>(ax.nbins);
-            ax.xmax += 2.0 * bin_width;
-            ax.nbins += 2;
-            draw_expr = "(" + expr + ") + " + std::to_string(bin_width);
-        }
+        // Per-plot log-y override (keep global setting for everything else).
+        const bool old_logy = opt.use_log_y;
+        opt.use_log_y = (use_logy || force_logy);
 
         // Build stage-local Entry list
         std::vector<Entry> entries;
@@ -656,18 +605,13 @@ int plotInclusiveMuCCSelectionStages(const std::string &samples_tsv = "",
             data.push_back(&entries.back());
         }
 
-        // Force uniform binning for all inclusive muon plots.
-        (void)allow_adaptive;
-        const bool old_adaptive = opt.adaptive_binning;
-        opt.adaptive_binning = false;
-
         opt.x_title = x_title.empty() ? expr : x_title;
 
         // Stage-specific filename prefix via the "name" passed to make_spec:
         // we keep spec.expr as the real draw expression.
         const std::string spec_name = plot_tag + "__" + expr;
-        TH1DModel spec = make_spec(spec_name, ax.nbins, ax.xmin, ax.xmax, weight);
-        spec.expr = draw_expr;
+        TH1DModel spec = make_spec(spec_name, nbins, xmin, xmax, weight);
+        spec.expr = expr;
         spec.sel = Preset::Empty;
 
         if (include_data)
@@ -675,7 +619,7 @@ int plotInclusiveMuCCSelectionStages(const std::string &samples_tsv = "",
         else
             plotter.draw_stack(spec, mc);
 
-        opt.adaptive_binning = old_adaptive;
+        opt.use_log_y = old_logy;
     };
 
     // -------------------------------------------------------------------------
@@ -696,35 +640,35 @@ int plotInclusiveMuCCSelectionStages(const std::string &samples_tsv = "",
     // -------------------------------------------------------------------------
     // Trigger diagnostics
     // -------------------------------------------------------------------------
-    draw_one("trigger_pre", sel_pre_trigger, "optical_filter_pe_beam", 50, -10.0, 500.0, "Beam optical PE", true, true);
-    draw_one("trigger_post", sel_post_trigger, "optical_filter_pe_beam", 50, -10.0, 500.0, "Beam optical PE", true, true);
+    draw_one("trigger_pre", sel_pre_trigger, "optical_filter_pe_beam", 50, -10.0, 500.0, "Beam optical PE");
+    draw_one("trigger_post", sel_post_trigger, "optical_filter_pe_beam", 50, -10.0, 500.0, "Beam optical PE");
 
-    draw_one("trigger_pre", sel_pre_trigger, "optical_filter_pe_veto", 50, -10.0, 200.0, "Veto optical PE", true, true);
-    draw_one("trigger_post", sel_post_trigger, "optical_filter_pe_veto", 50, -10.0, 200.0, "Veto optical PE", true, true);
+    draw_one("trigger_pre", sel_pre_trigger, "optical_filter_pe_veto", 50, -10.0, 200.0, "Veto optical PE");
+    draw_one("trigger_post", sel_post_trigger, "optical_filter_pe_veto", 50, -10.0, 200.0, "Veto optical PE");
 
-    draw_one("trigger_pre", sel_pre_trigger, "software_trigger", 6, -0.5, 5.5, "Software trigger", false, false);
-    draw_one("trigger_post", sel_post_trigger, "software_trigger", 6, -0.5, 5.5, "Software trigger", false, false);
+    draw_one("trigger_pre", sel_pre_trigger, "software_trigger", 6, -0.5, 5.5, "Software trigger");
+    draw_one("trigger_post", sel_post_trigger, "software_trigger", 6, -0.5, 5.5, "Software trigger");
 
     // -------------------------------------------------------------------------
     // Slice diagnostics
     // -------------------------------------------------------------------------
-    draw_one("slice_pre", sel_pre_slice, "num_slices", 8, -0.5, 7.5, "Number of Pandora slices", false, false);
-    draw_one("slice_post", sel_post_slice, "num_slices", 8, -0.5, 7.5, "Number of Pandora slices", false, false);
+    draw_one("slice_pre", sel_pre_slice, "num_slices", 8, -0.5, 7.5, "Number of Pandora slices");
+    draw_one("slice_post", sel_post_slice, "num_slices", 8, -0.5, 7.5, "Number of Pandora slices");
 
-    draw_one("slice_pre", sel_pre_slice, "topological_score", 50, 0.0, 0.6, "Topological score", true, true);
-    draw_one("slice_post", sel_post_slice, "topological_score", 50, 0.0, 0.6, "Topological score", true, true);
+    draw_one("slice_pre", sel_pre_slice, "topological_score", 50, 0.0, 1.0, "Topological score", /*force_logy=*/true);
+    draw_one("slice_post", sel_post_slice, "topological_score", 50, 0.0, 1.0, "Topological score", /*force_logy=*/true);
 
     // -------------------------------------------------------------------------
     // Fiducial diagnostics (reco SCE vertex)
     // -------------------------------------------------------------------------
-    draw_one("fv_pre", sel_pre_fv, "reco_neutrino_vertex_sce_z", 50, -50.0, 1100.0, "Reco ν vertex z [cm]", true, true, true);
-    draw_one("fv_post", sel_post_fv, "reco_neutrino_vertex_sce_z", 50, -50.0, 1100.0, "Reco ν vertex z [cm]", true, true, true);
+    draw_one("fv_pre", sel_pre_fv, "reco_neutrino_vertex_sce_z", 50, -50.0, 1100.0, "Reco ν vertex z [cm]");
+    draw_one("fv_post", sel_post_fv, "reco_neutrino_vertex_sce_z", 50, -50.0, 1100.0, "Reco ν vertex z [cm]");
 
-    draw_one("fv_pre", sel_pre_fv, "reco_neutrino_vertex_sce_x", 50, -50.0, 300.0, "Reco ν vertex x [cm]", true, true, true);
-    draw_one("fv_post", sel_post_fv, "reco_neutrino_vertex_sce_x", 50, -50.0, 300.0, "Reco ν vertex x [cm]", true, true, true);
+    draw_one("fv_pre", sel_pre_fv, "reco_neutrino_vertex_sce_x", 50, -50.0, 300.0, "Reco ν vertex x [cm]");
+    draw_one("fv_post", sel_post_fv, "reco_neutrino_vertex_sce_x", 50, -50.0, 300.0, "Reco ν vertex x [cm]");
 
-    draw_one("fv_pre", sel_pre_fv, "reco_neutrino_vertex_sce_y", 50, -180.0, 180.0, "Reco ν vertex y [cm]", true, true, true);
-    draw_one("fv_post", sel_post_fv, "reco_neutrino_vertex_sce_y", 50, -180.0, 180.0, "Reco ν vertex y [cm]", true, true, true);
+    draw_one("fv_pre", sel_pre_fv, "reco_neutrino_vertex_sce_y", 50, -180.0, 180.0, "Reco ν vertex y [cm]");
+    draw_one("fv_post", sel_post_fv, "reco_neutrino_vertex_sce_y", 50, -180.0, 180.0, "Reco ν vertex y [cm]");
 
     // -------------------------------------------------------------------------
     // Muon-candidate diagnostics
@@ -736,28 +680,32 @@ int plotInclusiveMuCCSelectionStages(const std::string &samples_tsv = "",
     const std::string sel_post_mu_with_track = sel_post_mu + " && (mu_cand_idx >= 0)";
 
     // Track-likeness proxy (your shower-vs-track score)
-    draw_one("mu_pre", sel_pre_mu_with_track, "trk_longest_score", 50, 0.0, 1.0, "Longest-track shower→track score", true, true);
-    draw_one("mu_post", sel_post_mu_with_track, "mu_cand_score", 50, 0.0, 1.0, "Muon-candidate shower→track score", true, true);
+    draw_one("mu_pre", sel_pre_mu_with_track, "trk_longest_score", 50, 0.0, 1.0, "Longest-track shower→track score");
+    draw_one("mu_post", sel_post_mu_with_track, "mu_cand_score", 50, 0.0, 1.0, "Muon-candidate shower→track score");
 
     // Geometry/proximity
-    draw_one("mu_pre", sel_pre_mu_with_track, "trk_longest_length", 50, 0.0, 800.0, "Longest-track length [cm]", true, true);
-    draw_one("mu_post", sel_post_mu_with_track, "mu_cand_length", 50, 0.0, 800.0, "Muon-candidate length [cm]", true, true);
+    draw_one("mu_pre", sel_pre_mu_with_track, "trk_longest_length", 50, 0.0, 800.0, "Longest-track length [cm]");
+    draw_one("mu_post", sel_post_mu_with_track, "mu_cand_length", 50, 0.0, 800.0, "Muon-candidate length [cm]");
 
-    draw_one("mu_pre", sel_pre_mu_with_track, "trk_longest_distance", 50, 0.0, 50.0, "Longest-track start distance to ν vtx [cm]", true, true);
-    draw_one("mu_post", sel_post_mu_with_track, "mu_cand_distance", 50, 0.0, 50.0, "Muon-candidate start distance to ν vtx [cm]", true, true);
+    draw_one("mu_pre", sel_pre_mu_with_track, "trk_longest_distance", 50, 0.0, 50.0, "Longest-track start distance to ν vtx [cm]");
+    draw_one("mu_post", sel_post_mu_with_track, "mu_cand_distance", 50, 0.0, 50.0, "Muon-candidate start distance to ν vtx [cm]");
+
+    // PFP generation (explicit muon-selection requirement; previously missing)
+    draw_one("mu_pre", sel_pre_mu_with_track, "trk_longest_generation", 6, -0.5, 5.5, "Longest-track PFP generation");
+    draw_one("mu_post", sel_post_mu_with_track, "mu_cand_generation", 6, -0.5, 5.5, "Muon-candidate PFP generation");
 
     // MIPness (Y plane and median-over-planes)
     draw_one("mu_pre", sel_pre_mu_with_track + " && (trk_longest_mipness_y == trk_longest_mipness_y)",
-             "trk_longest_mipness_y", 50, 0.0, 2.0, "Longest-track MIPness (Y plane)", true, true);
+             "trk_longest_mipness_y", 50, 0.0, 2.0, "Longest-track MIPness (Y plane)");
 
     draw_one("mu_post", sel_post_mu_with_track + " && (mu_cand_mipness_y == mu_cand_mipness_y)",
-             "mu_cand_mipness_y", 50, 0.0, 2.0, "Muon-candidate MIPness (Y plane)", true, true);
+             "mu_cand_mipness_y", 50, 0.0, 2.0, "Muon-candidate MIPness (Y plane)");
 
     draw_one("mu_pre", sel_pre_mu_with_track + " && (trk_longest_mipness_med == trk_longest_mipness_med)",
-             "trk_longest_mipness_med", 50, 0.0, 2.0, "Longest-track MIPness (median planes)", true, true);
+             "trk_longest_mipness_med", 50, 0.0, 2.0, "Longest-track MIPness (median planes)");
 
     draw_one("mu_post", sel_post_mu_with_track + " && (mu_cand_mipness_med == mu_cand_mipness_med)",
-             "mu_cand_mipness_med", 50, 0.0, 2.0, "Muon-candidate MIPness (median planes)", true, true);
+             "mu_cand_mipness_med", 50, 0.0, 2.0, "Muon-candidate MIPness (median planes)");
 
     // Optional: 2D correlations (MC only), written directly to NUXSEC_PLOT_DIR
     save_2d(node_mc,
