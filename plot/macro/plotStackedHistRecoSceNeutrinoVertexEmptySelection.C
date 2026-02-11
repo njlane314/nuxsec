@@ -131,6 +131,7 @@ int plotStackedHistRecoSceNeutrinoVertexEmptySelection(const std::string &event_
 
     std::vector<const Entry *> mc;
     std::vector<const Entry *> data;
+    Entry *e_data = nullptr;
 
     ProcessorEntry rec_mc;
     rec_mc.source = Type::kMC;
@@ -151,7 +152,8 @@ int plotStackedHistRecoSceNeutrinoVertexEmptySelection(const std::string &event_
         ProcessorEntry rec_data;
         rec_data.source = Type::kData;
         entries.emplace_back(make_entry(std::move(node_data), rec_data));
-        data.push_back(&entries.back());
+        e_data = &entries.back();
+        data.push_back(e_data);
     }
 
     const std::string software_trigger_gate_sel = "software_trigger > 0";
@@ -162,7 +164,7 @@ int plotStackedHistRecoSceNeutrinoVertexEmptySelection(const std::string &event_
     e_ext.selection.nominal.node = e_ext.selection.nominal.node.Filter(combined_gate_sel);
     if (include_data)
     {
-        data.front()->selection.nominal.node = data.front()->selection.nominal.node.Filter(combined_gate_sel);
+        e_data->selection.nominal.node = e_data->selection.nominal.node.Filter(combined_gate_sel);
     }
 
     Plotter plotter;
