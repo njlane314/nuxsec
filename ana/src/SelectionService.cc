@@ -54,9 +54,9 @@ bool is_in_active_volume(const X &x, const Y &y, const Z &z)
 inline bool passes_trigger(Type src, float pe_beam, float pe_veto, int sw)
 {
     const bool requires_dataset_gate = (src == Type::kMC);
-    return requires_dataset_gate ? (pe_beam > SelectionService::trigger_min_beam_pe &&
-                                    pe_veto < SelectionService::trigger_max_veto_pe && sw > 0)
-                                 : true;
+    (void)pe_beam;
+    (void)pe_veto;
+    return requires_dataset_gate ? (sw > 0) : true;
 }
 
 inline bool passes_slice(int ns, float topo)
