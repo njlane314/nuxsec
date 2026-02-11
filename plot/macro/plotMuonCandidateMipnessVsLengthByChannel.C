@@ -300,19 +300,6 @@ void save_2d(const ROOT::RDF::RNode &node,
     h2->SetMinimum(0.5);
     h2->Draw("COLZ");
 
-    TLine line_x(x_threshold, ymin, x_threshold, ymax);
-    line_x.SetLineColor(kRed + 1);
-    line_x.SetLineStyle(2);
-    line_x.SetLineWidth(2);
-    line_x.Draw("SAME");
-
-    TLine line_y(xmin, y_threshold, xmax, y_threshold);
-    line_y.SetLineColor(kRed + 1);
-    line_y.SetLineStyle(2);
-    line_y.SetLineWidth(2);
-    line_y.Draw("SAME");
-
-
     const std::string summary =
         "In-range #Sigmaw: " + format_decimal(sum_w, 1) +
         "; L > " + format_decimal(x_threshold, 1) + " cm: " + format_decimal(frac_x, 1) + "%" +
