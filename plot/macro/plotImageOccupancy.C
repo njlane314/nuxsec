@@ -285,6 +285,11 @@ int plotImageOccupancy(const std::string &samples_tsv = "",
 
   const double n_events = static_cast<double>(*n.Count());
   const double evt_weight = (n_events > 0.0) ? (100.0 / n_events) : 0.0;
+  std::cout << "[plotImageOccupancy] selected events=" << n_events
+            << " evt_weight=" << evt_weight << "\n";
+  std::cout << "[plotImageOccupancy] unstack debug env NUXSEC_DEBUG_PLOT_UNSTACK="
+            << (std::getenv("NUXSEC_DEBUG_PLOT_UNSTACK") ? std::getenv("NUXSEC_DEBUG_PLOT_UNSTACK") : "<unset>")
+            << "\n";
 
   auto draw_one = [&](const std::string &cos_col,
                       const std::string &nu_col,
@@ -292,6 +297,13 @@ int plotImageOccupancy(const std::string &samples_tsv = "",
     std::cout << "[plotImageOccupancy][debug] start draw_one tag=" << tag
               << " cosmic_col=" << cos_col
               << " nu_col=" << nu_col << "\n";
+    std::cout.flush();
+
+    const auto cosmic_entries = *n.Filter(cos_col + " > 0.0").Count();
+    const auto neutrino_entries = *n.Filter(nu_col + " > 0.0").Count();
+    std::cout << "[plotImageOccupancy][debug] non-zero occupancy counts tag=" << tag
+              << " cosmic=" << cosmic_entries
+              << " neutrino=" << neutrino_entries << "\n";
     std::cout.flush();
 
     ProcessorEntry rec_mc;
