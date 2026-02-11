@@ -287,6 +287,7 @@ int plotImageOccupancy(const std::string &samples_tsv = "",
   const double evt_weight = (n_events > 0.0) ? (100.0 / n_events) : 0.0;
   std::cout << "[plotImageOccupancy] selected events=" << n_events
             << " evt_weight=" << evt_weight << "\n";
+
   std::cout << "[plotImageOccupancy] unstack debug env NUXSEC_DEBUG_PLOT_UNSTACK="
             << (std::getenv("NUXSEC_DEBUG_PLOT_UNSTACK") ? std::getenv("NUXSEC_DEBUG_PLOT_UNSTACK") : "<unset>")
             << "\n";
@@ -358,7 +359,11 @@ int plotImageOccupancy(const std::string &samples_tsv = "",
     std::cout << "[plotImageOccupancy][debug] configuring unstack options for tag=" << tag << "\n";
     std::cout.flush();
     opt.out_dir = out_dir;
+    std::cout << "[plotImageOccupancy][debug] set opt.out_dir=" << opt.out_dir << "\n";
+    std::cout.flush();
     opt.image_format = fmt;
+    std::cout << "[plotImageOccupancy][debug] set opt.image_format=" << opt.image_format << "\n";
+    std::cout.flush();
     opt.show_ratio = false;
     opt.show_ratio_band = false;
     opt.annotate_numbers = false;
@@ -368,16 +373,29 @@ int plotImageOccupancy(const std::string &samples_tsv = "",
     opt.show_watermark = false;
     opt.use_log_x = true;
     opt.use_log_y = false;
+    std::cout << "[plotImageOccupancy][debug] set basic bool options for tag=" << tag << "\n";
+    std::cout.flush();
     opt.channel_column = "plot_occ_channel";
+    std::cout << "[plotImageOccupancy][debug] set opt.channel_column=" << opt.channel_column << "\n";
+    std::cout.flush();
     opt.unstack_channel_keys = {97, 98};
+    std::cout << "[plotImageOccupancy][debug] set opt.unstack_channel_keys size="
+              << opt.unstack_channel_keys.size() << "\n";
+    std::cout.flush();
     opt.unstack_channel_labels = {
         {97, "Cosmic Pixels"},
         {98, "Neutrino Pixels"}
     };
+    std::cout << "[plotImageOccupancy][debug] set opt.unstack_channel_labels size="
+              << opt.unstack_channel_labels.size() << "\n";
+    std::cout.flush();
     opt.unstack_channel_colours = {
         {97, kAzure + 1},
         {98, kOrange + 1}
     };
+    std::cout << "[plotImageOccupancy][debug] set opt.unstack_channel_colours size="
+              << opt.unstack_channel_colours.size() << "\n";
+    std::cout.flush();
 
     std::cout << "[plotImageOccupancy][debug] configured options for tag=" << tag
               << " out_dir=" << opt.out_dir
