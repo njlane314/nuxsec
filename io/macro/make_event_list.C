@@ -71,6 +71,9 @@ static std::vector<std::string> default_event_columns()
         "reco_neutrino_vertex_sce_x",
         "reco_neutrino_vertex_sce_y",
         "reco_neutrino_vertex_sce_z",
+        "is_vtx_in_image_u",
+        "is_vtx_in_image_v",
+        "is_vtx_in_image_w",
 
         "nu_vtx_x",
         "nu_vtx_y",
