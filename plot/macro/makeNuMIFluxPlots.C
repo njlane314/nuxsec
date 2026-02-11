@@ -3,7 +3,7 @@
 // Produces a multi-page PDF with “interesting” flux plots from the NuMIFlux_dk2nu_*.root
 // files you listed (CV spectra, mode comparisons, wrong-sign, nue contamination,
 // parentage stacks/fractions, region breakdown, a couple of 2D maps, and PPFX multisim
-// fractional uncertainties + correlation matrices).
+// fractional uncertainties + covariance/correlation matrices).
 //
 // Run (ROOT):
 //   root -l -b -q 'makeNuMIFluxPlots.C()'
@@ -177,6 +177,28 @@ TH2D* CovToCorr(const TH2D* cov, const TString& name, const TString& title) {
   }
   corr->GetZaxis()->SetRangeUser(-1.0, 1.0);
   return corr;
+}
+
+double MaxAbsBinContent(const TH2D* h) {
+  if (!h) return 0.0;
+  const int nx = h->GetNbinsX();
+  const int ny = h->GetNbinsY();
+  double m = 0.0;
+  for (int ix = 1; ix <= nx; ++ix) {
+    for (int iy = 1; iy <= ny; ++iy) {
+      const double v = std::abs(h->GetBinContent(ix, iy));
+      if (v > m) m = v;
+    }
+  }
+  return m;
+}
+
+void SetSymmetricZRange(TH2D* h, const double maxAbsOverride = -1.0) {
+  if (!h) return;
+  double m = maxAbsOverride;
+  if (m < 0.0) m = MaxAbsBinContent(h);
+  if (m <= 0.0) m = 1.0;
+  h->GetZaxis()->SetRangeUser(-m, +m);
 }
 
 TH1D* DiagFracUnc(const TH2D* cov, const TH1D* cv, const TString& name, const TString& title) {
@@ -880,6 +902,92 @@ void PlotPPFXUncertainties(TCanvas& c, TFile* f, const TString& mode,
     c.Print(outpdf);
   }
 
+  // --------------------------------------------------------------------------
+  // Covariance matrices (total + a couple of key components + shape-only total)
+  // NOTE: covariance can have negative off-diagonals, so do NOT use logz here.
+  // We draw with a symmetric z-range around 0 to make sign structure visible.
+  // --------------------------------------------------------------------------
+
+  // Total covariance
+  if (covTotal) {
+    TH2D* covPlot = dynamic_cast<TH2D*>(covTotal->Clone(TString::Format("covPlotTotal_%s_%s", mode.Data(), flavor.Data())));
+    if (covPlot) {
+      covPlot->SetDirectory(0);
+      covPlot->SetTitle(TString::Format("%s %s: total PPFX covariance (sum of groups)", mode.Data(), flavor.Data()));
+      covPlot->GetXaxis()->SetTitle("E_{#nu} [GeV]");
+      covPlot->GetYaxis()->SetTitle("E_{#nu} [GeV]");
+      SetSymmetricZRange(covPlot);
+
+      c.Clear();
+      c.SetRightMargin(0.14);
+      c.SetLogz(false);
+      covPlot->Draw("COLZ");
+      DrawHeader(TString::Format("%s %s: PPFX covariance matrix (total)", mode.Data(), flavor.Data()));
+      c.Print(outpdf);
+      delete covPlot;
+    }
+  }
+
+  // Total shape-only covariance
+  if (covTotalShape) {
+    TH2D* covPlot = dynamic_cast<TH2D*>(covTotalShape->Clone(TString::Format("covPlotTotalShape_%s_%s", mode.Data(), flavor.Data())));
+    if (covPlot) {
+      covPlot->SetDirectory(0);
+      covPlot->SetTitle(TString::Format("%s %s: total PPFX covariance (shape-only; sum of groups)", mode.Data(), flavor.Data()));
+      covPlot->GetXaxis()->SetTitle("E_{#nu} [GeV]");
+      covPlot->GetYaxis()->SetTitle("E_{#nu} [GeV]");
+      SetSymmetricZRange(covPlot);
+
+      c.Clear();
+      c.SetRightMargin(0.14);
+      c.SetLogz(false);
+      covPlot->Draw("COLZ");
+      DrawHeader(TString::Format("%s %s: PPFX covariance matrix (shape-only)", mode.Data(), flavor.Data()));
+      c.Print(outpdf);
+      delete covPlot;
+    }
+  }
+
+  // Component covariance: MIPP pion
+  if (covPion) {
+    TH2D* covPlot = dynamic_cast<TH2D*>(covPion->Clone(TString::Format("covPlotPion_%s_%s", mode.Data(), flavor.Data())));
+    if (covPlot) {
+      covPlot->SetDirectory(0);
+      covPlot->SetTitle(TString::Format("%s %s: PPFX MIPP pion covariance", mode.Data(), flavor.Data()));
+      covPlot->GetXaxis()->SetTitle("E_{#nu} [GeV]");
+      covPlot->GetYaxis()->SetTitle("E_{#nu} [GeV]");
+      SetSymmetricZRange(covPlot);
+
+      c.Clear();
+      c.SetRightMargin(0.14);
+      c.SetLogz(false);
+      covPlot->Draw("COLZ");
+      DrawHeader(TString::Format("%s %s: PPFX covariance (MIPP pion)", mode.Data(), flavor.Data()));
+      c.Print(outpdf);
+      delete covPlot;
+    }
+  }
+
+  // Component covariance: MIPP kaon
+  if (covKaon) {
+    TH2D* covPlot = dynamic_cast<TH2D*>(covKaon->Clone(TString::Format("covPlotKaon_%s_%s", mode.Data(), flavor.Data())));
+    if (covPlot) {
+      covPlot->SetDirectory(0);
+      covPlot->SetTitle(TString::Format("%s %s: PPFX MIPP kaon covariance", mode.Data(), flavor.Data()));
+      covPlot->GetXaxis()->SetTitle("E_{#nu} [GeV]");
+      covPlot->GetYaxis()->SetTitle("E_{#nu} [GeV]");
+      SetSymmetricZRange(covPlot);
+
+      c.Clear();
+      c.SetRightMargin(0.14);
+      c.SetLogz(false);
+      covPlot->Draw("COLZ");
+      DrawHeader(TString::Format("%s %s: PPFX covariance (MIPP kaon)", mode.Data(), flavor.Data()));
+      c.Print(outpdf);
+      delete covPlot;
+    }
+  }
+
   // Correlation matrix for total
   {
     TH2D* corrTotal = CovToCorr(covTotal, TString::Format("corrTotal_%s_%s", mode.Data(), flavor.Data()),
@@ -896,6 +1004,62 @@ void PlotPPFXUncertainties(TCanvas& c, TFile* f, const TString& mode,
       delete corrTotal;
     }
   }
+
+  // Correlation matrix for total shape-only
+  if (covTotalShape) {
+    TH2D* corrTotalShape = CovToCorr(covTotalShape,
+                                     TString::Format("corrTotalShape_%s_%s", mode.Data(), flavor.Data()),
+                                     TString::Format("%s %s total PPFX correlation (shape-only)", mode.Data(), flavor.Data()));
+    if (corrTotalShape) {
+      c.Clear();
+      c.SetRightMargin(0.14);
+      corrTotalShape->SetTitle(TString::Format("%s %s: total PPFX correlation (shape-only; sum of groups)", mode.Data(), flavor.Data()));
+      corrTotalShape->GetXaxis()->SetTitle("E_{#nu} [GeV]");
+      corrTotalShape->GetYaxis()->SetTitle("E_{#nu} [GeV]");
+      corrTotalShape->Draw("COLZ");
+      DrawHeader(TString::Format("%s %s: PPFX correlation (shape-only)", mode.Data(), flavor.Data()));
+      c.Print(outpdf);
+      delete corrTotalShape;
+    }
+  }
+
+  // Correlation matrices for a couple of key components
+  if (covPion) {
+    TH2D* corrPion = CovToCorr(covPion,
+                              TString::Format("corrPion_%s_%s", mode.Data(), flavor.Data()),
+                              TString::Format("%s %s PPFX MIPP pion correlation", mode.Data(), flavor.Data()));
+    if (corrPion) {
+      c.Clear();
+      c.SetRightMargin(0.14);
+      corrPion->SetTitle(TString::Format("%s %s: PPFX MIPP pion correlation", mode.Data(), flavor.Data()));
+      corrPion->GetXaxis()->SetTitle("E_{#nu} [GeV]");
+      corrPion->GetYaxis()->SetTitle("E_{#nu} [GeV]");
+      corrPion->Draw("COLZ");
+      DrawHeader(TString::Format("%s %s: PPFX correlation (MIPP pion)", mode.Data(), flavor.Data()));
+      c.Print(outpdf);
+      delete corrPion;
+    }
+  }
+
+  if (covKaon) {
+    TH2D* corrKaon = CovToCorr(covKaon,
+                              TString::Format("corrKaon_%s_%s", mode.Data(), flavor.Data()),
+                              TString::Format("%s %s PPFX MIPP kaon correlation", mode.Data(), flavor.Data()));
+    if (corrKaon) {
+      c.Clear();
+      c.SetRightMargin(0.14);
+      corrKaon->SetTitle(TString::Format("%s %s: PPFX MIPP kaon correlation", mode.Data(), flavor.Data()));
+      corrKaon->GetXaxis()->SetTitle("E_{#nu} [GeV]");
+      corrKaon->GetYaxis()->SetTitle("E_{#nu} [GeV]");
+      corrKaon->Draw("COLZ");
+      DrawHeader(TString::Format("%s %s: PPFX correlation (MIPP kaon)", mode.Data(), flavor.Data()));
+      c.Print(outpdf);
+      delete corrKaon;
+    }
+  }
+
+  // Reset canvas margins for callers (avoid leaking a big right margin).
+  c.SetRightMargin(0.05);
 
   delete cv;
   delete covTotal;
