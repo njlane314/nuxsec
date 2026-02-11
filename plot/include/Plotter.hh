@@ -39,6 +39,15 @@ class Plotter
                         const std::vector<const Entry *> &data,
                         const TMatrixDSym &total_cov) const;
 
+    void draw_unstack(const TH1DModel &spec, const std::vector<const Entry *> &mc) const;
+    void draw_unstack(const TH1DModel &spec,
+                      const std::vector<const Entry *> &mc,
+                      const std::vector<const Entry *> &data) const;
+    void draw_unstack_cov(const TH1DModel &spec,
+                          const std::vector<const Entry *> &mc,
+                          const std::vector<const Entry *> &data,
+                          const TMatrixDSym &total_cov) const;
+
     void set_global_style() const;
 
     static std::string sanitise(const std::string &name);
