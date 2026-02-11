@@ -22,7 +22,6 @@
 
 #include <TFile.h>
 
-#include "ColumnDerivationService.hh"
 #include "EventListIO.hh"
 #include "PlotChannels.hh"
 #include "Plotter.hh"
@@ -49,6 +48,7 @@ bool looks_like_event_list_root(const std::string &p)
 
     return has_refs && (has_events_tree || has_event_tree_key);
 }
+
 
 } // namespace
 
@@ -107,18 +107,14 @@ int plotParticleLevelMipnessSelectionStacked(const std::string &event_list_path 
     ProcessorEntry rec_data;
     rec_data.source = Type::kData;
 
-    const auto &derivation = ColumnDerivationService::instance();
-    node_mc = derivation.define(node_mc, rec_mc);
-    node_ext = derivation.define(node_ext, rec_ext);
-    node_data = derivation.define(node_data, rec_data);
+    auto has_mipness_column = [](ROOT::RDF::RNode node) {
+        const auto names = node.GetColumnNames();
+        return std::find(names.begin(), names.end(), "track_mipness_median_plane_score") != names.end();
+    };
 
-    const auto cols = node_mc.GetColumnNames();
-    const bool has_mipness_scores =
-        std::find(cols.begin(), cols.end(), "track_mipness_median_plane_score") != cols.end();
-
-    if (!has_mipness_scores)
+    if (!has_mipness_column(node_mc) || !has_mipness_column(node_ext) || (include_data && !has_mipness_column(node_data)))
     {
-        std::cerr << "[plotParticleLevelMipnessSelectionStacked] missing required column after ColumnDerivationService: "
+        std::cerr << "[plotParticleLevelMipnessSelectionStacked] missing required column: "
                   << "track_mipness_median_plane_score\n";
         return 1;
     }
