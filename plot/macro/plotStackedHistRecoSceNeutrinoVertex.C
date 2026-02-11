@@ -203,6 +203,8 @@ int plot_stacked_hist_impl(const std::string &samples_tsv,
         double xmax = 1.0;
     };
 
+    constexpr double target_bin_width_cm = 5.0;
+
     const auto build_dynamic_axis = [&](const std::string &expr,
                                         int fallback_nbins,
                                         double fallback_xmin,
@@ -241,14 +243,15 @@ int plot_stacked_hist_impl(const std::string &samples_tsv,
         }
 
         const double fallback_span = std::max(1.0, fallback_xmax - fallback_xmin);
-        const double nominal_fine_width = fallback_span / static_cast<double>(fallback_nbins);
-        const double span = std::max(nominal_fine_width, global_max - global_min);
+        const double fallback_bin_width = fallback_span / static_cast<double>(std::max(1, fallback_nbins));
+        const double nominal_bin_width = std::max(1.0, std::min(target_bin_width_cm, fallback_bin_width));
+        const double span = std::max(nominal_bin_width, global_max - global_min);
 
-        int dynamic_nbins = static_cast<int>(std::ceil(span / nominal_fine_width)) + 2;
+        int dynamic_nbins = static_cast<int>(std::ceil(span / nominal_bin_width)) + 2;
         dynamic_nbins = std::max(12, dynamic_nbins);
         out.nbins = dynamic_nbins;
 
-        const double padded_width = span / static_cast<double>(std::max(1, dynamic_nbins - 2));
+        const double padded_width = nominal_bin_width;
         out.xmin = global_min - padded_width;
         out.xmax = global_max + padded_width;
 
@@ -297,10 +300,9 @@ int plot_stacked_hist_impl(const std::string &samples_tsv,
         debug_log("drawing done: expr=" + expr);
     };
 
-    const int nbins = 50;
-    draw_one("reco_neutrino_vertex_sce_z", nbins, -50.0, 1100.0, "Reco SCE neutrino vertex z [cm]", true);
-    draw_one("reco_neutrino_vertex_sce_x", nbins, -50.0, 300.0, "Reco SCE neutrino vertex x [cm]", true);
-    draw_one("reco_neutrino_vertex_sce_y", nbins, -180.0, 180.0, "Reco SCE neutrino vertex y [cm]", true);
+    draw_one("reco_neutrino_vertex_sce_z", 230, -50.0, 1100.0, "Reco SCE neutrino vertex z [cm]", true);
+    draw_one("reco_neutrino_vertex_sce_x", 70, -50.0, 300.0, "Reco SCE neutrino vertex x [cm]", true);
+    draw_one("reco_neutrino_vertex_sce_y", 72, -180.0, 180.0, "Reco SCE neutrino vertex y [cm]", true);
 
     debug_log("completed all draw calls");
     return 0;
