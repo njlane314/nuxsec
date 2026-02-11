@@ -43,7 +43,6 @@
 
 #include <ROOT/RDataFrame.hxx>
 #include <TCanvas.h>
-#include <TColor.h>
 #include <TFile.h>
 #include <TH2D.h>
 #include <TPad.h>
@@ -250,7 +249,7 @@ void draw_truth_2d(ROOT::RDF::RNode node,
     gROOT->SetBatch(true);
     gStyle->SetOptStat(0);
     gStyle->SetNumberContours(255);
-    gStyle->SetPalette(kViridis);
+    gStyle->SetPalette();
 
     TCanvas c(("c2_" + sanitize_for_filename(v.name)).c_str(), "", 920, 800);
     c.cd(); // ensure gPad is set
