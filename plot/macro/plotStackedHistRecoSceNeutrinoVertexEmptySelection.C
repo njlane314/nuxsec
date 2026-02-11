@@ -6,7 +6,7 @@
 //
 // Notes:
 //   - This macro loads the event list ROOT file and stacks channels using analysis_channels.
-//   - The plots use the empty histogram preset and no additional event-level selection.
+//   - The plots use the empty histogram preset after software-trigger and slice gates.
 //   - The x-axis ranges match the standard true-vertex projection plots.
 //   - Binning is fixed and uniform in each projection.
 
@@ -152,6 +152,17 @@ int plotStackedHistRecoSceNeutrinoVertexEmptySelection(const std::string &event_
         rec_data.source = Type::kData;
         entries.emplace_back(make_entry(std::move(node_data), rec_data));
         data.push_back(&entries.back());
+    }
+
+    const std::string software_trigger_gate_sel = "software_trigger > 0";
+    const std::string reco_neutrino_slice_sel = "sel_slice";
+    const std::string combined_gate_sel = "(" + software_trigger_gate_sel + ") && (" + reco_neutrino_slice_sel + ")";
+    debug_log("applying selection (software trigger + neutrino slice gates): " + combined_gate_sel);
+    e_mc.selection.nominal.node = e_mc.selection.nominal.node.Filter(combined_gate_sel);
+    e_ext.selection.nominal.node = e_ext.selection.nominal.node.Filter(combined_gate_sel);
+    if (include_data)
+    {
+        data.front()->selection.nominal.node = data.front()->selection.nominal.node.Filter(combined_gate_sel);
     }
 
     Plotter plotter;
