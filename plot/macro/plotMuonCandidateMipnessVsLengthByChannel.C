@@ -262,7 +262,6 @@ void save_2d(const ROOT::RDF::RNode &node,
 {
     gROOT->SetBatch(true);
     gStyle->SetOptStat(0);
-    gStyle->SetPalette(kViridis);
     gStyle->SetNumberContours(255);
 
     const std::string out_dir = getenv_or("NUXSEC_PLOT_DIR", "./scratch/plots");
