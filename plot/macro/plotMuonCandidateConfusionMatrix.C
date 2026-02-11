@@ -11,7 +11,7 @@
 //   ./nuxsec macro plotMuonCandidateConfusionMatrix.C \
 //     'plotMuonCandidateConfusionMatrix("./scratch/out/event_list_myana.root")'
 //   ./nuxsec macro plotMuonCandidateConfusionMatrix.C \
-//     'plotMuonCandidateConfusionMatrix("./scratch/out/event_list_myana.root","true","w_nominal",true)'
+//     'plotMuonCandidateConfusionMatrix("./scratch/out/event_list_myana.root","true","w_nominal",true,0.5)'
 
 #include <algorithm>
 #include <cstdlib>
@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <ROOT/RDataFrame.hxx>
+#include <ROOT/RVec.hxx>
 
 #include <TCanvas.h>
 #include <TFile.h>
@@ -79,6 +80,16 @@ ROOT::RDF::RNode filter_by_mask(ROOT::RDF::RNode n,
         {"sample_id"});
 }
 
+bool passes_mipness_discriminant(const ROOT::RVec<float> &scores, float threshold)
+{
+    for (std::size_t i = 0; i < scores.size(); ++i)
+    {
+        if (scores[i] > threshold)
+            return true;
+    }
+    return false;
+}
+
 void draw_cell_text(const TH2D &h_count,
                     const TH2D &h_row_frac)
 {
@@ -110,7 +121,8 @@ void draw_cell_text(const TH2D &h_count,
 int plotMuonCandidateConfusionMatrix(const std::string &input = "",
                                      const std::string &extra_sel = "true",
                                      const std::string &weight_expr = "w_nominal",
-                                     bool row_normalise = true)
+                                     bool row_normalise = true,
+                                     double mipness_threshold = 0.5)
 {
     ROOT::EnableImplicitMT();
 
@@ -148,11 +160,18 @@ int plotMuonCandidateConfusionMatrix(const std::string &input = "",
 
     auto node = node_mc.Filter(selection)
                     .Define("cm_truth", [](bool is_numu_cc) { return is_numu_cc ? 1 : 0; }, {"is_nu_mu_cc"})
-                    .Define("cm_pred", [](bool sel) { return sel ? 1 : 0; }, {"sel_muon"});
+                    .Define("cm_pred", [](bool sel) { return sel ? 1 : 0; }, {"sel_muon"})
+                    .Define("cm_pred_mipness", [mipness_threshold](const ROOT::RVec<float> &mipness_scores) {
+                        return passes_mipness_discriminant(mipness_scores, static_cast<float>(mipness_threshold)) ? 1 : 0;
+                    }, {"track_mipness_median_plane_score"});
 
     auto h = node.Histo2D(
         {"h_muon_candidate_confusion", ";Predicted label;True label", 2, -0.5, 1.5, 2, -0.5, 1.5},
         "cm_pred", "cm_truth", weight_expr);
+
+    auto h_mipness = node.Histo2D(
+        {"h_muon_candidate_confusion_mipness", ";Predicted label;True label", 2, -0.5, 1.5, 2, -0.5, 1.5},
+        "cm_pred_mipness", "cm_truth", weight_expr);
 
     TH2D h_count = *h;
     h_count.SetDirectory(nullptr);
@@ -234,7 +253,76 @@ int plotMuonCandidateConfusionMatrix(const std::string &input = "",
 
     const std::string out_path = out_dir + "/muon_candidate_confusion_matrix." + out_fmt;
     c.SaveAs(out_path.c_str());
-
     std::cout << "[plotMuonCandidateConfusionMatrix] wrote " << out_path << "\n";
+
+    TH2D h_count_mipness = *h_mipness;
+    h_count_mipness.SetDirectory(nullptr);
+    h_count_mipness.GetXaxis()->SetBinLabel(1, "No muon candidate");
+    h_count_mipness.GetXaxis()->SetBinLabel(2, "Muon candidate");
+    h_count_mipness.GetYaxis()->SetBinLabel(1, "True not #nu_{#mu} CC");
+    h_count_mipness.GetYaxis()->SetBinLabel(2, "True #nu_{#mu} CC");
+
+    TH2D h_row_frac_mipness = h_count_mipness;
+    for (int by = 1; by <= h_row_frac_mipness.GetNbinsY(); ++by)
+    {
+        const double row_sum = h_row_frac_mipness.GetBinContent(1, by) + h_row_frac_mipness.GetBinContent(2, by);
+        if (row_sum <= 0.0)
+            continue;
+        for (int bx = 1; bx <= h_row_frac_mipness.GetNbinsX(); ++bx)
+            h_row_frac_mipness.SetBinContent(bx, by, h_row_frac_mipness.GetBinContent(bx, by) / row_sum);
+    }
+
+    const double tn_mipness = h_count_mipness.GetBinContent(1, 1);
+    const double fn_mipness = h_count_mipness.GetBinContent(1, 2);
+    const double fp_mipness = h_count_mipness.GetBinContent(2, 1);
+    const double tp_mipness = h_count_mipness.GetBinContent(2, 2);
+    const double efficiency_mipness = (tp_mipness + fn_mipness) > 0.0 ? tp_mipness / (tp_mipness + fn_mipness) : 0.0;
+    const double purity_mipness = (tp_mipness + fp_mipness) > 0.0 ? tp_mipness / (tp_mipness + fp_mipness) : 0.0;
+
+    std::cout << "[plotMuonCandidateConfusionMatrix] mipness_threshold=" << mipness_threshold
+              << ", TN=" << tn_mipness
+              << ", FP=" << fp_mipness
+              << ", FN=" << fn_mipness
+              << ", TP=" << tp_mipness << "\n";
+    std::cout << std::fixed << std::setprecision(4)
+              << "[plotMuonCandidateConfusionMatrix] mipness_purity=" << purity_mipness
+              << ", mipness_efficiency=" << efficiency_mipness << "\n";
+
+    TCanvas c_mipness("c_muon_candidate_confusion_mipness", "Muon candidate confusion matrix (mipness)", 900, 760);
+    c_mipness.SetLeftMargin(0.18f);
+    c_mipness.SetRightMargin(0.15f);
+    c_mipness.SetBottomMargin(0.15f);
+    c_mipness.SetTopMargin(0.1f);
+
+    if (row_normalise)
+    {
+        h_row_frac_mipness.SetTitle("");
+        h_row_frac_mipness.GetZaxis()->SetTitle("Fraction per truth row");
+        h_row_frac_mipness.SetMinimum(0.0);
+        h_row_frac_mipness.SetMaximum(1.0);
+        h_row_frac_mipness.Draw("COLZ");
+        draw_cell_text(h_count_mipness, h_row_frac_mipness);
+    }
+    else
+    {
+        h_count_mipness.SetTitle("");
+        h_count_mipness.GetZaxis()->SetTitle("Weighted events");
+        h_count_mipness.Draw("COLZ TEXT");
+    }
+
+    std::ostringstream ptxt_mipness;
+    ptxt_mipness << std::fixed << std::setprecision(1)
+                 << "Purity=" << (100.0 * purity_mipness) << "%, Efficiency=" << (100.0 * efficiency_mipness) << "%"
+                 << ", MIPness > " << mipness_threshold;
+
+    TLatex latex_mipness;
+    latex_mipness.SetNDC(true);
+    latex_mipness.SetTextFont(42);
+    latex_mipness.SetTextSize(0.03f);
+    latex_mipness.DrawLatex(0.18f, 0.93f, ptxt_mipness.str().c_str());
+
+    const std::string out_path_mipness = out_dir + "/muon_candidate_confusion_matrix_mipness." + out_fmt;
+    c_mipness.SaveAs(out_path_mipness.c_str());
+    std::cout << "[plotMuonCandidateConfusionMatrix] wrote " << out_path_mipness << "\n";
     return 0;
 }
