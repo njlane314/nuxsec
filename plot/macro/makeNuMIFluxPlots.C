@@ -27,6 +27,7 @@
 #include "TH2D.h"
 #include "THStack.h"
 #include "TMath.h"
+#include "TSystem.h"
 
 #include <vector>
 #include <string>
@@ -55,6 +56,27 @@ void DrawHeader(const TString& text) {
   lat.SetTextFont(42);
   lat.SetTextSize(0.04);
   lat.DrawLatex(0.12, 0.94, text.Data());
+}
+
+TString NormalizeOutDir(const TString& out) {
+  TString d(out);
+  if (d.EndsWith(".pdf")) d.Resize(d.Length() - 4);
+  if (d.IsNull()) d = ".";
+  return d;
+}
+
+void EnsureOutDir(const TString& outdir) {
+  if (outdir.IsNull()) return;
+  gSystem->mkdir(outdir, kTRUE);
+}
+
+void SaveCanvas(TCanvas& c, const TString& outdir) {
+  static int idx = 0;
+  EnsureOutDir(outdir);
+  TString p(outdir);
+  if (!p.EndsWith("/")) p += "/";
+  p += TString::Format("plot_%03d.pdf", idx++);
+  c.Print(p);
 }
 
 double SumPOT(TFile* f) {
@@ -150,8 +172,8 @@ TH2D* MakeEmptyCovLike(const TH1D* cv, const TString& name, const TString& title
   const double xmax = cv->GetXaxis()->GetXmax();
   TH2D* h2 = new TH2D(name, title, nb, xmin, xmax, nb, xmin, xmax);
   h2->SetDirectory(0);
-  h2->GetXaxis()->SetTitle("E_{#nu} [GeV]");
-  h2->GetYaxis()->SetTitle("E_{#nu} [GeV]");
+  h2->GetXaxis()->SetTitle("Neutrino Energy (GeV)");
+  h2->GetYaxis()->SetTitle("Neutrino Energy (GeV)");
   return h2;
 }
 
@@ -208,7 +230,7 @@ TH1D* DiagFracUnc(const TH2D* cov, const TH1D* cv, const TString& name, const TS
   f->SetDirectory(0);
   f->Reset("ICES");
   f->SetTitle(title);
-  f->GetXaxis()->SetTitle("E_{#nu} [GeV]");
+  f->GetXaxis()->SetTitle("Neutrino Energy (GeV)");
   f->GetYaxis()->SetTitle("Fractional uncertainty");
 
   const int nb = std::min(cov->GetNbinsX(), cv->GetNbinsX());
@@ -313,7 +335,7 @@ CovPack ComputeMultisimCov(
   return out;
 }
 
-void PlotTotalFluxByFlavor(TCanvas& c, TFile* f, const TString& mode, const TString& outpdf,
+void PlotTotalFluxByFlavor(TCanvas& c, TFile* f, const TString& mode, const TString& outdir,
                            const bool logy = true,
                            const int rebinFine = 50,
                            const double xmax = 10.0) {
@@ -332,7 +354,7 @@ void PlotTotalFluxByFlavor(TCanvas& c, TFile* f, const TString& mode, const TStr
     h->SetLineColor(colors[i]);
     h->SetLineWidth(2);
     h->SetTitle(TString::Format("%s: CV flux spectra (Detsmear/*_CV_AV_TPC_5MeV_bin)", mode.Data()));
-    h->GetXaxis()->SetTitle("E_{#nu} [GeV]");
+    h->GetXaxis()->SetTitle("Neutrino Energy (GeV)");
     h->GetYaxis()->SetTitle("Flux (a.u.)");
     h->GetXaxis()->SetRangeUser(0.0, xmax);
     hs.push_back(h);
@@ -377,11 +399,11 @@ void PlotTotalFluxByFlavor(TCanvas& c, TFile* f, const TString& mode, const TStr
   leg.Draw();
 
   DrawHeader(TString::Format("%s: flux spectra by flavor", mode.Data()));
-  c.Print(outpdf);
+  SaveCanvas(c, outdir);
 }
 
 void PlotFHCvsRHC_WithRatio(TCanvas& c, TFile* fFHC, TFile* fRHC,
-                           const TString& flavor, const TString& outpdf,
+                           const TString& flavor, const TString& outdir,
                            const int rebinFine = 50,
                            const double xmax = 10.0,
                            const bool logy = true) {
@@ -401,7 +423,7 @@ void PlotFHCvsRHC_WithRatio(TCanvas& c, TFile* fFHC, TFile* fRHC,
   hR->SetLineWidth(2);
 
   hF->SetTitle(TString::Format("%s: FHC vs RHC (CV, 5MeV bin, rebinned)", flavor.Data()));
-  hF->GetXaxis()->SetTitle("E_{#nu} [GeV]");
+  hF->GetXaxis()->SetTitle("Neutrino Energy (GeV)");
   hF->GetYaxis()->SetTitle("Flux (a.u.)");
   hF->GetXaxis()->SetRangeUser(0.0, xmax);
 
@@ -409,7 +431,7 @@ void PlotFHCvsRHC_WithRatio(TCanvas& c, TFile* fFHC, TFile* fRHC,
   TH1D* ratio = MakeRatio(hF, hR, TString::Format("ratio_%s", flavor.Data()),
                           TString::Format("%s: FHC/RHC", flavor.Data()));
   if (!ratio) return;
-  ratio->GetXaxis()->SetTitle("E_{#nu} [GeV]");
+  ratio->GetXaxis()->SetTitle("Neutrino Energy (GeV)");
   ratio->GetYaxis()->SetTitle("FHC / RHC");
   ratio->GetXaxis()->SetRangeUser(0.0, xmax);
   ratio->SetLineColor(kBlack);
@@ -465,7 +487,7 @@ void PlotFHCvsRHC_WithRatio(TCanvas& c, TFile* fFHC, TFile* fRHC,
   line.SetLineStyle(2);
   line.DrawLine(0.0, 1.0, xmax, 1.0);
 
-  c.Print(outpdf);
+  SaveCanvas(c, outdir);
 
   delete p1;
   delete p2;
@@ -473,7 +495,7 @@ void PlotFHCvsRHC_WithRatio(TCanvas& c, TFile* fFHC, TFile* fRHC,
 }
 
 void PlotWrongSignAndNueContamination(TCanvas& c, TFile* fFHC, TFile* fRHC,
-                                     const TString& outpdf,
+                                     const TString& outdir,
                                      const int rebinFine = 50,
                                      const double xmax = 10.0) {
   // Wrong-sign (mode quality):
@@ -500,7 +522,7 @@ void PlotWrongSignAndNueContamination(TCanvas& c, TFile* fFHC, TFile* fRHC,
     TH1D* rF = MakeRatio(numubF, numuF, "ws_FHC", "FHC wrong-sign: #bar{#nu}_{#mu} / #nu_{#mu}");
     rF->SetLineColor(kBlue + 1);
     rF->SetLineWidth(2);
-    rF->GetXaxis()->SetTitle("E_{#nu} [GeV]");
+    rF->GetXaxis()->SetTitle("Neutrino Energy (GeV)");
     rF->GetYaxis()->SetTitle("Wrong-sign fraction");
     rF->GetXaxis()->SetRangeUser(0.0, xmax);
 
@@ -527,7 +549,7 @@ void PlotWrongSignAndNueContamination(TCanvas& c, TFile* fFHC, TFile* fRHC,
     leg.Draw();
 
     DrawHeader("Wrong-sign fraction vs energy");
-    c.Print(outpdf);
+    SaveCanvas(c, outdir);
 
     delete rF;
     if (rR) delete rR;
@@ -540,7 +562,7 @@ void PlotWrongSignAndNueContamination(TCanvas& c, TFile* fFHC, TFile* fRHC,
     TH1D* cF = MakeRatio(nueF, numuF, "cont_FHC", "FHC intrinsic #nu_{e}: #nu_{e}/#nu_{#mu}");
     cF->SetLineColor(kBlue + 1);
     cF->SetLineWidth(2);
-    cF->GetXaxis()->SetTitle("E_{#nu} [GeV]");
+    cF->GetXaxis()->SetTitle("Neutrino Energy (GeV)");
     cF->GetYaxis()->SetTitle("Contamination ratio");
     cF->GetXaxis()->SetRangeUser(0.0, xmax);
 
@@ -567,7 +589,7 @@ void PlotWrongSignAndNueContamination(TCanvas& c, TFile* fFHC, TFile* fRHC,
     leg.Draw();
 
     DrawHeader("Intrinsic #nu_{e} contamination vs energy");
-    c.Print(outpdf);
+    SaveCanvas(c, outdir);
 
     delete cF;
     if (cR) delete cR;
@@ -575,7 +597,7 @@ void PlotWrongSignAndNueContamination(TCanvas& c, TFile* fFHC, TFile* fRHC,
 }
 
 void PlotParentageStackAndFraction(TCanvas& c, TFile* f, const TString& mode,
-                                  const TString& flavor, const TString& outpdf,
+                                  const TString& flavor, const TString& outdir,
                                   const int rebinFine = 50,
                                   const double xmax = 10.0) {
   // Total (CV, fine binning)
@@ -586,7 +608,7 @@ void PlotParentageStackAndFraction(TCanvas& c, TFile* f, const TString& mode,
   if (rebinFine > 1) total->Rebin(rebinFine);
   total->SetLineColor(kBlack);
   total->SetLineWidth(3);
-  total->GetXaxis()->SetTitle("E_{#nu} [GeV]");
+  total->GetXaxis()->SetTitle("Neutrino Energy (GeV)");
   total->GetYaxis()->SetTitle("Flux (a.u.)");
   total->GetXaxis()->SetRangeUser(0.0, xmax);
 
@@ -612,7 +634,7 @@ void PlotParentageStackAndFraction(TCanvas& c, TFile* f, const TString& mode,
   // Stack plot
   {
     THStack st(TString::Format("st_%s_%s", mode.Data(), flavor.Data()),
-               TString::Format("%s %s parentage stack;E_{#nu} [GeV];Flux (a.u.)", mode.Data(), flavor.Data()));
+               TString::Format("%s %s parentage stack;Neutrino Energy (GeV);Flux (a.u.)", mode.Data(), flavor.Data()));
     for (auto* h : comps) st.Add(h);
 
     c.Clear();
@@ -640,13 +662,13 @@ void PlotParentageStackAndFraction(TCanvas& c, TFile* f, const TString& mode,
     leg.Draw();
 
     DrawHeader(TString::Format("%s %s: flux parentage (stack)", mode.Data(), flavor.Data()));
-    c.Print(outpdf);
+    SaveCanvas(c, outdir);
   }
 
   // Fraction (stacked fractions sum to ~1)
   {
     THStack stf(TString::Format("stfrac_%s_%s", mode.Data(), flavor.Data()),
-                TString::Format("%s %s parent fraction;E_{#nu} [GeV];Fraction", mode.Data(), flavor.Data()));
+                TString::Format("%s %s parent fraction;Neutrino Energy (GeV);Fraction", mode.Data(), flavor.Data()));
 
     std::vector<TH1D*> fracs;
     fracs.reserve(comps.size());
@@ -684,7 +706,7 @@ void PlotParentageStackAndFraction(TCanvas& c, TFile* f, const TString& mode,
     leg.Draw();
 
     DrawHeader(TString::Format("%s %s: parent fraction vs energy", mode.Data(), flavor.Data()));
-    c.Print(outpdf);
+    SaveCanvas(c, outdir);
 
     for (auto* r : fracs) delete r;
   }
@@ -694,7 +716,7 @@ void PlotParentageStackAndFraction(TCanvas& c, TFile* f, const TString& mode,
 }
 
 void PlotRegionBreakdown(TCanvas& c, TFile* f, const TString& mode,
-                         const TString& flavor, const TString& outpdf,
+                         const TString& flavor, const TString& outdir,
                          const int rebinFine = 50,
                          const double xmax = 10.0) {
   // Uses:
@@ -721,7 +743,7 @@ void PlotRegionBreakdown(TCanvas& c, TFile* f, const TString& mode,
   hD->SetLineWidth(2);
 
   hT->SetTitle(TString::Format("%s %s: region breakdown (OtherPlots/*_flux_*)", mode.Data(), flavor.Data()));
-  hT->GetXaxis()->SetTitle("E_{#nu} [GeV]");
+  hT->GetXaxis()->SetTitle("Neutrino Energy (GeV)");
   hT->GetYaxis()->SetTitle("Flux (a.u.)");
   hT->GetXaxis()->SetRangeUser(0.0, xmax);
 
@@ -743,7 +765,7 @@ void PlotRegionBreakdown(TCanvas& c, TFile* f, const TString& mode,
   leg.Draw();
 
   DrawHeader(TString::Format("%s %s: flux by production region", mode.Data(), flavor.Data()));
-  c.Print(outpdf);
+  SaveCanvas(c, outdir);
 
   delete hT;
   delete hP;
@@ -751,7 +773,7 @@ void PlotRegionBreakdown(TCanvas& c, TFile* f, const TString& mode,
 }
 
 void Plot2DExamples(TCanvas& c, TFile* f, const TString& mode,
-                    const TString& flavor, const TString& outpdf) {
+                    const TString& flavor, const TString& outdir) {
   // Two 2D examples you listed:
   //   flavor/OtherPlots/flavor_parent_zpos_angle
   //   flavor/OtherPlots/flavor_parent_zpos_angle_energy
@@ -775,14 +797,14 @@ void Plot2DExamples(TCanvas& c, TFile* f, const TString& mode,
     h2->Draw("COLZ");
 
     DrawHeader(TString::Format("%s %s: 2D map (%zu/2)", mode.Data(), flavor.Data(), i + 1));
-    c.Print(outpdf);
+    SaveCanvas(c, outdir);
 
     delete h2;
   }
 }
 
 void PlotPPFXUncertainties(TCanvas& c, TFile* f, const TString& mode,
-                           const TString& flavor, const TString& outpdf,
+                           const TString& flavor, const TString& outdir,
                            const int nuniv = 200) {
   // CV coarse histogram (matches multisim binning):
   //   numu/Detsmear/numu_CV_AV_TPC  (20 bins, 0-10)
@@ -792,7 +814,7 @@ void PlotPPFXUncertainties(TCanvas& c, TFile* f, const TString& mode,
   TH1D* cv = GetH1Clone(f, p, TString::Format("cv_%s_%s", mode.Data(), flavor.Data()));
   if (!cv) return;
 
-  cv->GetXaxis()->SetTitle("E_{#nu} [GeV]");
+  cv->GetXaxis()->SetTitle("Neutrino Energy (GeV)");
   cv->GetYaxis()->SetTitle("Flux (a.u.)");
 
   // Groups present in your file listing.
@@ -899,7 +921,7 @@ void PlotPPFXUncertainties(TCanvas& c, TFile* f, const TString& mode,
     leg.Draw();
 
     DrawHeader(TString::Format("%s %s: PPFX multisim uncertainty (coarse binning)", mode.Data(), flavor.Data()));
-    c.Print(outpdf);
+    SaveCanvas(c, outdir);
   }
 
   // --------------------------------------------------------------------------
@@ -914,8 +936,8 @@ void PlotPPFXUncertainties(TCanvas& c, TFile* f, const TString& mode,
     if (covPlot) {
       covPlot->SetDirectory(0);
       covPlot->SetTitle(TString::Format("%s %s: total PPFX covariance (sum of groups)", mode.Data(), flavor.Data()));
-      covPlot->GetXaxis()->SetTitle("E_{#nu} [GeV]");
-      covPlot->GetYaxis()->SetTitle("E_{#nu} [GeV]");
+      covPlot->GetXaxis()->SetTitle("Neutrino Energy (GeV)");
+      covPlot->GetYaxis()->SetTitle("Neutrino Energy (GeV)");
       SetSymmetricZRange(covPlot);
 
       c.Clear();
@@ -923,7 +945,7 @@ void PlotPPFXUncertainties(TCanvas& c, TFile* f, const TString& mode,
       c.SetLogz(false);
       covPlot->Draw("COLZ");
       DrawHeader(TString::Format("%s %s: PPFX covariance matrix (total)", mode.Data(), flavor.Data()));
-      c.Print(outpdf);
+      SaveCanvas(c, outdir);
       delete covPlot;
     }
   }
@@ -934,8 +956,8 @@ void PlotPPFXUncertainties(TCanvas& c, TFile* f, const TString& mode,
     if (covPlot) {
       covPlot->SetDirectory(0);
       covPlot->SetTitle(TString::Format("%s %s: total PPFX covariance (shape-only; sum of groups)", mode.Data(), flavor.Data()));
-      covPlot->GetXaxis()->SetTitle("E_{#nu} [GeV]");
-      covPlot->GetYaxis()->SetTitle("E_{#nu} [GeV]");
+      covPlot->GetXaxis()->SetTitle("Neutrino Energy (GeV)");
+      covPlot->GetYaxis()->SetTitle("Neutrino Energy (GeV)");
       SetSymmetricZRange(covPlot);
 
       c.Clear();
@@ -943,7 +965,7 @@ void PlotPPFXUncertainties(TCanvas& c, TFile* f, const TString& mode,
       c.SetLogz(false);
       covPlot->Draw("COLZ");
       DrawHeader(TString::Format("%s %s: PPFX covariance matrix (shape-only)", mode.Data(), flavor.Data()));
-      c.Print(outpdf);
+      SaveCanvas(c, outdir);
       delete covPlot;
     }
   }
@@ -954,8 +976,8 @@ void PlotPPFXUncertainties(TCanvas& c, TFile* f, const TString& mode,
     if (covPlot) {
       covPlot->SetDirectory(0);
       covPlot->SetTitle(TString::Format("%s %s: PPFX MIPP pion covariance", mode.Data(), flavor.Data()));
-      covPlot->GetXaxis()->SetTitle("E_{#nu} [GeV]");
-      covPlot->GetYaxis()->SetTitle("E_{#nu} [GeV]");
+      covPlot->GetXaxis()->SetTitle("Neutrino Energy (GeV)");
+      covPlot->GetYaxis()->SetTitle("Neutrino Energy (GeV)");
       SetSymmetricZRange(covPlot);
 
       c.Clear();
@@ -963,7 +985,7 @@ void PlotPPFXUncertainties(TCanvas& c, TFile* f, const TString& mode,
       c.SetLogz(false);
       covPlot->Draw("COLZ");
       DrawHeader(TString::Format("%s %s: PPFX covariance (MIPP pion)", mode.Data(), flavor.Data()));
-      c.Print(outpdf);
+      SaveCanvas(c, outdir);
       delete covPlot;
     }
   }
@@ -974,8 +996,8 @@ void PlotPPFXUncertainties(TCanvas& c, TFile* f, const TString& mode,
     if (covPlot) {
       covPlot->SetDirectory(0);
       covPlot->SetTitle(TString::Format("%s %s: PPFX MIPP kaon covariance", mode.Data(), flavor.Data()));
-      covPlot->GetXaxis()->SetTitle("E_{#nu} [GeV]");
-      covPlot->GetYaxis()->SetTitle("E_{#nu} [GeV]");
+      covPlot->GetXaxis()->SetTitle("Neutrino Energy (GeV)");
+      covPlot->GetYaxis()->SetTitle("Neutrino Energy (GeV)");
       SetSymmetricZRange(covPlot);
 
       c.Clear();
@@ -983,7 +1005,7 @@ void PlotPPFXUncertainties(TCanvas& c, TFile* f, const TString& mode,
       c.SetLogz(false);
       covPlot->Draw("COLZ");
       DrawHeader(TString::Format("%s %s: PPFX covariance (MIPP kaon)", mode.Data(), flavor.Data()));
-      c.Print(outpdf);
+      SaveCanvas(c, outdir);
       delete covPlot;
     }
   }
@@ -996,11 +1018,11 @@ void PlotPPFXUncertainties(TCanvas& c, TFile* f, const TString& mode,
       c.Clear();
       c.SetRightMargin(0.14);
       corrTotal->SetTitle(TString::Format("%s %s: total PPFX correlation (sum of groups)", mode.Data(), flavor.Data()));
-      corrTotal->GetXaxis()->SetTitle("E_{#nu} [GeV]");
-      corrTotal->GetYaxis()->SetTitle("E_{#nu} [GeV]");
+      corrTotal->GetXaxis()->SetTitle("Neutrino Energy (GeV)");
+      corrTotal->GetYaxis()->SetTitle("Neutrino Energy (GeV)");
       corrTotal->Draw("COLZ");
       DrawHeader(TString::Format("%s %s: PPFX correlation matrix", mode.Data(), flavor.Data()));
-      c.Print(outpdf);
+      SaveCanvas(c, outdir);
       delete corrTotal;
     }
   }
@@ -1014,11 +1036,11 @@ void PlotPPFXUncertainties(TCanvas& c, TFile* f, const TString& mode,
       c.Clear();
       c.SetRightMargin(0.14);
       corrTotalShape->SetTitle(TString::Format("%s %s: total PPFX correlation (shape-only; sum of groups)", mode.Data(), flavor.Data()));
-      corrTotalShape->GetXaxis()->SetTitle("E_{#nu} [GeV]");
-      corrTotalShape->GetYaxis()->SetTitle("E_{#nu} [GeV]");
+      corrTotalShape->GetXaxis()->SetTitle("Neutrino Energy (GeV)");
+      corrTotalShape->GetYaxis()->SetTitle("Neutrino Energy (GeV)");
       corrTotalShape->Draw("COLZ");
       DrawHeader(TString::Format("%s %s: PPFX correlation (shape-only)", mode.Data(), flavor.Data()));
-      c.Print(outpdf);
+      SaveCanvas(c, outdir);
       delete corrTotalShape;
     }
   }
@@ -1032,11 +1054,11 @@ void PlotPPFXUncertainties(TCanvas& c, TFile* f, const TString& mode,
       c.Clear();
       c.SetRightMargin(0.14);
       corrPion->SetTitle(TString::Format("%s %s: PPFX MIPP pion correlation", mode.Data(), flavor.Data()));
-      corrPion->GetXaxis()->SetTitle("E_{#nu} [GeV]");
-      corrPion->GetYaxis()->SetTitle("E_{#nu} [GeV]");
+      corrPion->GetXaxis()->SetTitle("Neutrino Energy (GeV)");
+      corrPion->GetYaxis()->SetTitle("Neutrino Energy (GeV)");
       corrPion->Draw("COLZ");
       DrawHeader(TString::Format("%s %s: PPFX correlation (MIPP pion)", mode.Data(), flavor.Data()));
-      c.Print(outpdf);
+      SaveCanvas(c, outdir);
       delete corrPion;
     }
   }
@@ -1049,11 +1071,11 @@ void PlotPPFXUncertainties(TCanvas& c, TFile* f, const TString& mode,
       c.Clear();
       c.SetRightMargin(0.14);
       corrKaon->SetTitle(TString::Format("%s %s: PPFX MIPP kaon correlation", mode.Data(), flavor.Data()));
-      corrKaon->GetXaxis()->SetTitle("E_{#nu} [GeV]");
-      corrKaon->GetYaxis()->SetTitle("E_{#nu} [GeV]");
+      corrKaon->GetXaxis()->SetTitle("Neutrino Energy (GeV)");
+      corrKaon->GetYaxis()->SetTitle("Neutrino Energy (GeV)");
       corrKaon->Draw("COLZ");
       DrawHeader(TString::Format("%s %s: PPFX correlation (MIPP kaon)", mode.Data(), flavor.Data()));
-      c.Print(outpdf);
+      SaveCanvas(c, outdir);
       delete corrKaon;
     }
   }
@@ -1077,7 +1099,7 @@ void PlotPPFXUncertainties(TCanvas& c, TFile* f, const TString& mode,
 void makeNuMIFluxPlots(
   const char* fhc_file = "/exp/uboone/data/users/bnayak/ppfx/flugg_studies/NuMIFlux_dk2nu_FHC.root",
   const char* rhc_file = "/exp/uboone/data/users/bnayak/ppfx/flugg_studies/NuMIFlux_dk2nu_RHC.root",
-  const char* outpdf   = "NuMIFlux_dk2nu_interesting_plots.pdf"
+  const char* outdir_in   = "NuMIFlux_dk2nu_plots"
 ) {
   gROOT->SetBatch(kTRUE);
   SetNiceStyle();
@@ -1098,43 +1120,42 @@ void makeNuMIFluxPlots(
   std::cout << "[INFO] FHC total POT (sum of POT tree): " << potF << "\n";
   std::cout << "[INFO] RHC total POT (sum of POT tree): " << potR << "\n";
 
+  TString outdir = NormalizeOutDir(outdir_in);
+  EnsureOutDir(outdir);
+
   TCanvas c("c", "c", 1000, 750);
 
-  // Open multi-page PDF
-  c.Print(TString::Format("%s[", outpdf));
 
   // 1) Flux by flavor (per mode)
-  PlotTotalFluxByFlavor(c, fFHC, "FHC", outpdf, /*logy=*/true,  /*rebinFine=*/50, /*xmax=*/10.0);
-  PlotTotalFluxByFlavor(c, fRHC, "RHC", outpdf, /*logy=*/true,  /*rebinFine=*/50, /*xmax=*/10.0);
+  PlotTotalFluxByFlavor(c, fFHC, "FHC", outdir, /*logy=*/true,  /*rebinFine=*/50, /*xmax=*/10.0);
+  PlotTotalFluxByFlavor(c, fRHC, "RHC", outdir, /*logy=*/true,  /*rebinFine=*/50, /*xmax=*/10.0);
 
   // 2) FHC vs RHC comparison for dominant flavors
-  PlotFHCvsRHC_WithRatio(c, fFHC, fRHC, "numu",   outpdf, /*rebinFine=*/50, /*xmax=*/10.0, /*logy=*/true);
-  PlotFHCvsRHC_WithRatio(c, fFHC, fRHC, "numubar",outpdf, /*rebinFine=*/50, /*xmax=*/10.0, /*logy=*/true);
+  PlotFHCvsRHC_WithRatio(c, fFHC, fRHC, "numu",   outdir, /*rebinFine=*/50, /*xmax=*/10.0, /*logy=*/true);
+  PlotFHCvsRHC_WithRatio(c, fFHC, fRHC, "numubar",outdir, /*rebinFine=*/50, /*xmax=*/10.0, /*logy=*/true);
 
   // 3) Wrong-sign + nue contamination
-  PlotWrongSignAndNueContamination(c, fFHC, fRHC, outpdf, /*rebinFine=*/50, /*xmax=*/10.0);
+  PlotWrongSignAndNueContamination(c, fFHC, fRHC, outdir, /*rebinFine=*/50, /*xmax=*/10.0);
 
   // 4) Parentage stacks + fractions
-  PlotParentageStackAndFraction(c, fFHC, "FHC", "numu",    outpdf, /*rebinFine=*/50, /*xmax=*/10.0);
-  PlotParentageStackAndFraction(c, fRHC, "RHC", "numubar", outpdf, /*rebinFine=*/50, /*xmax=*/10.0);
+  PlotParentageStackAndFraction(c, fFHC, "FHC", "numu",    outdir, /*rebinFine=*/50, /*xmax=*/10.0);
+  PlotParentageStackAndFraction(c, fRHC, "RHC", "numubar", outdir, /*rebinFine=*/50, /*xmax=*/10.0);
 
   // 5) Region breakdown (targ/pipe/dump)
-  PlotRegionBreakdown(c, fFHC, "FHC", "numu", outpdf, /*rebinFine=*/50, /*xmax=*/10.0);
-  PlotRegionBreakdown(c, fRHC, "RHC", "numubar", outpdf, /*rebinFine=*/50, /*xmax=*/10.0);
+  PlotRegionBreakdown(c, fFHC, "FHC", "numu", outdir, /*rebinFine=*/50, /*xmax=*/10.0);
+  PlotRegionBreakdown(c, fRHC, "RHC", "numubar", outdir, /*rebinFine=*/50, /*xmax=*/10.0);
 
   // 6) A couple of 2D “map” plots
-  Plot2DExamples(c, fFHC, "FHC", "numu", outpdf);
-  Plot2DExamples(c, fRHC, "RHC", "numubar", outpdf);
+  Plot2DExamples(c, fFHC, "FHC", "numu", outdir);
+  Plot2DExamples(c, fRHC, "RHC", "numubar", outdir);
 
   // 7) PPFX multisim uncertainty (coarse binning; matches Multisims hist binning)
-  PlotPPFXUncertainties(c, fFHC, "FHC", "numu", outpdf, /*nuniv=*/200);
-  PlotPPFXUncertainties(c, fRHC, "RHC", "numubar", outpdf, /*nuniv=*/200);
+  PlotPPFXUncertainties(c, fFHC, "FHC", "numu", outdir, /*nuniv=*/200);
+  PlotPPFXUncertainties(c, fRHC, "RHC", "numubar", outdir, /*nuniv=*/200);
 
-  // Close multi-page PDF
-  c.Print(TString::Format("%s]", outpdf));
 
   fFHC->Close();
   fRHC->Close();
 
-  std::cout << "[INFO] Wrote: " << outpdf << "\n";
+  std::cout << "[INFO] Wrote PDFs under: " << outdir << "\n";
 }
