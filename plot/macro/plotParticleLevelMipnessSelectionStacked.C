@@ -11,9 +11,11 @@
 //     'plotParticleLevelMipnessSelectionStacked("", "w_nominal", "", false, true, "sel_trigger && sel_triggered_slice && sel_reco_fv && sel_triggered_muon")'
 
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -58,7 +60,9 @@ int plotParticleLevelMipnessSelectionStacked(const std::string &event_list_path 
                                              bool use_logy = false,
                                              bool include_data = true,
                                              const std::string &selection_upto = "sel_trigger && sel_triggered_slice && sel_reco_fv",
-                                             const std::string &particle_pdg_branch = "backtracked_pdg_codes")
+                                             const std::string &particle_pdg_branch = "backtracked_pdg_codes",
+                                             double squash_midpoint = 1.0,
+                                             double squash_softness = 0.2)
 {
     ROOT::EnableImplicitMT();
 
@@ -119,6 +123,13 @@ int plotParticleLevelMipnessSelectionStacked(const std::string &event_list_path 
         return 1;
     }
 
+    if (squash_softness <= 0.0)
+    {
+        std::cerr << "[plotParticleLevelMipnessSelectionStacked] squash_softness must be > 0, got "
+                  << squash_softness << "\n";
+        return 1;
+    }
+
     std::vector<Entry> entries;
     entries.reserve(include_data ? 3 : 2);
 
@@ -150,6 +161,19 @@ int plotParticleLevelMipnessSelectionStacked(const std::string &event_list_path 
     e_ext.selection.nominal.node = e_ext.selection.nominal.node.Filter(combined_sel);
     if (p_data != nullptr)
         p_data->selection.nominal.node = p_data->selection.nominal.node.Filter(combined_sel);
+
+    std::ostringstream squashed_expr;
+    squashed_expr << "1.0/(1.0 + exp((track_mipness_median_plane_score - "
+                  << squash_midpoint
+                  << ")/"
+                  << squash_softness
+                  << "))";
+    const std::string squashed_col = "track_mipness_squashed_score";
+
+    e_mc.selection.nominal.node = e_mc.selection.nominal.node.Define(squashed_col, squashed_expr.str());
+    e_ext.selection.nominal.node = e_ext.selection.nominal.node.Define(squashed_col, squashed_expr.str());
+    if (p_data != nullptr)
+        p_data->selection.nominal.node = p_data->selection.nominal.node.Define(squashed_col, squashed_expr.str());
 
     Plotter plotter;
     auto &opt = plotter.options();
@@ -187,6 +211,8 @@ int plotParticleLevelMipnessSelectionStacked(const std::string &event_list_path 
     std::cout << "[plotParticleLevelMipnessSelectionStacked] selection=" << combined_sel
               << ", include_data=" << (include_data ? "true" : "false")
               << ", use_logy=" << (use_logy ? "true" : "false")
+              << ", squash_midpoint=" << squash_midpoint
+              << ", squash_softness=" << squash_softness
               << ", particle_pdg_branch=" << opt.particle_pdg_branch << "\n";
 
     if (include_data)
@@ -196,6 +222,25 @@ int plotParticleLevelMipnessSelectionStacked(const std::string &event_list_path 
 
     std::cout << "[plotParticleLevelMipnessSelectionStacked] wrote "
               << plotter.options().out_dir << "/" << spec.id << "."
+              << plotter.options().image_format << "\n";
+
+    TH1DModel spec_squashed = spec;
+    spec_squashed.id = "particle_level_track_mipness_selection_upto_squashed";
+    spec_squashed.name = "particle_level_track_mipness_selection_upto_squashed";
+    spec_squashed.title = "Squashed track MIPness (particle-level stack)";
+    spec_squashed.expr = squashed_col;
+    spec_squashed.nbins = 50;
+    spec_squashed.xmin = 0.0;
+    spec_squashed.xmax = 1.0;
+    opt.x_title = "Squashed track MIPness score";
+
+    if (include_data)
+        plotter.draw_stack(spec_squashed, mc, data);
+    else
+        plotter.draw_stack(spec_squashed, mc);
+
+    std::cout << "[plotParticleLevelMipnessSelectionStacked] wrote "
+              << plotter.options().out_dir << "/" << spec_squashed.id << "."
               << plotter.options().image_format << "\n";
 
     return 0;
