@@ -39,6 +39,10 @@
 static std::vector<std::string> default_event_columns()
 {
     return {
+        "run",
+        "sub",
+        "evt",
+
         "analysis_channels",
         "w_nominal",
 
