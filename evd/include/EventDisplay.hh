@@ -95,9 +95,9 @@ class EventDisplay
             std::string run = "run";
             std::string sub = "sub";
             std::string evt = "evt";
-            std::string det_u = "event_detector_image_u";
-            std::string det_v = "event_detector_image_v";
-            std::string det_w = "event_detector_image_w";
+            std::string det_u = "detector_image_u";
+            std::string det_v = "detector_image_v";
+            std::string det_w = "detector_image_w";
             std::string sem_u = "semantic_image_u";
             std::string sem_v = "semantic_image_v";
             std::string sem_w = "semantic_image_w";
