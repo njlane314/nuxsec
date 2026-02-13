@@ -93,6 +93,7 @@ static std::vector<std::string> default_event_columns()
         "slice_semantic_active_pixels_u",
         "slice_semantic_active_pixels_v",
         "slice_semantic_active_pixels_w",
+        "inf_scores",
 
         "nu_vtx_x",
         "nu_vtx_y",
