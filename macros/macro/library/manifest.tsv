@@ -1,0 +1,4 @@
+# heron macro library manifest
+# columns: name<TAB>macro<TAB>call
+# example:
+# pr_eff	plotPREffVsNeutrinoKinematics.C	plotPREffVsNeutrinoKinematics()

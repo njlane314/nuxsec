@@ -233,7 +233,7 @@ heron --set template macro plotPotSimple.C
 ```
 
 For an in-repo macro library, keep macros under `macros/macro/library/` (for example,
-as a git submodule checkout), and optionally add extra search paths.
+in this repository), and optionally add extra search paths.
 
 ```bash
 export HERON_MACRO_LIBRARY_DIR=macros/macro/library
