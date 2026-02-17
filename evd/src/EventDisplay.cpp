@@ -536,7 +536,9 @@ void EventDisplay::render_from_rdf(ROOT::RDF::RNode df, const BatchOptions &opt)
                             };
 
                             const float min_pos = q(0.02);
-                            const float max_val = q(0.995);
+                            // Keep a robust upper bound while reducing colour saturation
+                            // on bright detector features.
+                            const float max_val = q(0.999);
 
                             plane_opts.det_min = std::max(min_pos, 1e-4f);
                             plane_opts.det_max = max_val;
