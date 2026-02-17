@@ -74,7 +74,7 @@ class EventDisplay
 
     void draw(TCanvas &canvas);
 
-    void draw_and_save(const std::string &image_format = "png");
+    void draw_and_save(const std::string &image_format = "pdf");
     void draw_and_save(const std::string &image_format,
                        const std::string &file_override);
 
@@ -84,7 +84,7 @@ class EventDisplay
         unsigned long long n_events = 1;
 
         std::string out_dir = "./plots/event_displays";
-        std::string image_format = "png";
+        std::string image_format = "pdf";
         std::string combined_pdf;
         std::string manifest_path;
 

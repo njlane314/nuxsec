@@ -87,7 +87,7 @@ void EventDisplay::draw_and_save(const std::string &image_format)
                    opt_.canvas_size);
     draw(canvas);
 
-    const std::string fmt = image_format.empty() ? "png" : image_format;
+    const std::string fmt = image_format.empty() ? "pdf" : image_format;
     canvas.SaveAs((output_directory_ + "/" + plot_name_ + "." + fmt).c_str());
 }
 
@@ -108,7 +108,7 @@ void EventDisplay::draw_and_save(const std::string &image_format,
     }
     else
     {
-        const std::string fmt = image_format.empty() ? "png" : image_format;
+        const std::string fmt = image_format.empty() ? "pdf" : image_format;
         canvas.SaveAs((output_directory_ + "/" + plot_name_ + "." + fmt).c_str());
     }
 }
@@ -235,8 +235,7 @@ void EventDisplay::draw_detector(TCanvas &c)
     hist_->GetXaxis()->SetAxisColor(0);
     hist_->GetYaxis()->SetAxisColor(0);
 
-    if (opt_.use_log_z)
-        c.SetLogz();
+    c.SetLogz(opt_.use_log_z ? 1 : 0);
 
     hist_->Draw("COL");
 }
