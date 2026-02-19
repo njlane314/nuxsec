@@ -95,8 +95,6 @@ ROOT::RDF::RNode SelectionService::apply(ROOT::RDF::RNode node, Preset p, const 
         return filter_on(node, "sel_slice");
     case Preset::Fiducial:
         return filter_on(node, "sel_fiducial");
-    case Preset::Topology:
-        return filter_on(node, "sel_topology");
     case Preset::Muon:
         return filter_on(node, "sel_muon");
     default:
@@ -153,7 +151,6 @@ ROOT::RDF::RNode SelectionService::decorate(ROOT::RDF::RNode node, Preset p, con
             {"num_slices", "topological_score"});
         return node;
     case Preset::Fiducial:
-    case Preset::Topology:
     case Preset::Muon:
         define_if_missing(
             "sel_slice",
@@ -229,8 +226,6 @@ std::string SelectionService::selection_label(Preset p)
         return "Slice Selection";
     case Preset::Fiducial:
         return "Fiducial Selection";
-    case Preset::Topology:
-        return "Topology Selection";
     case Preset::Muon:
         return "Muon Selection";
     case Preset::Empty:
