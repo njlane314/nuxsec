@@ -26,7 +26,7 @@ apps/  CLI entrypoints that orchestrate the pipeline
 
 ### Runtime 
 
-- `scratch/out/<set>/art/` stores provenance ROOT outputs from `heron art`.
+- `$HERON_OUTPUT_DIR/art/` stores provenance ROOT outputs from `heron art` (the variable must be set).
 - `scratch/out/<set>/sample/` stores per-sample ROOT outputs and `samples.tsv` produced by `heron sample`.
 - `scratch/out/<set>/event/` stores event-level ROOT outputs produced by `heron event`.
 - `scratch/plot/<set>/` stores plot outputs produced by `heron macro` (configurable via `HERON_PLOT_DIR`).
@@ -99,10 +99,11 @@ wrapper script:
 ### Environment Variables
 
 - `HERON_SET` selects the active workspace (default: `template`).
-- `HERON_OUT_BASE` overrides the base output directory (default: `<repo>/scratch/out`).
+- `HERON_OUT_BASE` overrides the base output directory; if unset, `HERON_OUTPUT_DIR` is used before falling back to `<repo>/scratch/out`.
 - Temporary snapshot staging is written to `/exp/uboone/data/users/$USER/staging`; `USER` must be set.
 - `HERON_PLOT_BASE` overrides the plot base directory (default: `<repo>/scratch/plot`).
-- `HERON_ART_DIR`, `HERON_SAMPLE_DIR`, and `HERON_EVENT_DIR` override per-stage output directories.
+- `HERON_OUTPUT_DIR` is required by `heron art`; outputs are written to `$HERON_OUTPUT_DIR/art`.
+- `HERON_SAMPLE_DIR` and `HERON_EVENT_DIR` override per-stage output directories for `sample` and `event`.
 - `HERON_PLOT_DIR` and `HERON_PLOT_FORMAT` control plot output location and file extension.
 - `HERON_MACRO_LIBRARY_DIR` sets the in-repo macro library directory (default: `<repo>/macros/macro/library`).
 - `HERON_MACRO_PATH` sets additional colon-separated macro search paths (searched after `HERON_MACRO_LIBRARY_DIR`).

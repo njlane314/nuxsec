@@ -74,6 +74,10 @@ inline std::filesystem::path out_base_dir()
     {
         return std::filesystem::path(value);
     }
+    if (const char *value = getenv_cstr("HERON_OUTPUT_DIR"))
+    {
+        return std::filesystem::path(value);
+    }
     return repo_root_dir() / "scratch" / "out";
 }
 
