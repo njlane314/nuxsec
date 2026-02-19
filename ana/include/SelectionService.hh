@@ -37,7 +37,6 @@ enum class Preset
     Trigger,
     Slice,
     Fiducial,
-    Topology,
     Muon
 };
 
