@@ -39,6 +39,7 @@
 
 #include "EventListIO.hh"
 #include "PlotEnv.hh"
+#include "PlottingHelper.hh"
 #include "SampleCLI.hh"
 #include "SelectionService.hh"
 
