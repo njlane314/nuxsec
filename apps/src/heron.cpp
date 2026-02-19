@@ -42,14 +42,6 @@ const char *kUsageMacro =
     "  HERON_PLOT_FORMAT  Output extension (default: pdf)\n"
     "  HERON_SET          Workspace selector (default: out)\n";
 
-const char *kMainBanner =
-    "███╗   ██╗██╗   ██╗██╗  ██╗███████╗███████╗ ██████╗\n"
-    "████╗  ██║██║   ██║╚██╗██╔╝██╔════╝██╔════╝██╔════╝\n"
-    "██╔██╗ ██║██║   ██║ ╚███╔╝ ███████╗█████╗  ██║     \n"
-    "██║╚██╗██║██║   ██║ ██╔██╗ ╚════██║██╔══╝  ██║     \n"
-    "██║ ╚████║╚██████╔╝██╔╝ ██╗███████║███████╗╚██████╗\n"
-    "╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝ ╚═════╝\n";
-
 bool is_help_arg(const std::string &arg)
 {
     return arg == "-h" || arg == "--help";
@@ -104,8 +96,7 @@ GlobalOptions parse_global(int &i, int argc, char **argv)
 
 void print_main_help(std::ostream &out)
 {
-    out << kMainBanner << "\n"
-        << "HERON — Histogram and Event Relay for Orchestrated Normalisation.\n\n"
+    out << "HERON — Histogram and Event Relay for Orchestrated Normalisation.\n\n"
         << "Usage: heron <command> [args]\n\n"
         << "Commands:\n"
         << "  art         Aggregate art provenance for an input\n"
