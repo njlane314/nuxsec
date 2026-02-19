@@ -1,8 +1,8 @@
 EventColumnProvider
 ===================
 
-``EventColumnProvider`` loads event output column lists from the compiled
-defaults or a user-provided TSV schema.
+``EventColumnProvider`` loads event output column lists from the default
+repository TSV (``apps/config/event_columns.tsv``) or a user-provided TSV schema.
 
 Location
 --------

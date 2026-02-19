@@ -59,6 +59,12 @@ int run(const EventArgs &event_args, const std::string &log_prefix)
         inputs.push_back(std::move(input));
     }
 
+    std::string columns_tsv_path = event_args.columns_tsv_path;
+    if (columns_tsv_path.empty())
+    {
+        columns_tsv_path = (repo_root_dir() / "apps" / "config" / "event_columns.tsv").string();
+    }
+
     const std::vector<std::string> default_columns = {
         "run",
         "sub",
@@ -104,7 +110,7 @@ int run(const EventArgs &event_args, const std::string &log_prefix)
     const EventColumnProvider column_provider(
         default_columns,
         default_schema_columns,
-        event_args.columns_tsv_path);
+        columns_tsv_path);
 
     nu::EventListIO::init(event_args.output_root,
                           header,
