@@ -51,16 +51,16 @@ class SelectionService
     static const float muon_max_track_distance;
     static const unsigned muon_required_generation;
 
-    static ROOT::RDF::RNode apply(ROOT::RDF::RNode node, Preset p, const SelectionEntry &rec);
+    static ROOT::RDF::RNode apply(ROOT::RDF::RNode node, Preset p);
     static ROOT::RDF::RNode decorate(ROOT::RDF::RNode node);
     static std::string selection_label(Preset p);
     static bool is_in_truth_volume(float x, float y, float z) noexcept;
     static bool is_in_reco_volume(float x, float y, float z) noexcept;
 };
 
-inline ROOT::RDF::RNode apply(ROOT::RDF::RNode node, Preset p, const SelectionEntry &rec)
+inline ROOT::RDF::RNode apply(ROOT::RDF::RNode node, Preset p)
 {
-    return SelectionService::apply(node, p, rec);
+    return SelectionService::apply(node, p);
 }
 
 

@@ -82,7 +82,7 @@ inline ROOT::RDF::RNode filter_on(ROOT::RDF::RNode node, const char *col)
 
 } // namespace
 
-ROOT::RDF::RNode SelectionService::apply(ROOT::RDF::RNode node, Preset p, const SelectionEntry &rec)
+ROOT::RDF::RNode SelectionService::apply(ROOT::RDF::RNode node, Preset p)
 {
     node = decorate(node);
     switch (p)
@@ -121,7 +121,7 @@ ROOT::RDF::RNode SelectionService::decorate(ROOT::RDF::RNode node)
         define_if_missing(
             "sel_trigger",
             [](int beam_mode, int run, int sw, int sw_pre, int sw_post) {
-                const int numi_beam_mode = static_cast<int>(nu::SampleIO::BeamMode::kNuMI);
+                const int numi_beam_mode = static_cast<int>(SampleIO::BeamMode::kNuMI);
                 if (beam_mode == numi_beam_mode)
                 {
                     constexpr int numi_run_boundary = 16880;
