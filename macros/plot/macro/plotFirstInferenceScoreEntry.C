@@ -7,7 +7,7 @@
 //   ./heron macro plotFirstInferenceScoreEntry.C \
 //     'plotFirstInferenceScoreEntry("./scratch/out/event_list_myana.root")'
 //   ./heron macro plotFirstInferenceScoreEntry.C \
-//     'plotFirstInferenceScoreEntry("./scratch/out/event_list_myana.root","sel_triggered_muon",false,true)'
+//     'plotFirstInferenceScoreEntry("./scratch/out/event_list_myana.root","sel_muon",false,true)'
 
 #include <cstdlib>
 #include <algorithm>
@@ -130,7 +130,7 @@ RocCurve make_roc_curve(const std::vector<float> &scores, const std::vector<int>
 }
 
 int plotFirstInferenceScoreEntry(const std::string &samples_tsv = "",
-                                 const std::string &extra_sel = "sel_triggered_muon",
+                                 const std::string &extra_sel = "sel_muon",
                                  bool use_logy = true,
                                  bool include_data = false)
 {
@@ -228,10 +228,25 @@ int plotFirstInferenceScoreEntry(const std::string &samples_tsv = "",
 
     if (!extra_sel.empty())
     {
-        e_mc.selection.nominal.node = e_mc.selection.nominal.node.Filter(extra_sel);
-        e_ext.selection.nominal.node = e_ext.selection.nominal.node.Filter(extra_sel);
-        if (p_data != nullptr)
-            p_data->selection.nominal.node = p_data->selection.nominal.node.Filter(extra_sel);
+        const bool named_column = rdf.HasColumn(extra_sel);
+
+        if (named_column)
+        {
+            e_mc.selection.nominal.node = e_mc.selection.nominal.node.Filter(
+                [](bool pass) { return pass; }, {extra_sel});
+            e_ext.selection.nominal.node = e_ext.selection.nominal.node.Filter(
+                [](bool pass) { return pass; }, {extra_sel});
+            if (p_data != nullptr)
+                p_data->selection.nominal.node = p_data->selection.nominal.node.Filter(
+                    [](bool pass) { return pass; }, {extra_sel});
+        }
+        else
+        {
+            e_mc.selection.nominal.node = e_mc.selection.nominal.node.Filter(extra_sel);
+            e_ext.selection.nominal.node = e_ext.selection.nominal.node.Filter(extra_sel);
+            if (p_data != nullptr)
+                p_data->selection.nominal.node = p_data->selection.nominal.node.Filter(extra_sel);
+        }
     }
 
     Plotter plotter;
@@ -274,7 +289,12 @@ int plotFirstInferenceScoreEntry(const std::string &samples_tsv = "",
 
     ROOT::RDF::RNode auc_node = filter_by_mask(base, mask_mc);
     if (!extra_sel.empty())
-        auc_node = auc_node.Filter(extra_sel);
+    {
+        if (rdf.HasColumn(extra_sel))
+            auc_node = auc_node.Filter([](bool pass) { return pass; }, {extra_sel});
+        else
+            auc_node = auc_node.Filter(extra_sel);
+    }
 
     auto v_logit = auc_node.Take<float>("inf_score_0");
     auto v_sigmoid = auc_node.Take<float>("inf_score_0_sigmoid");
