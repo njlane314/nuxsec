@@ -64,9 +64,8 @@ class StackedHist
     // A copy of the MC total with *statistical* errors only (after any density scaling).
     std::unique_ptr<TH1D> mc_total_stat_;
     std::unique_ptr<TH1D> data_hist_;
+    std::unique_ptr<TH1D> mc_unc_hist_;
     std::unique_ptr<TH1D> sig_hist_;
-    std::unique_ptr<TH1D> mc_unc_up_;
-    std::unique_ptr<TH1D> mc_unc_down_;
     std::unique_ptr<TH1D> ratio_hist_;
     std::unique_ptr<TH1D> ratio_band_;
     std::vector<int> chan_order_;

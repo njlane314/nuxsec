@@ -53,6 +53,9 @@ struct Options
 {
     std::string out_dir = ".";
     std::string image_format = "png";
+    // STV/CCNp-style presentation: top legend band, thicker axes/ticks,
+    // dotted uncertainty outline, and Events/bin defaults.
+    bool stv_style = true;
     // MicroBooNE-like defaults: ratio panel + uncertainty band in ratio.
     bool show_ratio = true;
     bool show_ratio_band = true;
@@ -62,9 +65,9 @@ struct Options
     bool show_chi2 = true;
     bool use_log_x = false;
     bool use_log_y = false;
-    bool annotate_numbers = false;
+    bool annotate_numbers = true;
     bool overlay_signal = false;
-    bool legend_on_top = false;
+    bool legend_on_top = true;
     bool show_legend = true;
     bool show_watermark = true;
     bool show_cuts = false;
