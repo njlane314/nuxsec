@@ -11,9 +11,8 @@
 #include <string>
 #include <vector>
 
+#include "SampleIO.hh"
 
-const float SelectionService::trigger_min_beam_pe = 0.f;
-const float SelectionService::trigger_max_veto_pe = 20.f;
 
 const int SelectionService::slice_required_count = 1;
 const float SelectionService::slice_min_topology_score = 0.06f;
@@ -48,14 +47,6 @@ bool is_in_active_volume(const X &x, const Y &y, const Z &z)
     return is_within(x, min_x, max_x) &&
            is_within(y, min_y, max_y) &&
            is_within(z, min_z, max_z);
-}
-
-inline bool passes_trigger(Type src, float pe_beam, float pe_veto, int sw)
-{
-    const bool requires_dataset_gate = (src == Type::kMC);
-    (void)pe_beam;
-    (void)pe_veto;
-    return requires_dataset_gate ? (sw > 0) : true;
 }
 
 inline bool passes_slice(int ns, float topo)
@@ -132,13 +123,29 @@ ROOT::RDF::RNode SelectionService::decorate(ROOT::RDF::RNode node, Preset p, con
     case Preset::Empty:
         return node;
     case Preset::Trigger:
-        define_if_missing(
-            "sel_trigger",
-            [src = rec.source](float pe_beam, float pe_veto, int sw) {
-                return passes_trigger(src, pe_beam, pe_veto, sw);
-            },
-            {"optical_filter_pe_beam", "optical_filter_pe_veto", "software_trigger"});
+    {
+        if (has("beam_mode") && has("run") && has("software_trigger") && has("software_trigger_pre") && has("software_trigger_post"))
+        {
+            define_if_missing(
+                "sel_trigger",
+                [](int beam_mode, int run, int sw, int sw_pre, int sw_post) {
+                    const int numi_beam_mode = static_cast<int>(nu::SampleIO::BeamMode::kNuMI);
+                    if (beam_mode == numi_beam_mode)
+                    {
+                        constexpr int numi_run_boundary = 16880;
+                        if (run < numi_run_boundary)
+                            return sw_pre > 0;
+                        return sw_post > 0;
+                    }
+                    return sw > 0;
+                },
+                {"beam_mode", "run", "software_trigger", "software_trigger_pre", "software_trigger_post"});
+            return node;
+        }
+
+        define_if_missing("sel_trigger", [](int sw) { return sw > 0; }, {"software_trigger"});
         return node;
+    }
     case Preset::Slice:
         define_if_missing(
             "sel_slice",
