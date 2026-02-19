@@ -27,6 +27,7 @@
 #include "TDecompChol.h"
 #include "TImage.h"
 #include "TLine.h"
+#include "TLegendEntry.h"
 #include "TList.h"
 #include "TMatrixDSym.h"
 #include "TPaveText.h"
@@ -42,12 +43,11 @@ namespace nu
 namespace
 {
 constexpr int k_panel_fill_colour = kWhite;
-// Ratio-band uncertainty should read as a light, solid grey (MicroBooNE-like).
-constexpr int k_uncertainty_fill_colour = kGray + 1;
-constexpr int k_uncertainty_fill_style = 1001;
-constexpr int k_uncertainty_line_colour = kBlack;
-constexpr int k_uncertainty_line_style = kDotted;
-constexpr int k_uncertainty_line_width = 2;
+// Default (non-STV) uncertainty appearance.
+constexpr int k_uncertainty_fill_colour = kGray + 2;
+constexpr int k_uncertainty_fill_style = 3345;
+// STV-style uncertainty outline (matches the reference plots: dotted line, no fill).
+constexpr int k_uncertainty_outline_style = kDotted;
 
 bool stack_debug_enabled()
 {
@@ -106,9 +106,9 @@ std::pair<int, int> visible_bin_range(const TH1D &h, double xmin, double xmax)
     return {first_bin, last_bin};
 }
 
-std::string fmt_sci_tex(double value, int precision = 2)
+std::string fmt_times10(double value, int precision = 2)
 {
-    if (!(value > 0.0))
+    if (!(value > 0.0) || !std::isfinite(value))
     {
         return {};
     }
@@ -262,6 +262,110 @@ void StackedHist::setup_pads(TCanvas &c, TPad *&p_main, TPad *&p_ratio, TPad *&p
     p_ratio = nullptr;
     p_legend = nullptr;
 
+    // STV-style layout: full-width plot, optional ratio pad at bottom, optional legend band pad at top.
+    if (opt_.stv_style)
+    {
+        const bool want_leg_pad = opt_.show_legend && opt_.legend_on_top;
+        const double y_leg_split = want_leg_pad ? 0.85 : 1.00;
+
+        const std::string main_name = plot_name_ + "_pad_main";
+        const std::string ratio_name = plot_name_ + "_pad_ratio";
+        const std::string legend_name = plot_name_ + "_pad_legend";
+
+        if (want_ratio())
+        {
+            p_ratio = new TPad(ratio_name.c_str(), ratio_name.c_str(), 0.0, 0.01, 1.0, 0.23);
+            p_main = new TPad(main_name.c_str(), main_name.c_str(), 0.0, 0.23, 1.0, y_leg_split);
+            if (want_leg_pad)
+            {
+                p_legend = new TPad(legend_name.c_str(), legend_name.c_str(), 0.0, y_leg_split, 1.0, 1.0);
+            }
+
+            p_main->SetTopMargin(0.02);
+            p_main->SetBottomMargin(0.00);
+            p_main->SetLeftMargin(0.13);
+            p_main->SetRightMargin(0.06);
+            p_main->SetFillColor(k_panel_fill_colour);
+            p_main->SetFrameFillColor(k_panel_fill_colour);
+            p_main->SetGridx();
+            if (opt_.use_log_y)
+            {
+                p_main->SetLogy();
+            }
+
+            p_ratio->SetTopMargin(0.00);
+            p_ratio->SetBottomMargin(0.38);
+            p_ratio->SetLeftMargin(0.13);
+            p_ratio->SetRightMargin(0.06);
+            p_ratio->SetFillColor(k_panel_fill_colour);
+            p_ratio->SetFrameFillColor(k_panel_fill_colour);
+            p_ratio->SetFrameFillStyle(4000);
+            p_ratio->SetGridx();
+
+            if (p_legend)
+            {
+                p_legend->SetTopMargin(0.10);
+                p_legend->SetBottomMargin(0.02);
+                p_legend->SetLeftMargin(0.00);
+                p_legend->SetRightMargin(0.00);
+                p_legend->SetFillColor(k_panel_fill_colour);
+                p_legend->SetFrameFillColor(k_panel_fill_colour);
+            }
+
+            p_ratio->Draw();
+            p_main->Draw();
+            if (p_legend)
+            {
+                p_legend->Draw();
+            }
+            disable_primitive_ownership(p_ratio);
+            disable_primitive_ownership(p_main);
+            disable_primitive_ownership(p_legend);
+            return;
+        }
+
+        if (want_leg_pad)
+        {
+            p_main = new TPad(main_name.c_str(), main_name.c_str(), 0.0, 0.00, 1.0, y_leg_split);
+            p_legend = new TPad(legend_name.c_str(), legend_name.c_str(), 0.0, y_leg_split, 1.0, 1.0);
+        }
+        else
+        {
+            p_main = new TPad(main_name.c_str(), main_name.c_str(), 0.0, 0.00, 1.0, 1.0);
+        }
+
+        p_main->SetTopMargin(0.02);
+        p_main->SetBottomMargin(0.12);
+        p_main->SetLeftMargin(0.13);
+        p_main->SetRightMargin(0.06);
+        p_main->SetFillColor(k_panel_fill_colour);
+        p_main->SetFrameFillColor(k_panel_fill_colour);
+        p_main->SetGridx();
+        if (opt_.use_log_y)
+        {
+            p_main->SetLogy();
+        }
+
+        if (p_legend)
+        {
+            p_legend->SetTopMargin(0.10);
+            p_legend->SetBottomMargin(0.02);
+            p_legend->SetLeftMargin(0.00);
+            p_legend->SetRightMargin(0.00);
+            p_legend->SetFillColor(k_panel_fill_colour);
+            p_legend->SetFrameFillColor(k_panel_fill_colour);
+        }
+
+        p_main->Draw();
+        if (p_legend)
+        {
+            p_legend->Draw();
+        }
+        disable_primitive_ownership(p_main);
+        disable_primitive_ownership(p_legend);
+        return;
+    }
+
     const double split_top = 0.85;
     const bool separate_legend = opt_.show_legend;
 
@@ -334,375 +438,76 @@ void StackedHist::setup_pads(TCanvas &c, TPad *&p_main, TPad *&p_ratio, TPad *&p
             p_legend->Draw();
         }
         disable_primitive_ownership(p_ratio);
-        disable_primitive_ownership(p_main);
         disable_primitive_ownership(p_legend);
         return;
     }
 
-    const double legend_split = separate_legend ? 0.78 : 1.00;
-
     if (want_ratio())
     {
-        const std::string main_name = plot_name_ + "_pad_main";
         const std::string ratio_name = plot_name_ + "_pad_ratio";
-        p_main = new TPad(main_name.c_str(), main_name.c_str(), 0., 0.30, legend_split, 1.);
-        p_ratio = new TPad(ratio_name.c_str(), ratio_name.c_str(), 0., 0., legend_split, 0.30);
+        const std::string main_name = plot_name_ + "_pad_main";
+        p_ratio = new TPad(ratio_name.c_str(), ratio_name.c_str(), 0., 0.00, 1., 0.30);
+        p_main = new TPad(main_name.c_str(), main_name.c_str(), 0., 0.30, 1., 1.00);
 
         p_main->SetTopMargin(0.06);
         p_main->SetBottomMargin(0.02);
         p_main->SetLeftMargin(0.12);
-        p_main->SetRightMargin(separate_legend ? 0.03 : 0.05);
+        p_main->SetRightMargin(0.05);
         p_main->SetFillColor(k_panel_fill_colour);
         p_main->SetFrameFillColor(k_panel_fill_colour);
 
-        p_ratio->SetTopMargin(0.05);
+        p_ratio->SetTopMargin(0.04);
         p_ratio->SetBottomMargin(0.35);
         p_ratio->SetLeftMargin(0.12);
-        p_ratio->SetRightMargin(separate_legend ? 0.03 : 0.05);
+        p_ratio->SetRightMargin(0.05);
         p_ratio->SetFillColor(k_panel_fill_colour);
         p_ratio->SetFrameFillColor(k_panel_fill_colour);
-
-        if (opt_.use_log_y)
-        {
-            p_main->SetLogy();
-        }
-
-        if (separate_legend)
-        {
-            const std::string legend_name = plot_name_ + "_pad_legend";
-            p_legend = new TPad(legend_name.c_str(), legend_name.c_str(), legend_split, 0., 1., 1.);
-            p_legend->SetTopMargin(0.06);
-            p_legend->SetBottomMargin(0.08);
-            p_legend->SetLeftMargin(0.02);
-            p_legend->SetRightMargin(0.02);
-            p_legend->SetFillColor(k_panel_fill_colour);
-            p_legend->SetFrameFillColor(k_panel_fill_colour);
-        }
-
-        p_ratio->Draw();
-        p_main->Draw();
-        if (p_legend)
-        {
-            p_legend->Draw();
-        }
-        disable_primitive_ownership(p_ratio);
-        disable_primitive_ownership(p_main);
-        disable_primitive_ownership(p_legend);
-        return;
+    }
+    else
+    {
+        const std::string main_name = plot_name_ + "_pad_main";
+        p_main = new TPad(main_name.c_str(), main_name.c_str(), 0., 0.00, 1., 1.00);
+        p_main->SetTopMargin(0.06);
+        p_main->SetBottomMargin(0.12);
+        p_main->SetLeftMargin(0.12);
+        p_main->SetRightMargin(0.05);
+        p_main->SetFillColor(k_panel_fill_colour);
+        p_main->SetFrameFillColor(k_panel_fill_colour);
     }
 
-    const std::string main_name = plot_name_ + "_pad_main";
-    p_main = new TPad(main_name.c_str(), main_name.c_str(), 0., 0., legend_split, 1.);
-    p_main->SetTopMargin(0.06);
-    p_main->SetBottomMargin(0.12);
-    p_main->SetLeftMargin(0.12);
-    p_main->SetRightMargin(separate_legend ? 0.03 : 0.05);
-    p_main->SetFillColor(k_panel_fill_colour);
-    p_main->SetFrameFillColor(k_panel_fill_colour);
-    if (opt_.use_log_y)
+    if (separate_legend && p_main)
+    {
+        const double split = std::min(std::max(opt_.legend_split, 0.40), 0.90);
+        p_main->SetPad(0., 0., split, 1.0);
+        const std::string legend_name = plot_name_ + "_pad_legend";
+        p_legend = new TPad(legend_name.c_str(), legend_name.c_str(), split, 0., 1.0, 1.0);
+        p_legend->SetFillColor(k_panel_fill_colour);
+        p_legend->SetFrameFillColor(k_panel_fill_colour);
+        p_legend->SetTopMargin(0.06);
+        p_legend->SetBottomMargin(0.12);
+        p_legend->SetLeftMargin(0.00);
+        p_legend->SetRightMargin(0.00);
+    }
+
+    if (opt_.use_log_y && p_main)
     {
         p_main->SetLogy();
     }
-
-    if (separate_legend)
+    if (p_ratio)
     {
-        const std::string legend_name = plot_name_ + "_pad_legend";
-        p_legend = new TPad(legend_name.c_str(), legend_name.c_str(), legend_split, 0., 1., 1.);
-        p_legend->SetTopMargin(0.06);
-        p_legend->SetBottomMargin(0.08);
-        p_legend->SetLeftMargin(0.02);
-        p_legend->SetRightMargin(0.02);
-        p_legend->SetFillColor(k_panel_fill_colour);
-        p_legend->SetFrameFillColor(k_panel_fill_colour);
+        p_ratio->Draw();
     }
-
-    p_main->Draw();
+    if (p_main)
+    {
+        p_main->Draw();
+    }
     if (p_legend)
     {
         p_legend->Draw();
     }
+    disable_primitive_ownership(p_ratio);
     disable_primitive_ownership(p_main);
     disable_primitive_ownership(p_legend);
-}
-
-
-void StackedHist::build_histograms()
-{
-    const auto axes = spec_.axis_title();
-    stack_ = std::make_unique<THStack>((spec_.id + "_stack").c_str(), axes.c_str());
-    if (stack_->GetHists())
-    {
-        stack_->GetHists()->SetOwner(kFALSE);
-    }
-    mc_ch_hists_.clear();
-    mc_total_.reset();
-    mc_total_stat_.reset();
-    chi2_box_.reset();
-    data_hist_.reset();
-    sig_hist_.reset();
-    mc_unc_up_.reset();
-    mc_unc_down_.reset();
-    ratio_hist_.reset();
-    ratio_band_.reset();
-    signal_events_ = 0.0;
-    signal_scale_ = 1.0;
-    chan_event_yields_.clear();
-    total_mc_events_ = 0.0;
-    density_mode_ = false;
-    std::map<int, std::vector<ROOT::RDF::RResultPtr<TH1D>>> booked;
-    const bool particle_level = opt_.particle_level;
-    const auto &channels = particle_level ? ParticleChannels::keys() : Channels::mc_keys();
-    const std::string pdg_branch = particle_level
-                                       ? (opt_.particle_pdg_branch.empty() ? "backtracked_pdg_codes" : opt_.particle_pdg_branch)
-                                       : std::string{};
-    const TH1DModel &fill_spec = spec_;
-
-    for (size_t ie = 0; ie < mc_.size(); ++ie)
-    {
-        const Entry *e = mc_[ie];
-        if (!e)
-        {
-            continue;
-        }
-        auto n0 = apply(e->rnode(), spec_.sel);
-        auto n = (spec_.expr.empty() ? n0 : n0.Define("_nx_expr_", spec_.expr));
-        const std::string var = spec_.expr.empty() ? spec_.id : "_nx_expr_";
-
-        if (!particle_level)
-        {
-            for (int ch : channels)
-            {
-                auto nf = n.Filter([ch](int c) { return c == ch; }, {"analysis_channels"});
-                auto h = nf.Histo1D(fill_spec.model("_mc_ch" + std::to_string(ch) + "_src" + std::to_string(ie)), var, spec_.weight);
-                booked[ch].push_back(h);
-            }
-        }
-        else
-        {
-            // Convert any vector-like numeric column to RVec<double> once, then
-            // per-category select based on the truth-matched PDG vector.
-            const std::string val_d = "_nx_val_d_";
-            const std::string val_expr = "ROOT::VecOps::RVec<double>(" + var + ".begin(), " + var + ".end())";
-            auto nvec = n.Define(val_d, val_expr);
-
-            for (int ch : channels)
-            {
-                const std::string sel = "_nx_part_sel_" + std::to_string(ch) + "_src" + std::to_string(ie);
-                auto nsel = nvec.Define(
-                    sel,
-                    [ch, drop_nan = opt_.particle_drop_nan](const ROOT::VecOps::RVec<double> &values,
-                                                            const ROOT::VecOps::RVec<int> &pdg_codes) {
-                        return select_particle_values(values, pdg_codes, ch, drop_nan);
-                    },
-                    std::vector<std::string>{val_d, pdg_branch});
-
-                auto h = nsel.Histo1D(fill_spec.model("_mc_pdg" + std::to_string(ch) + "_src" + std::to_string(ie)),
-                                      sel, spec_.weight);
-                booked[ch].push_back(h);
-            }
-        }
-    }
-
-    std::map<int, std::unique_ptr<TH1D>> sum_by_channel;
-
-    for (int ch : channels)
-    {
-        auto it = booked.find(ch);
-        if (it == booked.end() || it->second.empty())
-        {
-            continue;
-        }
-        std::unique_ptr<TH1D> sum;
-        for (auto &rr : it->second)
-        {
-            const TH1D &h = rr.GetValue();
-            if (!sum)
-            {
-                sum.reset(static_cast<TH1D *>(h.Clone((spec_.id + "_mc_sum_ch" + std::to_string(ch)).c_str())));
-                sum->SetDirectory(nullptr);
-            }
-            else
-            {
-                sum->Add(&h);
-            }
-        }
-        if (sum)
-        {
-            sum_by_channel.emplace(ch, std::move(sum));
-        }
-    }
-
-    // ---- Compute yields so ordering matches what you plot ----
-    std::vector<std::pair<int, double>> yields;
-    yields.reserve(sum_by_channel.size());
-    for (auto &kv : sum_by_channel)
-    {
-        if (!kv.second)
-        {
-            continue;
-        }
-        yields.emplace_back(kv.first, kv.second->Integral());
-    }
-
-    std::stable_sort(yields.begin(), yields.end(), [](const auto &a, const auto &b) {
-        if (a.second == b.second)
-        {
-            return a.first < b.first;
-        }
-        return a.second > b.second;
-    });
-
-    chan_order_.clear();
-    chan_event_yields_.clear();
-    for (auto &cy : yields)
-    {
-        const int ch = cy.first;
-        auto it = sum_by_channel.find(ch);
-        if (it == sum_by_channel.end() || !it->second)
-        {
-            continue;
-        }
-        auto &sum = it->second;
-        if (particle_level)
-        {
-            sum->SetFillColor(ParticleChannels::colour(ch));
-            sum->SetFillStyle(ParticleChannels::fill_style(ch));
-        }
-        else
-        {
-            sum->SetFillColor(Channels::colour(ch));
-            sum->SetFillStyle(Channels::fill_style(ch));
-        }
-        sum->SetLineColor(sum->GetFillColor());
-        sum->SetLineWidth(1);
-        stack_->Add(sum.get(), "HIST");
-        if (auto *hists = stack_->GetHists())
-        {
-            // THStack owns its histogram list by default. We also own these
-            // histograms via std::unique_ptr in mc_ch_hists_, so disable list
-            // ownership to avoid double-deletes when StackedHist tears down.
-            hists->SetOwner(kFALSE);
-        }
-        mc_ch_hists_.push_back(std::move(sum));
-        chan_order_.push_back(ch);
-        chan_event_yields_.push_back(cy.second); // pre-density event yield
-    }
-
-    for (auto &uptr : mc_ch_hists_)
-    {
-        if (!mc_total_)
-        {
-            mc_total_.reset(static_cast<TH1D *>(uptr->Clone((spec_.id + "_mc_total").c_str())));
-            mc_total_->SetDirectory(nullptr);
-        }
-        else
-        {
-            mc_total_->Add(uptr.get());
-        }
-    }
-
-    // Cache the event-count total before any density scaling.
-    total_mc_events_ = mc_total_ ? mc_total_->Integral() : 0.0;
-    // Keep a stat-only copy before we inflate errors with systematics.
-    if (mc_total_)
-    {
-        mc_total_stat_.reset(static_cast<TH1D *>(mc_total_->Clone((spec_.id + "_mc_total_stat").c_str())));
-        mc_total_stat_->SetDirectory(nullptr);
-    }
-
-    if (!data_.empty())
-    {
-        std::vector<ROOT::RDF::RResultPtr<TH1D>> parts;
-        for (size_t ie = 0; ie < data_.size(); ++ie)
-        {
-            const Entry *e = data_[ie];
-            if (!e)
-            {
-                continue;
-            }
-            auto n0 = apply(e->rnode(), spec_.sel);
-            auto n = (spec_.expr.empty() ? n0 : n0.Define("_nx_expr_", spec_.expr));
-            const std::string var = spec_.expr.empty() ? spec_.id : "_nx_expr_";
-            parts.push_back(n.Histo1D(fill_spec.model("_data_src" + std::to_string(ie)), var));
-        }
-        for (auto &rr : parts)
-        {
-            const TH1D &h = rr.GetValue();
-            if (!data_hist_)
-            {
-                data_hist_.reset(static_cast<TH1D *>(h.Clone((spec_.id + "_data").c_str())));
-                data_hist_->SetDirectory(nullptr);
-            }
-            else
-            {
-                data_hist_->Add(&h);
-            }
-        }
-        if (data_hist_)
-        {
-            data_hist_->SetMarkerStyle(kFullCircle);
-            data_hist_->SetMarkerSize(0.8);
-            data_hist_->SetLineColor(kBlack);
-            data_hist_->SetFillStyle(0);
-        }
-    }
-
-    if (opt_.overlay_signal && !opt_.signal_channels.empty() && !mc_ch_hists_.empty())
-    {
-        double tot_sum = mc_total_ ? integral_in_visible_range(*mc_total_, spec_.xmin, spec_.xmax) : 0.0;
-        auto sig = std::make_unique<TH1D>(*mc_ch_hists_.front());
-        sig->Reset();
-        for (size_t i = 0; i < mc_ch_hists_.size(); ++i)
-        {
-            int ch = chan_order_.at(i);
-            if (std::find(opt_.signal_channels.begin(), opt_.signal_channels.end(), ch) != opt_.signal_channels.end())
-            {
-                sig->Add(mc_ch_hists_[i].get());
-            }
-        }
-        signal_events_ = integral_in_visible_range(*sig, spec_.xmin, spec_.xmax);
-        double sig_sum = signal_events_;
-        if (sig_sum > 0.0 && tot_sum > 0.0)
-        {
-            signal_scale_ = tot_sum / sig_sum;
-            sig->Scale(signal_scale_);
-        }
-        sig->SetLineColor(kGreen + 2);
-        sig->SetLineStyle(kDashed);
-        sig->SetLineWidth(2);
-        sig->SetFillStyle(0);
-        sig_hist_ = std::move(sig);
-    }
-
-    // Optional density rendering (events / bin width), matching publication plots.
-    if (opt_.normalise_by_bin_width)
-    {
-        density_mode_ = true;
-        for (auto &h : mc_ch_hists_)
-        {
-            if (h)
-            {
-                h->Scale(1.0, "width");
-            }
-        }
-        if (mc_total_)
-        {
-            mc_total_->Scale(1.0, "width");
-        }
-        if (mc_total_stat_)
-        {
-            mc_total_stat_->Scale(1.0, "width");
-        }
-        if (data_hist_)
-        {
-            data_hist_->Scale(1.0, "width");
-        }
-        if (sig_hist_)
-        {
-            sig_hist_->Scale(1.0, "width");
-        }
-    }
-
 }
 
 void StackedHist::draw_stack_and_unc(TPad *p_main, double &max_y)
@@ -730,8 +535,8 @@ void StackedHist::draw_stack_and_unc(TPad *p_main, double &max_y)
         const std::string default_x = !spec_.name.empty() ? spec_.name : spec_.id;
         const std::string x = opt_.x_title.empty() ? default_x : opt_.x_title;
         const std::string default_y = opt_.particle_level
-                                          ? (density_mode_ ? "Particles / bin width" : "Particles")
-                                          : (density_mode_ ? "Events / bin width" : "Events");
+                                          ? (opt_.stv_style ? "Particles/bin" : (density_mode_ ? "Particles / bin width" : "Particles"))
+                                          : (opt_.stv_style ? "Events/bin" : (density_mode_ ? "Events / bin width" : "Events"));
         const std::string y = opt_.y_title.empty() ? default_y : opt_.y_title;
         stack_->SetTitle((";" + x + ";" + y).c_str());
     }
@@ -751,7 +556,7 @@ void StackedHist::draw_stack_and_unc(TPad *p_main, double &max_y)
     if (frame)
     {
         frame->GetXaxis()->SetNdivisions(510);
-        frame->GetXaxis()->SetTickLength(0.02);
+        frame->GetXaxis()->SetTickLength(opt_.stv_style ? 0.03 : 0.02);
         // When a ratio pad exists, the x-axis labels/titles live on the ratio pad.
         if (want_ratio())
         {
@@ -760,13 +565,14 @@ void StackedHist::draw_stack_and_unc(TPad *p_main, double &max_y)
         }
         else
         {
-            frame->GetXaxis()->SetLabelSize(0.04);
-            frame->GetXaxis()->SetTitleSize(0.05);
+            frame->GetXaxis()->SetLabelSize(opt_.stv_style ? 0.05 : 0.04);
+            frame->GetXaxis()->SetTitleSize(opt_.stv_style ? 0.06 : 0.05);
         }
-        frame->GetXaxis()->CenterTitle(false);
-        frame->GetYaxis()->SetLabelSize(0.04);
-        frame->GetYaxis()->SetTitleSize(0.05);
-        frame->GetYaxis()->SetTitleOffset(1.2);
+        frame->GetXaxis()->CenterTitle(opt_.stv_style);
+        frame->GetYaxis()->SetLabelSize(opt_.stv_style ? 0.05 : 0.04);
+        frame->GetYaxis()->SetTitleSize(opt_.stv_style ? 0.06 : 0.05);
+        frame->GetYaxis()->SetTitleOffset(opt_.stv_style ? 0.95 : 1.2);
+        frame->GetYaxis()->CenterTitle(opt_.stv_style);
 
         // If we didn't override titles explicitly, THStack's default comes from
         // TH1DModel::axis_title() (which defaults to "Events"). For particle-level
@@ -806,34 +612,33 @@ void StackedHist::draw_stack_and_unc(TPad *p_main, double &max_y)
             max_y = opt_.y_max;
         }
 
-        stack_->SetMaximum(max_y * (opt_.use_log_y ? 10. : 1.3));
+        const double headroom = opt_.use_log_y ? 10.0 : (opt_.stv_style ? 1.05 : 1.3);
+        stack_->SetMaximum(max_y * headroom);
         stack_->SetMinimum(opt_.use_log_y ? 0.1 : opt_.y_min);
 
-        // MicroBooNE-like uncertainty rendering: dotted step envelope (±1σ) instead of a filled band.
-        mc_unc_up_.reset(static_cast<TH1D *>(mc_total_->Clone((spec_.id + "_mc_unc_up").c_str())));
-        mc_unc_down_.reset(static_cast<TH1D *>(mc_total_->Clone((spec_.id + "_mc_unc_down").c_str())));
-        mc_unc_up_->SetDirectory(nullptr);
-        mc_unc_down_->SetDirectory(nullptr);
-        const int nb = mc_total_->GetNbinsX();
-        for (int i = 1; i <= nb; ++i)
+        // Uncertainty visual:
+        //  - STV-style: dotted outline (no fill), matching the reference plots.
+        //  - Default: filled band.
+        mc_unc_hist_.reset(static_cast<TH1D *>(mc_total_->Clone((spec_.id + "_mc_unc").c_str())));
+        mc_unc_hist_->SetDirectory(nullptr);
+        mc_unc_hist_->SetMarkerSize(0);
+        if (opt_.stv_style)
         {
-            const double m = mc_total_->GetBinContent(i);
-            const double e = mc_total_->GetBinError(i);
-            mc_unc_up_->SetBinContent(i, m + e);
-            mc_unc_up_->SetBinError(i, 0.0);
-            mc_unc_down_->SetBinContent(i, std::max(0.0, m - e));
-            mc_unc_down_->SetBinError(i, 0.0);
+            mc_unc_hist_->SetFillStyle(0);
+            mc_unc_hist_->SetFillColor(0);
+            mc_unc_hist_->SetLineColor(kBlack);
+            mc_unc_hist_->SetLineStyle(k_uncertainty_outline_style);
+            mc_unc_hist_->SetLineWidth(2);
         }
-        for (auto *u : {mc_unc_up_.get(), mc_unc_down_.get()})
+        else
         {
-            u->SetFillStyle(0);
-            u->SetMarkerSize(0);
-            u->SetLineColor(k_uncertainty_line_colour);
-            u->SetLineStyle(k_uncertainty_line_style);
-            u->SetLineWidth(k_uncertainty_line_width);
+            mc_unc_hist_->SetFillColor(k_uncertainty_fill_colour);
+            mc_unc_hist_->SetFillStyle(k_uncertainty_fill_style);
+            mc_unc_hist_->SetLineColor(k_uncertainty_fill_colour);
+            mc_unc_hist_->SetLineStyle(kSolid);
+            mc_unc_hist_->SetLineWidth(1);
         }
-        mc_unc_up_->Draw("HIST SAME");
-        mc_unc_down_->Draw("HIST SAME");
+        mc_unc_hist_->Draw("E2 SAME");
     }
 
     // THStack can refresh its internal frame after range/max updates.
@@ -869,38 +674,66 @@ void StackedHist::draw_ratio(TPad *p_ratio)
     ratio_hist_.reset(static_cast<TH1D *>(
         data_hist_->Clone((spec_.id + "_ratio").c_str())));
     ratio_hist_->SetDirectory(nullptr);
-    // MicroBooNE-like ratio: points carry *data statistical* uncertainty only.
-    // MC uncertainty is shown separately as a band around unity.
-    const int nb = ratio_hist_->GetNbinsX();
-    for (int i = 1; i <= nb; ++i)
+    ratio_hist_->Divide(mc_total_.get());
+    ratio_hist_->SetTitle("");
+    ratio_hist_->SetLineWidth(opt_.stv_style ? 2 : 1);
+    ratio_hist_->SetLineColor(kBlack);
+    ratio_hist_->SetMarkerStyle(kFullCircle);
+    ratio_hist_->SetMarkerSize(0.8);
+
+    if (opt_.stv_style)
     {
-        const double d = data_hist_->GetBinContent(i);
-        const double ed = data_hist_->GetBinError(i);
-        const double m = mc_total_->GetBinContent(i);
-        if (m > 0.0)
+        ratio_hist_->GetXaxis()->SetTitle(opt_.x_title.empty() ? data_hist_->GetXaxis()->GetTitle() : opt_.x_title.c_str());
+        ratio_hist_->GetXaxis()->CenterTitle(true);
+        ratio_hist_->GetXaxis()->SetLabelSize(0.12);
+        ratio_hist_->GetXaxis()->SetTitleSize(0.18);
+        ratio_hist_->GetXaxis()->SetTickLength(0.05);
+        ratio_hist_->GetXaxis()->SetTitleOffset(0.9);
+
+        ratio_hist_->GetYaxis()->SetTitle("ratio");
+        ratio_hist_->GetYaxis()->CenterTitle(true);
+        ratio_hist_->GetYaxis()->SetLabelSize(0.08);
+        ratio_hist_->GetYaxis()->SetTitleSize(0.15);
+        ratio_hist_->GetYaxis()->SetTitleOffset(0.35);
+        ratio_hist_->GetYaxis()->SetNdivisions(505);
+
+        double rmax = 1.0;
+        double rmin = 1.0;
+        bool seeded = false;
+        const int nb = ratio_hist_->GetNbinsX();
+        for (int i = 1; i <= nb; ++i)
         {
-            ratio_hist_->SetBinContent(i, d / m);
-            ratio_hist_->SetBinError(i, ed / m);
+            const double r = ratio_hist_->GetBinContent(i);
+            if (!std::isfinite(r) || ratio_hist_->GetBinError(i) <= 0.0)
+            {
+                continue;
+            }
+            if (!seeded)
+            {
+                rmax = rmin = r;
+                seeded = true;
+            }
+            rmax = std::max(rmax, r);
+            rmin = std::min(rmin, r);
         }
-        else
-        {
-            ratio_hist_->SetBinContent(i, 0.0);
-            ratio_hist_->SetBinError(i, 0.0);
-        }
+        ratio_hist_->SetMaximum(rmax + 0.15 * std::abs(rmax));
+        ratio_hist_->SetMinimum(rmin - 0.20 * std::abs(rmin));
     }
-    ratio_hist_->SetTitle("; ;ratio");
-    ratio_hist_->SetMaximum(1.20);
-    ratio_hist_->SetMinimum(0.80);
-    ratio_hist_->GetYaxis()->SetNdivisions(505);
-    ratio_hist_->GetXaxis()->SetLabelSize(0.10);
-    ratio_hist_->GetXaxis()->SetTitleSize(0.12);
-    ratio_hist_->GetXaxis()->SetTitleOffset(1.05);
-    ratio_hist_->GetYaxis()->SetLabelSize(0.10);
-    ratio_hist_->GetYaxis()->SetTitleSize(0.10);
-    ratio_hist_->GetYaxis()->SetTitleOffset(0.55);
-    ratio_hist_->GetYaxis()->SetTitle("ratio");
-    ratio_hist_->GetXaxis()->CenterTitle(false);
-    ratio_hist_->GetXaxis()->SetTitle(opt_.x_title.empty() ? data_hist_->GetXaxis()->GetTitle() : opt_.x_title.c_str());
+    else
+    {
+        ratio_hist_->SetMaximum(1.20);
+        ratio_hist_->SetMinimum(0.80);
+        ratio_hist_->GetYaxis()->SetNdivisions(505);
+        ratio_hist_->GetXaxis()->SetLabelSize(0.10);
+        ratio_hist_->GetXaxis()->SetTitleSize(0.12);
+        ratio_hist_->GetXaxis()->SetTitleOffset(1.05);
+        ratio_hist_->GetYaxis()->SetLabelSize(0.10);
+        ratio_hist_->GetYaxis()->SetTitleSize(0.10);
+        ratio_hist_->GetYaxis()->SetTitleOffset(0.55);
+        ratio_hist_->GetYaxis()->SetTitle("Data / MC");
+        ratio_hist_->GetXaxis()->CenterTitle(false);
+        ratio_hist_->GetXaxis()->SetTitle(opt_.x_title.empty() ? data_hist_->GetXaxis()->GetTitle() : opt_.x_title.c_str());
+    }
 
     ratio_hist_->Draw("E1");
 
@@ -932,7 +765,7 @@ void StackedHist::draw_ratio(TPad *p_ratio)
     auto *unity = new TLine(ratio_hist_->GetXaxis()->GetXmin(), 1.0,
                             ratio_hist_->GetXaxis()->GetXmax(), 1.0);
     unity->SetLineColor(kBlack);
-    unity->SetLineStyle(kDashed);
+    unity->SetLineStyle(opt_.stv_style ? 9 : kDashed);
     unity->SetLineWidth(1);
     unity->Draw("SAME");
 
@@ -1126,19 +959,52 @@ void StackedHist::draw_legend(TPad *p)
     }
     p->cd();
     const bool compact_legend = p->GetWNDC() < 0.30;
-    const double x1 = compact_legend ? 0.04 : 0.12;
-    const double y1 = compact_legend ? 0.03 : 0.00;
-    const double x2 = 0.98;
-    const double y2 = compact_legend ? 0.97 : 0.75;
+
+    double x1 = 0.12, y1 = 0.00, x2 = 0.98, y2 = 0.75;
+    if (opt_.stv_style)
+    {
+        if (compact_legend)
+        {
+            x1 = 0.02;
+            y1 = 0.05;
+            x2 = 0.98;
+            y2 = 0.95;
+        }
+        else
+        {
+            x1 = 0.13;
+            y1 = 0.88;
+            x2 = 0.94;
+            y2 = 0.99;
+        }
+    }
+    else
+    {
+        x1 = compact_legend ? 0.04 : 0.12;
+        y1 = compact_legend ? 0.03 : 0.00;
+        x2 = 0.98;
+        y2 = compact_legend ? 0.97 : 0.75;
+    }
+
     legend_ = std::make_unique<TLegend>(x1, y1, x2, y2);
     auto *leg = legend_.get();
-    // MicroBooNE-like legend: white box with border.
-    leg->SetBorderSize(1);
-    leg->SetLineColor(kBlack);
-    leg->SetFillColor(kWhite);
-    leg->SetFillStyle(1001);
+    if (opt_.stv_style)
+    {
+        leg->SetBorderSize(1);
+        leg->SetLineColor(kBlack);
+        leg->SetFillColor(kWhite);
+        leg->SetFillStyle(1001);
+        leg->SetTextSize(0.028);
+        leg->SetMargin(0.18);
+    }
+    else
+    {
+        leg->SetBorderSize(0);
+        leg->SetFillColor(k_panel_fill_colour);
+        leg->SetFillStyle(0);
+        leg->SetMargin(0.25);
+    }
     leg->SetTextFont(42);
-    leg->SetMargin(0.25);
 
     int n_entries = static_cast<int>(mc_ch_hists_.size());
     if (mc_total_)
@@ -1155,17 +1021,53 @@ void StackedHist::draw_legend(TPad *p)
     }
     if (n_entries > 0)
     {
-        int n_cols = (n_entries > 4) ? 3 : 2;
-        if (compact_legend)
+        int n_cols = 2;
+        if (opt_.stv_style)
         {
-            n_cols = 1;
+            n_cols = 3;
+        }
+        else
+        {
+            n_cols = (n_entries > 4) ? 3 : 2;
+            if (compact_legend)
+            {
+                n_cols = 1;
+            }
         }
         leg->SetNColumns(n_cols);
     }
 
     legend_proxies_.clear();
 
-    if (opt_.show_watermark)
+    if (opt_.stv_style && opt_.show_watermark)
+    {
+        std::string header;
+        if (!opt_.beamline.empty())
+        {
+            header = opt_.beamline;
+        }
+        if (opt_.total_protons_on_target > 0.0)
+        {
+            const std::string pot = fmt_times10(opt_.total_protons_on_target, 2);
+            if (!pot.empty())
+            {
+                if (!header.empty())
+                {
+                    header += " ";
+                }
+                header += pot + " POT";
+            }
+        }
+        if (!header.empty())
+        {
+            leg->SetHeader(header.c_str(), "C");
+            if (auto *hdr = dynamic_cast<TLegendEntry *>(leg->GetListOfPrimitives()->First()))
+            {
+                hdr->SetTextSize(0.03);
+            }
+        }
+    }
+    else if (opt_.show_watermark)
     {
         std::string header;
         if (!opt_.analysis_region_label.empty())
@@ -1178,7 +1080,7 @@ void StackedHist::draw_legend(TPad *p)
         }
         if (opt_.total_protons_on_target > 0.0)
         {
-            const std::string pot = fmt_sci_tex(opt_.total_protons_on_target, 2);
+            const std::string pot = fmt_times10(opt_.total_protons_on_target, 2);
             if (!pot.empty())
             {
                 if (!header.empty())
@@ -1210,8 +1112,6 @@ void StackedHist::draw_legend(TPad *p)
         }
         else if (mc_ch_hists_[i])
         {
-            // Fallback if yields were not cached for some reason.
-            // If density_mode_ is true, Integral("width") restores event counts.
             sum = density_mode_ ? mc_ch_hists_[i]->Integral("width") : mc_ch_hists_[i]->Integral();
         }
         std::string label = opt_.particle_level ? ParticleChannels::label(ch) : Channels::label(ch);
@@ -1240,11 +1140,24 @@ void StackedHist::draw_legend(TPad *p)
             mc_total_->Clone((spec_.id + "_leg_unc").c_str())));
         proxy->SetDirectory(nullptr);
         proxy->Reset("ICES");
-        proxy->SetFillStyle(0);
-        proxy->SetLineColor(k_uncertainty_line_colour);
-        proxy->SetLineStyle(k_uncertainty_line_style);
-        proxy->SetLineWidth(k_uncertainty_line_width);
-        leg->AddEntry(proxy.get(), "Stat + syst unc.", "l");
+        if (opt_.stv_style)
+        {
+            proxy->SetFillStyle(0);
+            proxy->SetFillColor(0);
+            proxy->SetLineColor(kBlack);
+            proxy->SetLineStyle(k_uncertainty_outline_style);
+            proxy->SetLineWidth(2);
+            leg->AddEntry(proxy.get(), "Stat + syst unc.", "l");
+        }
+        else
+        {
+            proxy->SetFillColor(k_uncertainty_fill_colour);
+            proxy->SetFillStyle(k_uncertainty_fill_style);
+            proxy->SetLineColor(k_uncertainty_fill_colour);
+            proxy->SetLineStyle(kSolid);
+            proxy->SetLineWidth(1);
+            leg->AddEntry(proxy.get(), "Stat. #oplus Syst. Unc.", "f");
+        }
         legend_proxies_.push_back(std::move(proxy));
     }
 
@@ -1324,7 +1237,9 @@ void StackedHist::draw_and_save(const std::string &image_format)
     std::filesystem::create_directories(output_directory_);
     stack_debug_log("draw_and_save enter: plot='" + plot_name_ +
                     "', out_dir='" + output_directory_ + "'");
-    TCanvas canvas(plot_name_.c_str(), plot_name_.c_str(), 800, 600);
+    const int cw = opt_.stv_style ? 700 : 800;
+    const int ch = opt_.stv_style ? 500 : 600;
+    TCanvas canvas(plot_name_.c_str(), plot_name_.c_str(), cw, ch);
     stack_debug_log("canvas constructed: plot='" + plot_name_ + "'");
     draw(canvas);
     stack_debug_log("draw finished: plot='" + plot_name_ + "'");
