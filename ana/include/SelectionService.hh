@@ -44,9 +44,6 @@ enum class Preset
 class SelectionService
 {
   public:
-    static const float trigger_min_beam_pe;
-    static const float trigger_max_veto_pe;
-
     static const int slice_required_count;
     static const float slice_min_topology_score;
 
