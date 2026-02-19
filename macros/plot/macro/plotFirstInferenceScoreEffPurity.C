@@ -63,6 +63,8 @@ int plotFirstInferenceScoreEffPurity(const std::string &event_list_path = "",
                                      const std::string &signal_sel = "is_signal",
                                      const std::string &mc_weight = "w_nominal",
                                      int n_thresholds = 101,
+                                     double raw_threshold_min = -15.0,
+                                     double raw_threshold_max = 15.0,
                                      const std::string &output_stem = "first_inference_score_eff_purity")
 {
     const std::string input_path = event_list_path.empty() ? default_event_list_root() : event_list_path;
@@ -183,6 +185,51 @@ int plotFirstInferenceScoreEffPurity(const std::string &event_list_path = "",
     std::cout << "[plotFirstInferenceScoreEffPurity] best threshold=" << best_thr
               << " with efficiency x purity=" << best_effpur << "\n";
 
+    if (raw_threshold_max < raw_threshold_min)
+        std::swap(raw_threshold_min, raw_threshold_max);
+
+    std::vector<double> x_raw;
+    std::vector<double> y_raw_eff;
+    std::vector<double> y_raw_pur;
+    std::vector<double> y_raw_effpur;
+    x_raw.reserve(static_cast<std::size_t>(n_thresholds));
+    y_raw_eff.reserve(static_cast<std::size_t>(n_thresholds));
+    y_raw_pur.reserve(static_cast<std::size_t>(n_thresholds));
+    y_raw_effpur.reserve(static_cast<std::size_t>(n_thresholds));
+
+    double best_raw_thr = raw_threshold_min;
+    double best_raw_effpur = -1.0;
+
+    for (int i = 0; i < n_thresholds; ++i)
+    {
+        const double frac = static_cast<double>(i) / static_cast<double>(n_thresholds - 1);
+        const double thr = raw_threshold_min + frac * (raw_threshold_max - raw_threshold_min);
+        const std::string pass_expr = "(inf_score_0 >= " + std::to_string(thr) + ")";
+
+        const double signal_pass = *(node_mc.Filter("(" + signal_sel + ") && " + pass_expr).Sum<double>("__w__"));
+        const double selected_mc = *(node_mc.Filter(pass_expr).Sum<double>("__w__"));
+        const double selected_ext = *(node_ext.Filter(pass_expr).Sum<double>("__w__"));
+
+        const double selected_all = selected_mc + selected_ext;
+        const double efficiency = signal_pass / signal_total;
+        const double purity = (selected_all > 0.0) ? signal_pass / selected_all : 0.0;
+        const double effpur = efficiency * purity;
+
+        x_raw.push_back(thr);
+        y_raw_eff.push_back(efficiency);
+        y_raw_pur.push_back(purity);
+        y_raw_effpur.push_back(effpur);
+
+        if (effpur > best_raw_effpur)
+        {
+            best_raw_effpur = effpur;
+            best_raw_thr = thr;
+        }
+    }
+
+    std::cout << "[plotFirstInferenceScoreEffPurity] best raw threshold=" << best_raw_thr
+              << " with efficiency x purity=" << best_raw_effpur << "\n";
+
     gStyle->SetOptStat(0);
     TCanvas c("c_first_inf_score_effpur", "First inference-score threshold scan", 900, 700);
     c.SetLeftMargin(0.11);
@@ -228,7 +275,52 @@ int plotFirstInferenceScoreEffPurity(const std::string &event_list_path = "",
     const auto out = plot_output_file(output_stem).string();
     c.SaveAs(out.c_str());
 
+    TCanvas c_raw("c_first_inf_score_effpur_raw", "First inference-score raw-threshold scan", 900, 700);
+    c_raw.SetLeftMargin(0.11);
+    c_raw.SetRightMargin(0.07);
+    c_raw.SetBottomMargin(0.12);
+
+    TGraph g_raw_eff(static_cast<int>(x_raw.size()), x_raw.data(), y_raw_eff.data());
+    TGraph g_raw_pur(static_cast<int>(x_raw.size()), x_raw.data(), y_raw_pur.data());
+    TGraph g_raw_effpur(static_cast<int>(x_raw.size()), x_raw.data(), y_raw_effpur.data());
+
+    g_raw_eff.SetTitle(";Inference score [0] threshold;metric value");
+    g_raw_eff.SetLineColor(kBlue + 1);
+    g_raw_eff.SetMarkerColor(kBlue + 1);
+    g_raw_eff.SetLineWidth(3);
+    g_raw_eff.SetMarkerStyle(20);
+
+    g_raw_pur.SetLineColor(kRed + 1);
+    g_raw_pur.SetMarkerColor(kRed + 1);
+    g_raw_pur.SetLineWidth(3);
+    g_raw_pur.SetMarkerStyle(21);
+
+    g_raw_effpur.SetLineColor(kGreen + 2);
+    g_raw_effpur.SetMarkerColor(kGreen + 2);
+    g_raw_effpur.SetLineWidth(3);
+    g_raw_effpur.SetMarkerStyle(22);
+
+    g_raw_eff.Draw("ALP");
+    g_raw_pur.Draw("LP SAME");
+    g_raw_effpur.Draw("LP SAME");
+
+    g_raw_eff.GetYaxis()->SetRangeUser(0.0, 1.05);
+
+    TLegend leg_raw(0.17, 0.70, 0.56, 0.88);
+    leg_raw.SetBorderSize(0);
+    leg_raw.SetFillStyle(0);
+    leg_raw.AddEntry(&g_raw_eff, "efficiency", "lp");
+    leg_raw.AddEntry(&g_raw_pur, "purity", "lp");
+    leg_raw.AddEntry(&g_raw_effpur, "efficiency #times purity", "lp");
+    leg_raw.Draw();
+
+    c_raw.RedrawAxis();
+
+    const auto raw_out = plot_output_file(output_stem + "_raw").string();
+    c_raw.SaveAs(raw_out.c_str());
+
     std::cout << "[plotFirstInferenceScoreEffPurity] saved plot: " << out << "\n";
+    std::cout << "[plotFirstInferenceScoreEffPurity] saved raw-threshold plot: " << raw_out << "\n";
     std::cout << "[plotFirstInferenceScoreEffPurity] done\n";
 
     return 0;
