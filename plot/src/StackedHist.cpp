@@ -24,6 +24,7 @@
 #include "ROOT/RVec.hxx"
 #include "TArrow.h"
 #include "TCanvas.h"
+#include "TColor.h"
 #include "TImage.h"
 #include "TLatex.h"
 #include "TLine.h"
@@ -40,6 +41,9 @@ namespace nu
 
 namespace
 {
+constexpr int k_panel_fill_colour = 17;
+constexpr int k_uncertainty_fill_style = 3002;
+
 bool stack_debug_enabled()
 {
     const char *env = std::getenv("HERON_DEBUG_PLOT_STACK");
@@ -206,6 +210,8 @@ void StackedHist::setup_pads(TCanvas &c, TPad *&p_main, TPad *&p_ratio, TPad *&p
     };
 
     c.cd();
+    c.SetFillColor(k_panel_fill_colour);
+    c.SetFrameFillColor(k_panel_fill_colour);
     p_main = nullptr;
     p_ratio = nullptr;
     p_legend = nullptr;
@@ -227,16 +233,22 @@ void StackedHist::setup_pads(TCanvas &c, TPad *&p_main, TPad *&p_ratio, TPad *&p
             p_main->SetBottomMargin(0.02);
             p_main->SetLeftMargin(0.12);
             p_main->SetRightMargin(0.05);
+            p_main->SetFillColor(k_panel_fill_colour);
+            p_main->SetFrameFillColor(k_panel_fill_colour);
 
             p_ratio->SetTopMargin(0.05);
             p_ratio->SetBottomMargin(0.35);
             p_ratio->SetLeftMargin(0.12);
             p_ratio->SetRightMargin(0.05);
+            p_ratio->SetFillColor(k_panel_fill_colour);
+            p_ratio->SetFrameFillColor(k_panel_fill_colour);
 
             p_legend->SetTopMargin(0.05);
             p_legend->SetBottomMargin(0.01);
             p_legend->SetLeftMargin(0.00);
             p_legend->SetRightMargin(0.00);
+            p_legend->SetFillColor(k_panel_fill_colour);
+            p_legend->SetFrameFillColor(k_panel_fill_colour);
         }
         else
         {
@@ -249,9 +261,13 @@ void StackedHist::setup_pads(TCanvas &c, TPad *&p_main, TPad *&p_ratio, TPad *&p
             p_main->SetBottomMargin(0.12);
             p_main->SetLeftMargin(0.12);
             p_main->SetRightMargin(0.05);
+            p_main->SetFillColor(k_panel_fill_colour);
+            p_main->SetFrameFillColor(k_panel_fill_colour);
 
             p_legend->SetTopMargin(0.05);
             p_legend->SetBottomMargin(0.01);
+            p_legend->SetFillColor(k_panel_fill_colour);
+            p_legend->SetFrameFillColor(k_panel_fill_colour);
         }
         if (opt_.use_log_y && p_main)
         {
@@ -286,10 +302,14 @@ void StackedHist::setup_pads(TCanvas &c, TPad *&p_main, TPad *&p_ratio, TPad *&p
             p_main->SetBottomMargin(0.02);
             p_main->SetLeftMargin(0.12);
             p_main->SetRightMargin(0.05);
+            p_main->SetFillColor(k_panel_fill_colour);
+            p_main->SetFrameFillColor(k_panel_fill_colour);
             p_ratio->SetTopMargin(0.05);
             p_ratio->SetBottomMargin(0.35);
             p_ratio->SetLeftMargin(0.12);
             p_ratio->SetRightMargin(0.05);
+            p_ratio->SetFillColor(k_panel_fill_colour);
+            p_ratio->SetFrameFillColor(k_panel_fill_colour);
             if (opt_.use_log_y)
             {
                 p_main->SetLogy();
@@ -307,6 +327,8 @@ void StackedHist::setup_pads(TCanvas &c, TPad *&p_main, TPad *&p_ratio, TPad *&p
             p_main->SetBottomMargin(0.12);
             p_main->SetLeftMargin(0.12);
             p_main->SetRightMargin(0.05);
+            p_main->SetFillColor(k_panel_fill_colour);
+            p_main->SetFrameFillColor(k_panel_fill_colour);
             if (opt_.use_log_y)
             {
                 p_main->SetLogy();
@@ -671,6 +693,8 @@ void StackedHist::draw_stack_and_unc(TPad *p_main, double &max_y)
     if (frame)
     {
         frame->SetLineWidth(2);
+        frame->SetFillColor(k_panel_fill_colour);
+        frame->SetMarkerSize(0.0);
     }
     if (frame && spec_.xmin < spec_.xmax)
     {
@@ -680,7 +704,12 @@ void StackedHist::draw_stack_and_unc(TPad *p_main, double &max_y)
     {
         frame->GetXaxis()->SetNdivisions(510);
         frame->GetXaxis()->SetTickLength(0.02);
+        frame->GetXaxis()->SetLabelSize(0.04);
+        frame->GetXaxis()->SetTitleSize(0.05);
         frame->GetXaxis()->CenterTitle(false);
+        frame->GetYaxis()->SetLabelSize(0.04);
+        frame->GetYaxis()->SetTitleSize(0.05);
+        frame->GetYaxis()->SetTitleOffset(1.2);
 
         // If we didn't override titles explicitly, THStack's default comes from
         // TH1DModel::axis_title() (which defaults to "Events"). For particle-level
@@ -726,10 +755,11 @@ void StackedHist::draw_stack_and_unc(TPad *p_main, double &max_y)
         auto *h = static_cast<TH1D *>(mc_total_->Clone((spec_.id + "_mc_totband").c_str()));
         h->SetDirectory(nullptr);
         h->SetFillColor(kBlack);
-        h->SetFillStyle(3004);
+        h->SetFillStyle(k_uncertainty_fill_style);
         h->SetMarkerSize(0);
         h->SetLineColor(kBlack);
-        h->SetLineWidth(1);
+        h->SetLineStyle(kDashed);
+        h->SetLineWidth(2);
         h->Draw("E2 SAME");
     }
 
@@ -768,13 +798,15 @@ void StackedHist::draw_ratio(TPad *p_ratio)
     ratio_hist_->SetDirectory(nullptr);
     ratio_hist_->Divide(mc_total_.get());
     ratio_hist_->SetTitle("; ;Data / MC");
-    ratio_hist_->SetMaximum(1.99);
-    ratio_hist_->SetMinimum(0.01);
+    ratio_hist_->SetMaximum(1.20);
+    ratio_hist_->SetMinimum(0.80);
     ratio_hist_->GetYaxis()->SetNdivisions(505);
     ratio_hist_->GetXaxis()->SetLabelSize(0.10);
+    ratio_hist_->GetXaxis()->SetTitleSize(0.12);
+    ratio_hist_->GetXaxis()->SetTitleOffset(1.05);
     ratio_hist_->GetYaxis()->SetLabelSize(0.10);
     ratio_hist_->GetYaxis()->SetTitleSize(0.10);
-    ratio_hist_->GetYaxis()->SetTitleOffset(0.4);
+    ratio_hist_->GetYaxis()->SetTitleOffset(0.55);
     ratio_hist_->GetYaxis()->SetTitle("Data / MC");
     ratio_hist_->GetXaxis()->CenterTitle(false);
     ratio_hist_->GetXaxis()->SetTitle(opt_.x_title.empty() ? data_hist_->GetXaxis()->GetTitle() : opt_.x_title.c_str());
@@ -794,8 +826,10 @@ void StackedHist::draw_ratio(TPad *p_ratio)
             ratio_band_->SetBinError(i, (m > 0 ? em / m : 0.0));
         }
         ratio_band_->SetFillColor(kBlack);
-        ratio_band_->SetFillStyle(3004);
+        ratio_band_->SetFillStyle(k_uncertainty_fill_style);
         ratio_band_->SetLineColor(kBlack);
+        ratio_band_->SetLineStyle(kDashed);
+        ratio_band_->SetLineWidth(2);
         ratio_band_->SetMarkerSize(0);
         ratio_band_->Draw("E2 SAME");
     }
@@ -803,6 +837,13 @@ void StackedHist::draw_ratio(TPad *p_ratio)
     {
         ratio_band_.reset();
     }
+
+    auto *unity = new TLine(ratio_hist_->GetXaxis()->GetXmin(), 1.0,
+                            ratio_hist_->GetXaxis()->GetXmax(), 1.0);
+    unity->SetLineColor(kBlack);
+    unity->SetLineStyle(kDashed);
+    unity->SetLineWidth(1);
+    unity->Draw("SAME");
 
     ratio_hist_->Draw("E1 SAME");
 }
@@ -817,8 +858,10 @@ void StackedHist::draw_legend(TPad *p)
     legend_ = std::make_unique<TLegend>(0.12, 0.0, 0.95, 0.75);
     auto *leg = legend_.get();
     leg->SetBorderSize(0);
-    leg->SetFillStyle(0);
+    leg->SetFillColor(kWhite);
+    leg->SetFillStyle(1001);
     leg->SetTextFont(42);
+    leg->SetMargin(0.25);
 
     int n_entries = static_cast<int>(mc_ch_hists_.size());
     if (mc_total_)
@@ -882,9 +925,10 @@ void StackedHist::draw_legend(TPad *p)
         proxy->SetDirectory(nullptr);
         proxy->Reset("ICES");
         proxy->SetFillColor(kBlack);
-        proxy->SetFillStyle(3004);
+        proxy->SetFillStyle(k_uncertainty_fill_style);
         proxy->SetLineColor(kBlack);
-        proxy->SetLineWidth(1);
+        proxy->SetLineStyle(kDashed);
+        proxy->SetLineWidth(2);
         leg->AddEntry(proxy.get(), "Stat. #oplus Syst. Unc.", "f");
         legend_proxies_.push_back(std::move(proxy));
     }
