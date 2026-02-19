@@ -175,8 +175,9 @@ std::filesystem::path path_from_env_or_default(
 
 std::filesystem::path out_base_dir(const std::filesystem::path &repo_root)
 {
-    return path_from_env_or_default("HERON_OUT_BASE",
-                                    repo_root / "scratch" / "out");
+    const auto fallback = path_from_env_or_default("HERON_OUTPUT_DIR",
+                                                   repo_root / "scratch" / "out");
+    return path_from_env_or_default("HERON_OUT_BASE", fallback);
 }
 
 std::filesystem::path plot_base_dir(const std::filesystem::path &repo_root)

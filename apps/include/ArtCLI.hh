@@ -106,8 +106,14 @@ inline ArtArgs parse_art_input(const std::string &input)
         throw std::runtime_error("Bad input definition (expected NAME:FILELIST[:SAMPLE_KIND:BEAM_MODE]): " + input);
     }
 
+    const char *output_dir = getenv_cstr("HERON_OUTPUT_DIR");
+    if (!output_dir)
+    {
+        throw std::runtime_error("HERON_OUTPUT_DIR must be set for the art command");
+    }
+
     const std::filesystem::path art_dir =
-        stage_output_dir("HERON_ART_DIR", "art");
+        std::filesystem::path(output_dir) / "art";
     out.art_path = (art_dir / ("art_prov_" + out.input.input_name + ".root")).string();
 
     return out;
