@@ -67,11 +67,12 @@ int run(const EventArgs &event_args, const std::string &log_prefix)
 
     const std::string provenance_tree = "heron_art_provenance/run_subrun";
     const std::string event_tree = analysis.tree_name();
+    const std::string output_event_tree = "events";
 
     nu::EventListHeader header;
     header.analysis_name = analysis.name();
     header.provenance_tree = provenance_tree;
-    header.event_tree = event_tree;
+    header.event_tree = output_event_tree;
     header.sample_list_source = event_args.list_path;
     header.heron_set = workspace_set();
 
@@ -159,7 +160,7 @@ int run(const EventArgs &event_args, const std::string &log_prefix)
                                                 sample.sample_name,
                                                 column_provider.columns(),
                                                 event_args.selection,
-                                                "events");
+                                                output_event_tree);
 
         std::ostringstream log_message;
         log_message << "action=event_snapshot status=complete analysis=" << analysis.name()
