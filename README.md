@@ -231,7 +231,7 @@ Plotting is macro-driven. Use the `heron macro` helper to run a plot macro
 (and optionally a specific function inside it).
 
 ```bash
-heron --set template macro plotPotSimple.C
+heron --set template macro plotMinimal.C
 ```
 
 For an in-repo macro library, keep macros under `macros/library/` (for example,
