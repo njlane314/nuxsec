@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace heron {
@@ -32,6 +33,17 @@ inline std::vector<std::string> missing_required_columns(const std::vector<std::
   return missing_columns;
 }
 
+inline std::vector<std::string> missing_required_columns(const std::unordered_set<std::string> &available_columns,
+                                                         const std::vector<std::string> &required_columns)
+{
+  std::vector<std::string> missing_columns;
+  for (std::vector<std::string>::const_iterator it = required_columns.begin(); it != required_columns.end(); ++it) {
+    if (available_columns.find(*it) == available_columns.end()) missing_columns.push_back(*it);
+  }
+
+  return missing_columns;
+}
+
 inline void print_missing_columns(const std::vector<std::string> &missing_columns,
                                   std::ostream &stream = std::cerr)
 {
@@ -42,6 +54,23 @@ inline void print_missing_columns(const std::vector<std::string> &missing_column
     stream << " " << *it;
   }
   stream << "\n";
+}
+
+inline int require_columns(const std::unordered_set<std::string> &available_columns,
+                           const std::vector<std::string> &required_columns,
+                           const std::string &macro_name,
+                           const std::string &label,
+                           std::ostream &stream = std::cerr)
+{
+  const std::vector<std::string> missing_columns = missing_required_columns(available_columns, required_columns);
+  if (missing_columns.empty()) return 0;
+
+  stream << "[" << macro_name << "] missing required columns for " << label << ":\n";
+  for (std::vector<std::string>::const_iterator it = missing_columns.begin(); it != missing_columns.end(); ++it) {
+    stream << "  - " << *it << "\n";
+  }
+
+  return 1;
 }
 
 } // namespace macro

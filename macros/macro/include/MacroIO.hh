@@ -56,6 +56,18 @@ inline bool validate_root_input_path(const std::string &path, std::ostream &stre
   return true;
 }
 
+inline bool looks_like_event_list_root(const std::string &path)
+{
+  std::unique_ptr<TFile> p_file = open_root_file_read(path);
+  if (!p_file) return false;
+
+  const bool has_sample_refs = (p_file->Get("sample_refs") != NULL);
+  const bool has_events_tree = (p_file->Get("events") != NULL);
+  const bool has_event_tree_key = (p_file->Get("event_tree") != NULL);
+
+  return has_sample_refs && (has_events_tree || has_event_tree_key);
+}
+
 } // namespace macro
 } // namespace heron
 

@@ -26,6 +26,7 @@
 #include "PlottingHelper.hh"
 #include "SampleCLI.hh"
 #include "include/MacroGuard.hh"
+#include "include/MacroIO.hh"
 
 using namespace nu;
 
@@ -33,23 +34,7 @@ namespace
 {
 bool looks_like_event_list_root(const std::string &path)
 {
-    const auto n = path.size();
-    if (n < 5 || path.substr(n - 5) != ".root")
-    {
-        return false;
-    }
-
-    std::unique_ptr<TFile> file(TFile::Open(path.c_str(), "READ"));
-    if (!file || file->IsZombie())
-    {
-        return false;
-    }
-
-    const bool has_refs = (file->Get("sample_refs") != nullptr);
-    const bool has_events_tree = (file->Get("events") != nullptr);
-    const bool has_event_tree_key = (file->Get("event_tree") != nullptr);
-
-    return has_refs && (has_events_tree || has_event_tree_key);
+    return heron::macro::looks_like_event_list_root(path);
 }
 
 bool debug_enabled()
