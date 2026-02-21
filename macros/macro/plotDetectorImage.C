@@ -4,42 +4,17 @@
 
 #include <ROOT/RDataFrame.hxx>
 
-#include <fstream>
 #include <iostream>
 #include <random>
 #include <sstream>
 #include <string>
-#include <vector>
 
 #include "../../../framework/modules/evd/include/EventDisplay.hh"
 #include "include/MacroGuard.hh"
+#include "include/MacroEnv.hh"
 
 using namespace heron::evd;
 
-namespace
-{
-
-bool file_exists(const std::string &path)
-{
-    std::ifstream f(path.c_str());
-    return f.good();
-}
-
-std::string find_default_event_list_path()
-{
-    const std::vector<std::string> candidates{
-        "/exp/uboone/data/users/nlane/heron/out/event/events.root"};
-
-    for (const auto &path : candidates)
-    {
-        if (file_exists(path))
-            return path;
-    }
-
-    return "";
-}
-
-} // namespace
 
 void plot_detector_image(const std::string &input_file,
                          int run,
@@ -126,7 +101,7 @@ void plot_random_detector_image(const std::string &input_file,
 void plotDetectorImage()
 {
   heron::macro::run_with_guard("plotDetectorImage", [&]() {
-    const auto input_file = find_default_event_list_path();
+    const auto input_file = heron::macro::find_default_event_list_path();
     if (input_file.empty())
     {
         std::cerr

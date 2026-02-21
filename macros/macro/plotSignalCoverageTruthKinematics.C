@@ -55,6 +55,7 @@
 #include "PlottingHelper.hh"
 #include "SampleCLI.hh"
 #include "include/MacroGuard.hh"
+#include "include/MacroEnv.hh"
 #include "include/MacroIO.hh"
 
 using namespace nu;
@@ -62,18 +63,7 @@ using namespace nu;
 namespace
 {
 
-bool looks_like_event_list_root(const std::string &p)
-{
-    return heron::macro::looks_like_event_list_root(p);
-}
 
-std::string getenv_or(const char *key, const std::string &fallback)
-{
-    const char *v = std::getenv(key);
-    if (!v || std::string(v).empty())
-        return fallback;
-    return std::string(v);
-}
 
 std::string sanitize_for_filename(const std::string &s)
 {
@@ -291,7 +281,7 @@ int plotSignalCoverageTruthKinematics(const std::string &samples_tsv = "",
     const std::string list_path = samples_tsv.empty() ? default_event_list_root() : samples_tsv;
     std::cout << "[plotSignalCoverageTruthKinematics] input=" << list_path << "\n";
 
-    if (!looks_like_event_list_root(list_path))
+    if (!heron::macro::looks_like_event_list_root(list_path))
     {
         std::cerr << "[plotSignalCoverageTruthKinematics] input is not an event list root file: " << list_path << "\n";
         return 1;
@@ -359,7 +349,7 @@ int plotSignalCoverageTruthKinematics(const std::string &samples_tsv = "",
     opt.signal_channels = Channels::signal_keys();
     opt.y_title = "Events / bin";
     opt.run_numbers = {"1"};
-    opt.image_format = getenv_or("HERON_PLOT_FORMAT", "pdf");
+    opt.image_format = heron::macro::getenv_or("HERON_PLOT_FORMAT", "pdf");
 
     const double pot_data = el.total_pot_data();
     const double pot_mc = el.total_pot_mc();
@@ -415,8 +405,8 @@ int plotSignalCoverageTruthKinematics(const std::string &samples_tsv = "",
             std::cout << "[plotSignalCoverageTruthKinematics] 2D: plotting all selected events (no truth-signal filter)\n";
         }
 
-        const std::string out_dir = getenv_or("HERON_PLOT_DIR", "./scratch/plots");
-        const std::string out_fmt = getenv_or("HERON_PLOT_FORMAT", "pdf");
+        const std::string out_dir = heron::macro::getenv_or("HERON_PLOT_DIR", "./scratch/plots");
+        const std::string out_fmt = heron::macro::getenv_or("HERON_PLOT_FORMAT", "pdf");
 
         const std::vector<Var2D> vars_2d = {
             {"truth2d_W_vs_nu_E",     "nu_E",      "kin_W",

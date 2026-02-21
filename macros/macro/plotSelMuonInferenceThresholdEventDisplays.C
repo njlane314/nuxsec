@@ -6,7 +6,6 @@
 #include <ROOT/RVec.hxx>
 
 #include <cstdlib>
-#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -16,17 +15,13 @@
 
 #include "../../../framework/modules/evd/include/EventDisplay.hh"
 #include "include/MacroGuard.hh"
+#include "include/MacroEnv.hh"
 
 using namespace heron::evd;
 
 namespace
 {
 
-bool file_exists(const std::string &path)
-{
-    std::ifstream f(path.c_str());
-    return f.good();
-}
 
 std::string find_default_event_list_path()
 {
@@ -54,7 +49,7 @@ std::string find_default_event_list_path()
 
     for (const auto &path : candidates)
     {
-        if (file_exists(path))
+        if (heron::macro::file_exists(path))
             return path;
     }
 

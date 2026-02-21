@@ -41,10 +41,6 @@ using namespace nu;
 
 namespace
 {
-bool looks_like_event_list_root(const std::string &path)
-{
-    return heron::macro::looks_like_event_list_root(path);
-}
 
 bool implicit_mt_enabled()
 {
@@ -129,7 +125,7 @@ int plotFirstInferenceScoreEntry(const std::string &samples_tsv = "",
     const std::string list_path = samples_tsv.empty() ? default_event_list_root() : samples_tsv;
     std::cout << "[plotFirstInferenceScoreEntry] input=" << list_path << "\n";
 
-    if (!looks_like_event_list_root(list_path))
+    if (!heron::macro::looks_like_event_list_root(list_path))
     {
         std::cerr << "[plotFirstInferenceScoreEntry] input is not an event list ROOT file: "
                   << list_path << "\n";

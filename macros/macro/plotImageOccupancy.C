@@ -51,6 +51,7 @@
 #include "Plotter.hh"
 #include "PlottingHelper.hh"
 #include "include/MacroGuard.hh"
+#include "include/MacroEnv.hh"
 #include "include/MacroColumns.hh"
 #include "include/MacroIO.hh"
 
@@ -58,22 +59,8 @@ using namespace nu;
 
 namespace
 {
-bool looks_like_event_list_root(const std::string &p)
-{
-    return heron::macro::looks_like_event_list_root(p);
-}
 
-std::string plot_out_dir()
-{
-  const char *v = std::getenv("HERON_PLOT_DIR");
-  return v ? std::string(v) : std::string("./scratch/plots");
-}
 
-std::string plot_out_fmt()
-{
-  const char *v = std::getenv("HERON_PLOT_FORMAT");
-  return v ? std::string(v) : std::string("pdf");
-}
 
 int require_columns(const std::unordered_set<std::string> &columns,
                     const std::vector<std::string> &required,
@@ -120,7 +107,7 @@ int plotImageOccupancy(const std::string &samples_tsv = "",
   std::cout << "[plotImageOccupancy] input=" << list_path << "\n";
   std::cout << "[plotImageOccupancy] extra_sel=" << extra_sel << "\n";
 
-  if (!looks_like_event_list_root(list_path))
+  if (!heron::macro::looks_like_event_list_root(list_path))
   {
     std::cerr << "[plotImageOccupancy] input is not an event list root file: " << list_path << "\n";
     return 1;
@@ -257,8 +244,8 @@ int plotImageOccupancy(const std::string &samples_tsv = "",
 
   gStyle->SetOptStat(0);
 
-  const std::string out_dir = plot_out_dir();
-  const std::string fmt = plot_out_fmt();
+  const std::string out_dir = heron::macro::plot_out_dir();
+  const std::string fmt = heron::macro::plot_out_fmt();
   gSystem->mkdir(out_dir.c_str(), true);
 
   const double n_events = static_cast<double>(*n.Count());

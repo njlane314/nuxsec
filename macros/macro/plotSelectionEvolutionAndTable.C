@@ -65,10 +65,6 @@ struct StageStats
     double rel_efficiency = 0.0;
 };
 
-bool looks_like_event_list_root(const std::string &p)
-{
-    return heron::macro::looks_like_event_list_root(p);
-}
 
 std::shared_ptr<const std::vector<char>> build_truth_mc_mask(const EventListIO &el)
 {
@@ -162,7 +158,7 @@ int plotSelectionEvolutionAndTable(const std::string &event_list_path = "",
                   << "For truth-level signal efficiency prefer 'is_signal' (or an explicit truth selector).\n";
     }
 
-    if (!looks_like_event_list_root(input_path))
+    if (!heron::macro::looks_like_event_list_root(input_path))
     {
         std::cerr << "[plotSelectionEvolutionAndTable] input is not an event-list root file: " << input_path << "\n";
         return 1;

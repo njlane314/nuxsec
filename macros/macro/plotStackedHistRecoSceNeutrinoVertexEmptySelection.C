@@ -32,10 +32,6 @@ using namespace nu;
 
 namespace
 {
-bool looks_like_event_list_root(const std::string &path)
-{
-    return heron::macro::looks_like_event_list_root(path);
-}
 
 bool debug_enabled()
 {
@@ -79,7 +75,7 @@ int plotStackedHistRecoSceNeutrinoVertexEmptySelection(const std::string &event_
     const std::string list_path = event_list_root.empty() ? default_event_list_root() : event_list_root;
     std::cout << "[plotStackedHistRecoSceNeutrinoVertexEmptySelection] input=" << list_path << "\n";
 
-    if (!looks_like_event_list_root(list_path))
+    if (!heron::macro::looks_like_event_list_root(list_path))
     {
         std::cerr << "[plotStackedHistRecoSceNeutrinoVertexEmptySelection] input is not an event list root file: " << list_path << "\n";
         return 1;

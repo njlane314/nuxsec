@@ -61,16 +61,13 @@
 #include "PlottingHelper.hh"
 #include "SampleCLI.hh"
 #include "include/MacroGuard.hh"
+#include "include/MacroEnv.hh"
 #include "include/MacroIO.hh"
 
 using namespace nu;
 
 namespace
 {
-bool looks_like_event_list_root(const std::string &p)
-{
-    return heron::macro::looks_like_event_list_root(p);
-}
 
 bool implicit_mt_enabled()
 {
@@ -78,13 +75,6 @@ bool implicit_mt_enabled()
     return env != nullptr && std::string(env) != "0";
 }
 
-std::string getenv_or(const char *key, const std::string &fallback)
-{
-    const char *v = std::getenv(key);
-    if (!v || std::string(v).empty())
-        return fallback;
-    return std::string(v);
-}
 
 std::string sanitize_for_filename(const std::string &s)
 {
@@ -369,8 +359,8 @@ void save_2d(const ROOT::RDF::RNode &node,
     gROOT->SetBatch(true);
     gStyle->SetOptStat(0);
 
-    const std::string out_dir = getenv_or("HERON_PLOT_DIR", "./scratch/plots");
-    const std::string out_fmt = getenv_or("HERON_PLOT_FORMAT", "pdf");
+    const std::string out_dir = heron::macro::getenv_or("HERON_PLOT_DIR", "./scratch/plots");
+    const std::string out_fmt = heron::macro::getenv_or("HERON_PLOT_FORMAT", "pdf");
     gSystem->mkdir(out_dir.c_str(), /*recursive=*/true);
 
     ROOT::RDF::RNode n = node;
@@ -413,7 +403,7 @@ int plotInclusiveMuCCSelectionStages(const std::string &samples_tsv = "",
     const std::string list_path = samples_tsv.empty() ? default_event_list_root() : samples_tsv;
     std::cout << "[plotInclusiveMuCCSelectionStages] input=" << list_path << "\n";
 
-    if (!looks_like_event_list_root(list_path))
+    if (!heron::macro::looks_like_event_list_root(list_path))
     {
         std::cerr << "[plotInclusiveMuCCSelectionStages] input is not an event list root file: " << list_path << "\n";
         return 1;
@@ -533,7 +523,7 @@ int plotInclusiveMuCCSelectionStages(const std::string &samples_tsv = "",
     opt.show_ratio_band = include_data;
     opt.signal_channels = Channels::signal_keys();
     opt.y_title = "Events";
-    opt.image_format = getenv_or("HERON_PLOT_FORMAT", "pdf");
+    opt.image_format = heron::macro::getenv_or("HERON_PLOT_FORMAT", "pdf");
 
     const double pot_data = el.total_pot_data();
     const double pot_mc = el.total_pot_mc();
