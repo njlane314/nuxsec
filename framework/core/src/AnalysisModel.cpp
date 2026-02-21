@@ -18,6 +18,24 @@ Selection AnalysisModel::selection(std::string name, Cut c, Weight w)
     s.name = std::move(name);
     s.cut = std::move(c);
     s.weight = std::move(w);
+    s.cut_expression = s.cut.expression.empty() ? s.cut.name : s.cut.expression;
+    m_selections.push_back(s);
+    return s;
+}
+
+Selection AnalysisModel::selection(std::string name, const CutExpression &c, Weight w)
+{
+    Cut combined;
+    combined.name = name + "_cut";
+    combined.predicate = std::function<bool()>();
+    combined.dependencies = c.dependencies;
+    combined.expression = c.expression;
+
+    Selection s;
+    s.name = std::move(name);
+    s.cut = std::move(combined);
+    s.weight = std::move(w);
+    s.cut_expression = c.expression;
     m_selections.push_back(s);
     return s;
 }
