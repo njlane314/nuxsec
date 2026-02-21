@@ -10,6 +10,7 @@
 #define HERON_CORE_ANALYSIS_MODEL_H
 
 #include <functional>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -18,6 +19,63 @@
 
 namespace heron
 {
+
+namespace detail
+{
+
+inline std::vector<std::string> merge_dependencies(const std::vector<std::string> &lhs, const std::vector<std::string> &rhs)
+{
+    std::vector<std::string> merged = lhs;
+    std::set<std::string> seen(lhs.begin(), lhs.end());
+    for (const std::string &dep : rhs)
+    {
+        if (seen.insert(dep).second)
+            merged.push_back(dep);
+    }
+
+    return merged;
+}
+
+inline std::string combine_expression(const std::string &lhs, const std::string &rhs, const std::string &op)
+{
+    if (lhs.empty())
+        return rhs;
+    if (rhs.empty())
+        return lhs;
+    return "(" + lhs + ") " + op + " (" + rhs + ")";
+}
+
+} // namespace detail
+
+template <typename TValue>
+struct Column
+{
+    std::string expression;
+    std::vector<std::string> dependencies;
+};
+
+template <typename TValue>
+inline Column<TValue> col(std::string name)
+{
+    Column<TValue> c;
+    c.expression = name;
+    c.dependencies.push_back(std::move(name));
+    return c;
+}
+
+template <typename TValue>
+inline Column<TValue> expr(std::string expression)
+{
+    Column<TValue> c;
+    c.expression = std::move(expression);
+    return c;
+}
+
+struct CutExpression
+{
+    std::string expression;
+    std::vector<std::string> dependencies;
+};
 
 /**
  *  \brief Named variable declaration with optional dependency names.
@@ -38,6 +96,7 @@ struct Cut
     std::string name;
     std::function<bool()> predicate;
     std::vector<std::string> dependencies;
+    std::string expression;
 };
 
 /**
@@ -48,6 +107,7 @@ struct Weight
     std::string name;
     std::function<double()> expression;
     std::vector<std::string> dependencies;
+    std::string column_expression;
 
     bool enabled = false;
 };
@@ -60,7 +120,39 @@ struct Selection
     std::string name;
     Cut cut;
     Weight weight;
+    std::string cut_expression;
 };
+
+inline CutExpression to_cut_expression(const Cut &c)
+{
+    CutExpression ce;
+    ce.expression = c.expression.empty() ? c.name : c.expression;
+    ce.dependencies = c.dependencies;
+    return ce;
+}
+
+inline CutExpression operator&&(const CutExpression &lhs, const CutExpression &rhs)
+{
+    CutExpression ce;
+    ce.expression = detail::combine_expression(lhs.expression, rhs.expression, "&&");
+    ce.dependencies = detail::merge_dependencies(lhs.dependencies, rhs.dependencies);
+    return ce;
+}
+
+inline CutExpression operator&&(const Cut &lhs, const Cut &rhs)
+{
+    return to_cut_expression(lhs) && to_cut_expression(rhs);
+}
+
+inline CutExpression operator&&(const CutExpression &lhs, const Cut &rhs)
+{
+    return lhs && to_cut_expression(rhs);
+}
+
+inline CutExpression operator&&(const Cut &lhs, const CutExpression &rhs)
+{
+    return to_cut_expression(lhs) && rhs;
+}
 
 /**
  *  \brief Named analysis channel declaration.
@@ -239,6 +331,18 @@ class AnalysisModel
         c.name = std::move(name);
         c.predicate = std::function<bool()>(std::move(predicate));
         c.dependencies = std::move(dependencies);
+        c.expression = c.name;
+        m_cuts.push_back(c);
+        return c;
+    }
+
+    Cut cut(std::string name, const Column<bool> &column)
+    {
+        Cut c;
+        c.name = std::move(name);
+        c.predicate = std::function<bool()>();
+        c.dependencies = column.dependencies;
+        c.expression = column.expression;
         m_cuts.push_back(c);
         return c;
     }
@@ -250,12 +354,26 @@ class AnalysisModel
         w.name = std::move(name);
         w.expression = std::function<double()>(std::move(expression));
         w.dependencies = std::move(dependencies);
+        w.column_expression = w.name;
+        w.enabled = true;
+        m_weights.push_back(w);
+        return w;
+    }
+
+    Weight weight(std::string name, const Column<double> &column)
+    {
+        Weight w;
+        w.name = std::move(name);
+        w.expression = std::function<double()>();
+        w.dependencies = column.dependencies;
+        w.column_expression = column.expression;
         w.enabled = true;
         m_weights.push_back(w);
         return w;
     }
 
     Selection selection(std::string name, Cut c, Weight w = {});
+    Selection selection(std::string name, const CutExpression &c, Weight w = {});
     Hist1DSpec hist1d(std::string name,
                       std::string variable,
                       int bins,

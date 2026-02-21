@@ -58,6 +58,8 @@ class DefaultAnalysisModel : public heron::AnalysisModel,
     bool is_in_reco_volume(float x, float y, float z) const noexcept override;
 
   private:
+    void define_selections() override;
+
     DefaultAnalysisModel();
 
     std::string m_name;

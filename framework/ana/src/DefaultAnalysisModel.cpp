@@ -64,6 +64,18 @@ DefaultAnalysisModel::DefaultAnalysisModel()
     m_tree_name = "nuselection/EventSelectionFilter";
 }
 
+
+void DefaultAnalysisModel::define_selections()
+{
+    const auto c_trigger = cut("trigger", heron::col<bool>("sel_trigger"));
+    const auto c_slice = cut("slice", heron::col<bool>("sel_slice"));
+    const auto c_fiducial = cut("fiducial", heron::col<bool>("sel_fiducial"));
+    const auto c_muon = cut("muon", heron::col<bool>("sel_muon"));
+    const auto w_cv = weight("cv", heron::col<double>("w_nominal"));
+
+    selection("numu_ccinc", c_trigger && c_slice && c_fiducial && c_muon, w_cv);
+}
+
 const std::string &DefaultAnalysisModel::name() const noexcept
 {
     return m_name;
