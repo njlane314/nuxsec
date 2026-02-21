@@ -45,10 +45,6 @@ int plotMySummary(const std::string &event_list_path = "")
 - Avoid duplicating generic helpers that already exist in `framework/modules/plot` and `framework/modules/io`.
 - Prefer imperative method names and early returns for validation failures.
 
-## Standardised manifest entrypoints
-
-A logical macro command should be added to `macros/macro/library/manifest.tsv` so users can run a stable alias even if a file moves.
-
 ## Standalone macros
 
 Macros that depend only on ROOT/C++ (and not on Heron library classes) live in `macros/macro/standalone/`.
