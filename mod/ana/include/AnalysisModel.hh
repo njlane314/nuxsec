@@ -14,17 +14,10 @@
 #include <utility>
 #include <vector>
 
+#include "AnalysisContext.hh"
+
 namespace heron
 {
-
-/**
- *  \brief Lightweight analysis context interface consumed by AnalysisModel.
- */
-class AnaContext
-{
-  public:
-    virtual ~AnaContext() = default;
-};
 
 /**
  *  \brief Named variable declaration with optional dependency names.
@@ -125,7 +118,15 @@ class AnalysisModel
     virtual void define() = 0;
 
     /// Optional hook for external configuration/services.
-    virtual void configure(const AnaContext &) {}
+    virtual void configure() {}
+
+    /// Optional context-aware configuration hook.
+    template <typename TPolicy, typename TServices>
+    void configure(const AnalysisContext<TPolicy, TServices> &context)
+    {
+        (void) context;
+        configure();
+    }
 
     const std::vector<Var<double> > &vars() const noexcept { return m_vars; }
     const std::vector<Cut> &cuts() const noexcept { return m_cuts; }
