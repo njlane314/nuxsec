@@ -28,24 +28,14 @@
 #include "Plotter.hh"
 #include "PlottingHelper.hh"
 #include "include/MacroGuard.hh"
+#include "include/MacroEnv.hh"
 #include "include/MacroIO.hh"
 
 using namespace nu;
 
 namespace
 {
-bool looks_like_event_list_root(const std::string &p)
-{
-    return heron::macro::looks_like_event_list_root(p);
-}
 
-std::string getenv_or(const char *key, const std::string &fallback)
-{
-    const char *v = std::getenv(key);
-    if (!v || std::string(v).empty())
-        return fallback;
-    return std::string(v);
-}
 
 ROOT::RDF::RNode filter_by_mask(ROOT::RDF::RNode n, std::shared_ptr<const std::vector<char>> mask)
 {
@@ -72,7 +62,7 @@ int plotMuonCandidateAfterFiducialPassFail(const std::string &input = "",
     const std::string list_path = input.empty() ? default_event_list_root() : input;
     std::cout << "[plotMuonCandidateAfterFiducialPassFail] input=" << list_path << "\n";
 
-    if (!looks_like_event_list_root(list_path))
+    if (!heron::macro::looks_like_event_list_root(list_path))
     {
         std::cerr << "[plotMuonCandidateAfterFiducialPassFail] input is not an event list root file: " << list_path << "\n";
         return 1;
@@ -157,7 +147,7 @@ int plotMuonCandidateAfterFiducialPassFail(const std::string &input = "",
     opt.x_title = "Muon Candidate Selected";
     opt.y_title = "Events";
     opt.analysis_region_label = "Software Trigger + Slice + Fiducial";
-    opt.image_format = getenv_or("HERON_PLOT_FORMAT", "pdf");
+    opt.image_format = heron::macro::getenv_or("HERON_PLOT_FORMAT", "pdf");
 
     const double pot_data = el.total_pot_data();
     const double pot_mc = el.total_pot_mc();

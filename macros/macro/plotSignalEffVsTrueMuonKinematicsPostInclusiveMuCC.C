@@ -45,6 +45,7 @@
 #include "PlottingHelper.hh"
 #include "SampleCLI.hh"
 #include "include/MacroGuard.hh"
+#include "include/MacroEnv.hh"
 #include "include/MacroColumns.hh"
 #include "include/MacroIO.hh"
 
@@ -52,10 +53,6 @@ using namespace nu;
 
 namespace
 {
-bool looks_like_event_list_root(const std::string &p)
-{
-    return heron::macro::looks_like_event_list_root(p);
-}
 
 struct VarSpec
 {
@@ -66,13 +63,6 @@ struct VarSpec
     std::string x_title;
 };
 
-bool env_truthy(const char *v)
-{
-    if (v == nullptr)
-        return false;
-    const std::string s(v);
-    return s == "1" || s == "true" || s == "TRUE" || s == "on" || s == "ON";
-}
 
 int require_columns(const std::unordered_set<std::string> &columns,
                     const std::vector<std::string> &required,
@@ -94,7 +84,7 @@ int plotSignalEffVsTrueMuonKinematicsPostInclusiveMuCC(const std::string &sample
                                                        " && (pi_p>0.0)")
 {
   return heron::macro::run_with_guard("plotSignalEffVsTrueMuonKinematicsPostInclusiveMuCC", [&]() -> int {
-    const bool use_imt = env_truthy(std::getenv("HERON_ENABLE_IMT"));
+    const bool use_imt = heron::macro::env_truthy(std::getenv("HERON_ENABLE_IMT"));
     if (use_imt)
     {
         ROOT::EnableImplicitMT();
@@ -109,7 +99,7 @@ int plotSignalEffVsTrueMuonKinematicsPostInclusiveMuCC(const std::string &sample
     const std::string list_path = samples_tsv.empty() ? default_event_list_root() : samples_tsv;
     std::cout << "[plotSignalEffVsTrueMuonKinematicsPostInclusiveMuCC] input=" << list_path << "\n";
 
-    if (!looks_like_event_list_root(list_path))
+    if (!heron::macro::looks_like_event_list_root(list_path))
     {
         std::cerr << "[plotSignalEffVsTrueMuonKinematicsPostInclusiveMuCC] input is not an event list root file: " << list_path << "\n";
         return 1;

@@ -38,6 +38,7 @@
 #include "PlottingHelper.hh"
 #include "SampleCLI.hh"
 #include "include/MacroGuard.hh"
+#include "include/MacroEnv.hh"
 #include "include/MacroColumns.hh"
 #include "include/MacroIO.hh"
 
@@ -45,22 +46,8 @@ using namespace nu;
 
 namespace
 {
-bool looks_like_event_list_root(const std::string &p)
-{
-    return heron::macro::looks_like_event_list_root(p);
-}
 
-std::string plot_out_dir()
-{
-    const char *v = std::getenv("HERON_PLOT_DIR");
-    return v ? std::string(v) : std::string("./scratch/plots");
-}
 
-std::string plot_out_fmt()
-{
-    const char *v = std::getenv("HERON_PLOT_FORMAT");
-    return v ? std::string(v) : std::string("pdf");
-}
 
 int require_columns(const std::unordered_set<std::string> &columns,
                     const std::vector<std::string> &required,
@@ -133,7 +120,7 @@ int plotRecoVertexInImageStats(const std::string &samples_tsv = "",
     std::cout << "[plotRecoVertexInImageStats] extra_sel=" << extra_sel << "\n";
     std::cout << "[plotRecoVertexInImageStats] include_data=" << (include_data ? "true" : "false") << "\n";
 
-    if (!looks_like_event_list_root(list_path))
+    if (!heron::macro::looks_like_event_list_root(list_path))
     {
         std::cerr << "[plotRecoVertexInImageStats] input is not an event list root file: " << list_path << "\n";
         return 1;
@@ -271,8 +258,8 @@ int plotRecoVertexInImageStats(const std::string &samples_tsv = "",
         leg.AddEntry(&h_data, "Data", "lp");
     leg.Draw();
 
-    const std::string out_dir = plot_out_dir();
-    const std::string fmt = plot_out_fmt();
+    const std::string out_dir = heron::macro::plot_out_dir();
+    const std::string fmt = heron::macro::plot_out_fmt();
     gSystem->mkdir(out_dir.c_str(), true);
 
     const std::string out = out_dir + "/reco_vtx_in_image_fractions." + fmt;

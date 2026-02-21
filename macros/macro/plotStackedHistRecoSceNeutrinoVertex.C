@@ -40,10 +40,6 @@ using namespace nu;
 
 namespace
 {
-bool looks_like_event_list_root(const std::string &p)
-{
-    return heron::macro::looks_like_event_list_root(p);
-}
 
 
 bool debug_enabled()
@@ -75,7 +71,7 @@ int plot_stacked_hist_impl(const std::string &samples_tsv,
     const std::string list_path = samples_tsv.empty() ? default_event_list_root() : samples_tsv;
     std::cout << "[plotStackedHistRecoSceNeutrinoVertex] input=" << list_path << "\n";
 
-    if (!looks_like_event_list_root(list_path))
+    if (!heron::macro::looks_like_event_list_root(list_path))
     {
         std::cerr << "[plotStackedHistRecoSceNeutrinoVertex] input is not an event list root file: " << list_path << "\n";
         return 1;

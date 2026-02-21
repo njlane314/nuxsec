@@ -40,10 +40,6 @@ using namespace nu;
 
 namespace
 {
-bool looks_like_event_list_root(const std::string &p)
-{
-    return heron::macro::looks_like_event_list_root(p);
-}
 
 struct Totals
 {
@@ -92,7 +88,7 @@ int printAnalysisChannelStats(const std::string &samples_tsv = "",
     std::cout << "[printAnalysisChannelStats] mc_weight=" << (mc_weight.empty() ? std::string("w_nominal") : mc_weight) << "\n";
     std::cout << "[printAnalysisChannelStats] include_data=" << (include_data ? "true" : "false") << "\n";
 
-    if (!looks_like_event_list_root(list_path))
+    if (!heron::macro::looks_like_event_list_root(list_path))
     {
         std::cerr << "[printAnalysisChannelStats] input is not an event list root file: " << list_path << "\n";
         return 1;

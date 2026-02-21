@@ -28,10 +28,6 @@ using namespace nu;
 
 namespace
 {
-bool looks_like_event_list_root(const std::string &path)
-{
-    return heron::macro::looks_like_event_list_root(path);
-}
 
 std::string make_selection_expr(double threshold)
 {
@@ -46,7 +42,7 @@ int plotSelMuonInferenceScoreSingleBin(const std::string &event_list_root = "",
 {
   return heron::macro::run_with_guard("plotSelMuonInferenceScoreSingleBin", [&]() -> int {
     const std::string list_path = event_list_root.empty() ? default_event_list_root() : event_list_root;
-    if (!looks_like_event_list_root(list_path))
+    if (!heron::macro::looks_like_event_list_root(list_path))
     {
         return 1;
     }
