@@ -19,12 +19,6 @@
 #include "AnalysisChannels.hh"
 #include "FiducialVolume.hh"
 
-const DefaultAnalysisModel &DefaultAnalysisModel::instance()
-{
-    static const DefaultAnalysisModel model{};
-    return model;
-}
-
 DefaultAnalysisModel::DefaultAnalysisModel()
 {
     m_name = "heron";

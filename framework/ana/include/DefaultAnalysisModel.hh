@@ -28,7 +28,7 @@ class DefaultAnalysisModel : public heron::AnalysisModel,
                              public SelectionService
 {
   public:
-    static const DefaultAnalysisModel &instance();
+    DefaultAnalysisModel();
 
     const std::string &name() const noexcept override;
     const std::string &tree_name() const noexcept override;
@@ -49,8 +49,6 @@ class DefaultAnalysisModel : public heron::AnalysisModel,
 
   private:
     void define_selections() override;
-
-    DefaultAnalysisModel();
 
     std::string m_name;
     std::string m_tree_name;

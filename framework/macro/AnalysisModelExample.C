@@ -2,8 +2,8 @@
 /**
  *  @file  macro/AnalysisModelExample.C
  *
- *  @brief Minimal example macro that loads samples and initialises the
- *         default analysis model with an analysis context.
+ *  @brief Minimal example macro that loads samples and initialises
+ *         a default analysis model with an analysis context.
  */
 
 #include <iostream>
@@ -27,7 +27,7 @@ void AnalysisModelExample(const char *sample_list_path = "scratch/out/out/sample
 
         heron::AnalysisContext<nu::ExecutionPolicy> context(policy, "default");
 
-        DefaultAnalysisModel &model = const_cast<DefaultAnalysisModel &>(DefaultAnalysisModel::instance());
+        DefaultAnalysisModel model;
         model.initialise(context);
 
         std::cout << "[AnalysisModelExample] model=" << model.name()

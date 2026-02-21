@@ -22,7 +22,7 @@ int run(const EventArgs &event_args, const std::string &log_prefix)
 {
     ROOT::EnableImplicitMT();
 
-    const auto &analysis = DefaultAnalysisModel::instance();
+    const DefaultAnalysisModel analysis;
     const auto entries = read_samples(event_args.list_path);
 
     const auto start_time = std::chrono::steady_clock::now();
