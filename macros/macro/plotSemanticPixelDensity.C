@@ -38,6 +38,8 @@
 #include "EventListIO.hh"
 #include "PlottingHelper.hh"
 #include "include/MacroGuard.hh"
+#include "include/MacroColumns.hh"
+#include "include/MacroIO.hh"
 
 using namespace nu;
 
@@ -45,19 +47,7 @@ namespace
 {
 bool looks_like_event_list_root(const std::string &p)
 {
-  const auto n = p.size();
-  if (n < 5 || p.substr(n - 5) != ".root")
-    return false;
-
-  std::unique_ptr<TFile> f(TFile::Open(p.c_str(), "READ"));
-  if (!f || f->IsZombie())
-    return false;
-
-  const bool has_refs = (f->Get("sample_refs") != nullptr);
-  const bool has_events_tree = (f->Get("events") != nullptr);
-  const bool has_event_tree_key = (f->Get("event_tree") != nullptr);
-
-  return has_refs && (has_events_tree || has_event_tree_key);
+    return heron::macro::looks_like_event_list_root(p);
 }
 
 std::string plot_out_dir()
@@ -117,21 +107,7 @@ int require_columns(const std::unordered_set<std::string> &columns,
                     const std::vector<std::string> &required,
                     const std::string &label)
 {
-  std::vector<std::string> missing;
-  missing.reserve(required.size());
-  for (const auto &name : required)
-  {
-    if (columns.find(name) == columns.end())
-      missing.push_back(name);
-  }
-
-  if (missing.empty())
-    return 0;
-
-  std::cerr << "[plotSemanticPixelDensity] missing required columns for " << label << ":\n";
-  for (const auto &name : missing)
-    std::cerr << "  - " << name << "\n";
-  return 1;
+    return heron::macro::require_columns(columns, required, "plotSemanticPixelDensity", label);
 }
 
 int at_or_zero(const ROOT::VecOps::RVec<int> &v, int idx)
