@@ -7,9 +7,8 @@ entities (aggregation → sample → dataset/RDF → channel/category → select
 compiled drivers to move between them.
 
 The core design goal is to keep analysis structure explicit: inputs are aggregated into samples with
-recorded provenance, samples feed into a compiled event-level analysis, and plots/macros operate on the
-resulting outputs. This makes it easier to audit which inputs contributed to each step and to reproduce
-analysis or training artefacts later.
+recorded provenance, and samples feed into a compiled event-level analysis. This makes it easier to audit
+which inputs contributed to each step and to reproduce analysis or training artefacts later.
 
 ## Architecture 
 
@@ -31,7 +30,6 @@ mod/evd/   event display utilities
 - `$HERON_OUTPUT_DIR/art/` stores provenance ROOT outputs from `heron art` (the variable must be set).
 - `scratch/out/<set>/sample/` stores per-sample ROOT outputs and `samples.tsv` produced by `heron sample`.
 - `scratch/out/<set>/event/` stores event-level ROOT outputs produced by `heron event`.
-- `scratch/plot/<set>/` stores plot outputs produced by `heron macro` (configurable via `HERON_PLOT_DIR`).
 
 The `<set>` segment defaults to `out` and is controlled by `HERON_SET` or `heron --set`.
 
@@ -71,7 +69,6 @@ Commands:
   art         Aggregate art provenance for an input
   sample      Aggregate Sample ROOT files from art provenance
   event       Build event-level output from aggregated samples
-  macro       Run plot macros
   paths       Print resolved workspace paths
   env         Print environment exports for a workspace
 
@@ -103,13 +100,8 @@ wrapper script:
 - `HERON_SET` selects the active workspace (default: `out`).
 - `HERON_OUT_BASE` overrides the base output directory; if unset, `HERON_OUTPUT_DIR` is used before falling back to `<repo>/scratch/out`.
 - Temporary snapshot staging is written to `/exp/uboone/data/users/$USER/staging`; `USER` must be set.
-- `HERON_PLOT_BASE` overrides the plot base directory (default: `<repo>/scratch/plot`).
 - `HERON_OUTPUT_DIR` is required by `heron art`; outputs are written to `$HERON_OUTPUT_DIR/art`.
 - `HERON_SAMPLE_DIR` and `HERON_EVENT_DIR` override per-stage output directories for `sample` and `event`.
-- `HERON_PLOT_DIR` and `HERON_PLOT_FORMAT` control plot output location and file extension.
-- `HERON_MACRO_LIBRARY_DIR` sets the in-repo macro library directory (default: `<repo>/macros/macro/library`).
-- `HERON_MACRO_PATH` sets additional colon-separated macro search paths (searched after `HERON_MACRO_LIBRARY_DIR`).
-- `manifest.tsv` inside `HERON_MACRO_LIBRARY_DIR` can register logical macro names as `name<TAB>macro[<TAB>call]`.
 - `HERON_REPO_ROOT` can be set to override the repo discovery used by the CLI.
 - `HERON_TREE_NAME` selects the input tree name for the event builder (default: `Events`).
 
@@ -227,28 +219,4 @@ heron --set template event scratch/out/template/event/events.root sel_reco_fv
 
 4) **Plotting via macros**
 
-Plotting is macro-driven. Use the `heron macro` helper to run a plot macro
-(and optionally a specific function inside it).
-
-```bash
-heron --set template macro plotPotSimple.C
-```
-
-For an in-repo macro library, keep macros under `macros/macro/library/` (for example,
-in this repository), and optionally add extra search paths.
-
-```bash
-export HERON_MACRO_LIBRARY_DIR=macros/macro/library
-export HERON_MACRO_PATH=macros/macro/library/custom
-heron --set template macro list
-```
-
-Optional: create `macros/macro/library/manifest.tsv` with entries like
-`name<TAB>macro<TAB>call` so users can run logical names, for example
-`heron macro pr_eff`.
-
-Macro resolution order for relative names is: `HERON_MACRO_LIBRARY_DIR`, then
-`HERON_MACRO_PATH` entries, then repository macro directories.
-
-Shell completion for these commands is available in `scripts/heron-completion.bash` (source it
-in your shell profile or session).
+Macro support and the in-repository macro collection are temporarily removed.
