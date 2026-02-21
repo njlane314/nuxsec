@@ -17,12 +17,12 @@ _heron()
     local exe
     local exe_dir
 
-    if [[ -n "${HERON_REPO_ROOT:-}" && ( -d "${HERON_REPO_ROOT}/macros/plot/macro" || -d "${HERON_REPO_ROOT}/macros/evd/macro" || -d "${HERON_REPO_ROOT}/macros/standalone/macro" || -d "${HERON_REPO_ROOT}/macros/io/macro" ) ]]; then
+    if [[ -n "${HERON_REPO_ROOT:-}" && -d "${HERON_REPO_ROOT}/macros/macro" ]]; then
       printf "%s" "${HERON_REPO_ROOT}"
       return 0
     fi
 
-    if [[ -n "${HERON_ROOT:-}" && ( -d "${HERON_ROOT}/macros/plot/macro" || -d "${HERON_ROOT}/macros/evd/macro" || -d "${HERON_ROOT}/macros/standalone/macro" || -d "${HERON_ROOT}/macros/io/macro" ) ]]; then
+    if [[ -n "${HERON_ROOT:-}" && -d "${HERON_ROOT}/macros/macro" ]]; then
       printf "%s" "${HERON_ROOT}"
       return 0
     fi
@@ -32,7 +32,7 @@ _heron()
       exe_dir="$(dirname "$(readlink -f "${exe}" 2>/dev/null || printf "%s" "${exe}")")"
       dir="${exe_dir}"
       while [[ -n "${dir}" && "${dir}" != "/" ]]; do
-        if [[ -d "${dir}/macros/plot/macro" || -d "${dir}/macros/evd/macro" || -d "${dir}/macros/standalone/macro" || -d "${dir}/macros/io/macro" ]]; then
+        if [[ -d "${dir}/macros/macro" ]]; then
           printf "%s" "${dir}"
           return 0
         fi
@@ -42,7 +42,7 @@ _heron()
 
     dir="${PWD}"
     while [[ "${dir}" != "/" ]]; do
-      if [[ -d "${dir}/macros/plot/macro" || -d "${dir}/macros/evd/macro" || -d "${dir}/macros/standalone/macro" || -d "${dir}/macros/io/macro" ]]; then
+      if [[ -d "${dir}/macros/macro" ]]; then
         printf "%s" "${dir}"
         return 0
       fi
@@ -57,35 +57,10 @@ _heron()
     local repo_root
     local macro_dir
     local macro
-    local evd_dir
 
     repo_root="$(_heron_find_root 2>/dev/null || true)"
     if [[ -n "${repo_root}" ]]; then
-      macro_dir="${repo_root}/macros/plot/macro"
-      if [[ -d "${macro_dir}" ]]; then
-        for macro in "${macro_dir}"/*.C; do
-          if [[ -f "${macro}" ]]; then
-            basename "${macro}"
-          fi
-        done
-      fi
-      macro_dir="${repo_root}/macros/standalone/macro"
-      if [[ -d "${macro_dir}" ]]; then
-        for macro in "${macro_dir}"/*.C; do
-          if [[ -f "${macro}" ]]; then
-            basename "${macro}"
-          fi
-        done
-      fi
-      evd_dir="${repo_root}/macros/evd/macro"
-      if [[ -d "${evd_dir}" ]]; then
-        for macro in "${evd_dir}"/*.C; do
-          if [[ -f "${macro}" ]]; then
-            basename "${macro}"
-          fi
-        done
-      fi
-      macro_dir="${repo_root}/macros/io/macro"
+      macro_dir="${repo_root}/macros/macro"
       if [[ -d "${macro_dir}" ]]; then
         for macro in "${macro_dir}"/*.C; do
           if [[ -f "${macro}" ]]; then
