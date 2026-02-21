@@ -49,6 +49,10 @@ int plotMySummary(const std::string &event_list_path = "")
 
 A logical macro command should be added to `macros/macro/library/manifest.tsv` so users can run a stable alias even if a file moves.
 
+## Standalone macros
+
+Macros that depend only on ROOT/C++ (and not on Heron library classes) live in `macros/macro/standalone/`.
+
 ## Legacy migration policy
 
 Migration should proceed in batches:
