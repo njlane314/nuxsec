@@ -18,10 +18,10 @@ also supports producing a CNN training snapshot: sample-level ROOT outputs can b
 saved as an offline training set before event-level aggregation or plotting.
 
 ```
-io/    LArSoft output discovery, file manifests, provenance, and run databases
-ana/   analysis configuration, selection logic, and ROOT::RDataFrame column derivations
-plot/  stacked-histogram and channel plotting helpers
-apps/  CLI entrypoints that orchestrate the pipeline
+framework/io/    LArSoft output discovery, file manifests, provenance, and run databases
+framework/ana/   analysis configuration, selection logic, and ROOT::RDataFrame column derivations
+framework/plot/  stacked-histogram and channel plotting helpers
+framework/apps/  CLI entrypoints that orchestrate the pipeline
 ```
 
 ### Runtime 
@@ -205,11 +205,11 @@ heron --set template event scratch/out/template/event/events.root
 ```
 
 To override the event output schema, pass a columns TSV as the final positional
-argument. The TSV expects `type` and `name` columns (see `apps/config/event_columns.tsv`).
+argument. The TSV expects `type` and `name` columns (see `framework/apps/config/event_columns.tsv`).
 If you only want to provide columns, pass `true` as the selection placeholder.
 
 ```bash
-heron --set template event scratch/out/template/event/events.root true apps/config/event_columns.tsv
+heron --set template event scratch/out/template/event/events.root true framework/apps/config/event_columns.tsv
 ```
 
 Selection strings can reference selection columns derived by the SelectionService.
