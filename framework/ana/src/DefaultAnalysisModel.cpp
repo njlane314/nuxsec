@@ -17,40 +17,7 @@
 #include <ROOT/RVec.hxx>
 
 #include "AnalysisChannels.hh"
-
-namespace
-{
-
-constexpr float min_x = 5.f;
-constexpr float max_x = 251.f;
-constexpr float min_y = -110.f;
-constexpr float max_y = 110.f;
-constexpr float min_z = 20.f;
-constexpr float max_z = 986.f;
-
-constexpr float reco_gap_min_z = 675.f;
-constexpr float reco_gap_max_z = 775.f;
-
-inline ROOT::RDF::RNode filter_on(ROOT::RDF::RNode node, const char *col)
-{
-    return node.Filter([](bool pass) { return pass; }, {col});
-}
-
-template <typename T>
-bool is_within(const T &value, float low, float high)
-{
-    return value > low && value < high;
-}
-
-template <typename X, typename Y, typename Z>
-bool is_in_active_volume(const X &x, const Y &y, const Z &z)
-{
-    return is_within(x, min_x, max_x) &&
-           is_within(y, min_y, max_y) &&
-           is_within(z, min_z, max_z);
-}
-
-} // namespace
+#include "FiducialVolume.hh"
 
 const DefaultAnalysisModel &DefaultAnalysisModel::instance()
 {
@@ -333,16 +300,16 @@ ROOT::RDF::RNode DefaultAnalysisModel::apply(ROOT::RDF::RNode node, Preset p, Se
     case Preset::Empty:
         break;
     case Preset::Trigger:
-        filtered = filter_on(node, "sel_trigger");
+        filtered = heron::fiducial::filter_on(node, "sel_trigger");
         break;
     case Preset::Slice:
-        filtered = filter_on(node, "sel_slice");
+        filtered = heron::fiducial::filter_on(node, "sel_slice");
         break;
     case Preset::Fiducial:
-        filtered = filter_on(node, "sel_fiducial");
+        filtered = heron::fiducial::filter_on(node, "sel_fiducial");
         break;
     case Preset::Muon:
-        filtered = filter_on(node, "sel_muon");
+        filtered = heron::fiducial::filter_on(node, "sel_muon");
         break;
     default:
         break;
@@ -463,10 +430,10 @@ std::string DefaultAnalysisModel::selection_label(Preset p) const
 
 bool DefaultAnalysisModel::is_in_truth_volume(float x, float y, float z) const noexcept
 {
-    return is_in_active_volume(x, y, z);
+    return heron::fiducial::is_in_active_volume(x, y, z);
 }
 
 bool DefaultAnalysisModel::is_in_reco_volume(float x, float y, float z) const noexcept
 {
-    return is_in_active_volume(x, y, z) && (z < reco_gap_min_z || z > reco_gap_max_z);
+    return heron::fiducial::is_in_reco_volume_excluding_gap(x, y, z);
 }
