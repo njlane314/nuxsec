@@ -1,6 +1,6 @@
 /* -- C++ -- */
 /**
- *  @file  framework/apps/include/ArtCLI.hh
+ *  @file  framework/core/include/ArtCLI.hh
  *
  *  @brief CLI helpers that orchestrate art file processing and related
  *         provenance-driven workflows, coordinating input discovery and

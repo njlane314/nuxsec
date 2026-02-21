@@ -1,6 +1,6 @@
 /* -- C++ -- */
 /**
- *  @file  framework/apps/include/EventColumnProvider.hh
+ *  @file  framework/core/include/EventColumnProvider.hh
  *
  *  @brief Column provider that assembles event output schemas with consistent
  *         names, metadata, and formatting for downstream CLI reporting.

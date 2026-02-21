@@ -1,6 +1,6 @@
 /* -- C++ -- */
 /**
- *  @file  framework/apps/include/EventCLI.hh
+ *  @file  framework/core/include/EventCLI.hh
  *
  *  @brief CLI helpers that drive event-level workflows, including configuration,
  *         input selection, and summary output for analysis-ready datasets.

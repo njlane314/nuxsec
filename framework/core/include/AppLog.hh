@@ -1,6 +1,6 @@
 /* -- C++ -- */
 /**
- *  @file  framework/apps/include/AppLog.hh
+ *  @file  framework/core/include/AppLog.hh
  *
  *  @brief Logging helpers that format and emit consistent status messages for
  *         application command-line workflows, covering informational, warning,

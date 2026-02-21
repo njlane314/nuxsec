@@ -1,6 +1,6 @@
 /* -- C++ -- */
 /**
- *  @file  framework/apps/include/SampleCLI.hh
+ *  @file  framework/core/include/SampleCLI.hh
  *
  *  @brief CLI helpers that manage sample-level workflows, from input handling
  *         through reporting and normalisation for data preparation tasks.

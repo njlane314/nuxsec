@@ -1,6 +1,6 @@
 /* -- C++ -- */
 /**
- *  @file  framework/apps/include/AppUtils.hh
+ *  @file  framework/core/include/AppUtils.hh
  *
  *  @brief Utility helpers that support application command-line execution,
  *         including shared parsing, formatting, and I/O conveniences used by
