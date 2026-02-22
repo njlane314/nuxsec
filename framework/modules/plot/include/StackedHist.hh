@@ -21,6 +21,7 @@
 #include "TPaveText.h"
 #include "TPad.h"
 
+#include "EventListIO.hh"
 #include "PlotDescriptors.hh"
 
 
@@ -30,7 +31,7 @@ namespace nu
 class StackedHist
 {
   public:
-    StackedHist(TH1DModel spec, Options opt, std::vector<const Entry *> mc, std::vector<const Entry *> data);
+    StackedHist(TH1DModel spec, Options opt, const EventListIO &event_list);
     ~StackedHist() = default;
 
     void draw_and_save(const std::string &image_format);
@@ -53,6 +54,7 @@ class StackedHist
     Options opt_;
     std::vector<const Entry *> mc_;
     std::vector<const Entry *> data_;
+    std::vector<Entry> owned_entries_;
     std::string plot_name_;
     std::string output_directory_;
     std::unique_ptr<THStack> stack_;
