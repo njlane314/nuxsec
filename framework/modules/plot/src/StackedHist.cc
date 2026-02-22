@@ -14,6 +14,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -34,6 +35,7 @@
 
 #include "PlotChannels.hh"
 #include "ParticleChannels.hh"
+#include "PlottingHelper.hh"
 #include "Plotter.hh"
 
 namespace nu
@@ -175,15 +177,53 @@ double maximum_in_visible_range(const TH1D &h, double xmin, double xmax, bool in
 }
 
 
-StackedHist::StackedHist(TH1DModel spec, Options opt, std::vector<const Entry *> mc, std::vector<const Entry *> data)
+StackedHist::StackedHist(TH1DModel spec, Options opt, const EventListIO &event_list)
     : spec_(std::move(spec)),
       opt_(std::move(opt)),
-      mc_(std::move(mc)),
-      data_(std::move(data)),
       plot_name_(Plotter::sanitise(spec_.id)),
       output_directory_(opt_.out_dir)
 {
+    auto base = event_list.rdf();
+
+    auto data_mask = event_list.mask_for_data();
+    auto ext_mask = event_list.mask_for_ext();
+
+    std::shared_ptr<std::vector<char>> data_like = std::make_shared<std::vector<char>>();
+    if (data_mask || ext_mask)
+    {
+        size_t n = 0;
+        if (data_mask)
+            n = std::max(n, data_mask->size());
+        if (ext_mask)
+            n = std::max(n, ext_mask->size());
+
+        data_like->assign(n, 0);
+        if (data_mask)
+        {
+            for (size_t i = 0; i < data_mask->size(); ++i)
+                (*data_like)[i] = (*data_like)[i] || (*data_mask)[i];
+        }
+        if (ext_mask)
+        {
+            for (size_t i = 0; i < ext_mask->size(); ++i)
+                (*data_like)[i] = (*data_like)[i] || (*ext_mask)[i];
+        }
+    }
+
+    const std::shared_ptr<const std::vector<char>> data_like_const = data_like;
+    auto data_node = filter_by_sample_mask(base, data_like_const);
+    auto mc_node = filter_not_sample_mask(base, data_like_const);
+
+    owned_entries_.reserve(2);
+    SelectionEntry mc_sel{Type::kMC, Frame{mc_node}};
+    owned_entries_.push_back(Entry{std::move(mc_sel), 0.0, 0.0, std::string(), std::string()});
+    mc_.push_back(&owned_entries_.back());
+
+    SelectionEntry data_sel{Type::kData, Frame{data_node}};
+    owned_entries_.push_back(Entry{std::move(data_sel), 0.0, 0.0, std::string(), std::string()});
+    data_.push_back(&owned_entries_.back());
 }
+
 
 void StackedHist::setup_pads(TCanvas &c, TPad *&p_main, TPad *&p_ratio, TPad *&p_legend) const
 {
